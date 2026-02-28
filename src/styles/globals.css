@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900;
+}
+
+/* Small, simple “demo” look similar to the wireframes */
+.aicar-container {
+  @apply mx-auto w-full max-w-6xl px-4;
+}
