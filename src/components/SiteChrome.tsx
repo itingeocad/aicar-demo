@@ -74,7 +74,6 @@ export function Footer({ config }: { config: SiteConfig }) {
 export function SiteFrame({ config, children }: { config: SiteConfig; children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
-      {/* @ts-expect-error Async Server Component */}
       <TopNav config={config} />
       <main className="flex-1">{children}</main>
       <Footer config={config} />
