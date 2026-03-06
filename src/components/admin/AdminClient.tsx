@@ -802,7 +802,7 @@ export default function AdminClient() {
                         </div>
 
                         <div className="mt-3 rounded-xl border bg-white overflow-hidden">
-                          <BlockRenderer block={b} />
+                          <BlockRenderer block={b} config={config!} />
                         </div>
                       </div>
                     ))}
