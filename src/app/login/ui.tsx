@@ -86,7 +86,7 @@ export default function LoginClient() {
         </form>
 
         <div className="mt-4 text-xs text-slate-500">
-          Если это первый запуск, создайте супер‑админа командой <span className="font-mono">npm run bootstrap:superadmin</span>.
+          Если это первый запуск, откройте <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span> (токен задаётся в переменной окружения <span className="font-mono">AICAR_BOOTSTRAP_TOKEN</span>).
         </div>
 
         {status ? <div className="mt-3 text-sm text-slate-700">{status}</div> : null}

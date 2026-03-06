@@ -72,3 +72,20 @@ npm run bootstrap:superadmin -- --email "admin@aicar.local" --password "StrongPa
 - Версия приложения берётся из `package.json` и автоматически прокидывается в клиент/сервер через `next.config.mjs`.
 - Версия отображается в футере публичного сайта и в шапке админки.
 - Проверить можно через `GET /api/version`.
+
+## Первичная настройка без локального Node.js
+
+Если у вас нет Node.js/npm на компьютере, можно создать первого супер‑админа прямо на Vercel:
+
+1) В Vercel → Project → Settings → Environment Variables добавьте:
+- `AICAR_AUTH_SECRET` (случайная длинная строка)
+- `AICAR_BOOTSTRAP_TOKEN` (любой длинный токен)
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (из Upstash)
+
+2) Сделайте redeploy (или просто push любого коммита).
+
+3) Откройте: `https://<ваш-домен>/setup?t=<AICAR_BOOTSTRAP_TOKEN>`
+
+4) Создайте супер‑админа и перейдите в `/admin`.
+
+После настройки рекомендуется сменить или удалить `AICAR_BOOTSTRAP_TOKEN`.
