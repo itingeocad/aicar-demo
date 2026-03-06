@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "aicar-demo-builder",
   "private": true,
-  "version": "0.1.2",
+  $10.1.2",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -32,3 +32,4 @@
     "typescript": "^5.4.5"
   }
 }
+
