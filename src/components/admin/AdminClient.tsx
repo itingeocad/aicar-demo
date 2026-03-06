@@ -818,63 +818,73 @@ export default function AdminClient() {
                 {activeBlock && activeDef ? (
                   <div className="mt-3 space-y-2">
                     {activeDef.fields.map((f) => {
-                      const value = (activeBlock.props as any)[f.name];
-                      if (f.kind === 'text') {
+                      const key = f.key;
+                      const value = (activeBlock.props as any)[key];
+
+                      if (f.type === 'text' || f.type === 'url') {
                         return (
-                          <Field key={f.name} label={f.label}>
+                          <Field key={key} label={f.label}>
                             <input
+                              type={f.type === 'url' ? 'url' : 'text'}
+                              placeholder={f.placeholder ?? ''}
                               className="w-full rounded-xl border px-3 py-2"
                               value={value ?? ''}
                               onChange={(e) =>
                                 updateBlock(activeBlock.id, {
-                                  props: { ...activeBlock.props, [f.name]: e.target.value }
+                                  props: { ...activeBlock.props, [key]: e.target.value }
                                 })
                               }
                             />
                           </Field>
                         );
                       }
-                      if (f.kind === 'textarea') {
+
+                      if (f.type === 'textarea') {
                         return (
-                          <Field key={f.name} label={f.label}>
+                          <Field key={key} label={f.label}>
                             <textarea
+                              placeholder={f.placeholder ?? ''}
                               className="w-full rounded-xl border px-3 py-2"
                               rows={4}
                               value={value ?? ''}
                               onChange={(e) =>
                                 updateBlock(activeBlock.id, {
-                                  props: { ...activeBlock.props, [f.name]: e.target.value }
+                                  props: { ...activeBlock.props, [key]: e.target.value }
                                 })
                               }
                             />
                           </Field>
                         );
                       }
-                      if (f.kind === 'number') {
+
+                      if (f.type === 'number') {
                         return (
-                          <Field key={f.name} label={f.label}>
+                          <Field key={key} label={f.label}>
                             <input
                               type="number"
+                              min={f.min}
+                              max={f.max}
                               className="w-full rounded-xl border px-3 py-2"
                               value={value ?? 0}
                               onChange={(e) =>
                                 updateBlock(activeBlock.id, {
-                                  props: { ...activeBlock.props, [f.name]: Number(e.target.value) }
+                                  props: { ...activeBlock.props, [key]: Number(e.target.value) }
                                 })
                               }
                             />
                           </Field>
                         );
                       }
-                      if (f.kind === 'boolean') {
+
+                      if (f.type === 'boolean') {
                         return (
-                          <label key={f.name} className="flex items-center gap-2 text-sm">
+                          <label key={key} className="flex items-center gap-2 text-sm">
                             <input
                               type="checkbox"
                               checked={Boolean(value)}
                               onChange={(e) =>
                                 updateBlock(activeBlock.id, {
-                                  props: { ...activeBlock.props, [f.name]: e.target.checked }
+                                  props: { ...activeBlock.props, [key]: e.target.checked }
                                 })
                               }
                             />
@@ -882,9 +892,10 @@ export default function AdminClient() {
                           </label>
                         );
                       }
-                      if (f.kind === 'image') {
+
+                      if (f.type === 'image') {
                         return (
-                          <Field key={f.name} label={f.label}>
+                          <Field key={key} label={f.label}>
                             <input
                               type="file"
                               accept="image/*"
@@ -895,7 +906,7 @@ export default function AdminClient() {
                                 const reader = new FileReader();
                                 reader.onload = () => {
                                   updateBlock(activeBlock.id, {
-                                    props: { ...activeBlock.props, [f.name]: String(reader.result) }
+                                    props: { ...activeBlock.props, [key]: String(reader.result) }
                                   });
                                 };
                                 reader.readAsDataURL(file);
@@ -905,6 +916,7 @@ export default function AdminClient() {
                           </Field>
                         );
                       }
+
                       return null;
                     })}
 
