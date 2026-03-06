@@ -1,15 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { Redis } from '@upstash/redis';
 import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
-
-function upstash() {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  return new Redis({ url, token });
-}
+import { getRedis } from '@/lib/kv/upstash.server';
 
 function upstashKey() {
   return process.env.AICAR_SITE_CONFIG_KEY || 'aicar:siteConfig';
@@ -22,7 +15,7 @@ function configPath() {
 }
 
 export async function getSiteConfig(): Promise<SiteConfig> {
-  const redis = upstash();
+  const redis = getRedis();
   if (redis) {
     try {
       const raw = await redis.get<string>(upstashKey());
@@ -42,7 +35,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 }
 
 export async function saveSiteConfig(next: SiteConfig): Promise<void> {
-  const redis = upstash();
+  const redis = getRedis();
   if (redis) {
     await redis.set(upstashKey(), JSON.stringify(next));
     return;

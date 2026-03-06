@@ -4,39 +4,70 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { BLOCK_DEFINITIONS } from '@/components/blocks/BlockRegistry';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
-import { Footer, TopNav } from '@/components/SiteChrome';
 import { SiteConfig, PageDoc, BlockInstance } from '@/lib/site/types';
 import { uid } from '@/lib/site/utils';
 import { formatBuildLabel } from '@/lib/version';
 
-type Tab = 'pages' | 'site';
+type Tab = 'pages' | 'site' | 'security';
+
+type MeUser = {
+  uid: string;
+  email: string;
+  displayName: string;
+  roleIds: string[];
+  permissions: string[];
+};
+
+type RoleDoc = {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: string[];
+  isSystem?: boolean;
+};
+
+type UserRow = {
+  id: string;
+  email: string;
+  displayName: string;
+  roleIds: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 function cls(...xs: Array<string | false | undefined>) {
   return xs.filter(Boolean).join(' ');
 }
 
+function can(me: MeUser | null, perm: string) {
+  if (!me) return false;
+  if (me.permissions.includes('*')) return true;
+  return me.permissions.includes(perm);
+}
+
+async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, { cache: 'no-store', ...init });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as any)?.error || `HTTP ${res.status}`);
+  }
+  return data as T;
+}
+
 async function fetchConfig(): Promise<SiteConfig> {
-  const res = await fetch('/api/site-config', { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to load config');
-  return (await res.json()) as SiteConfig;
+  return await fetchJSON<SiteConfig>('/api/site-config');
 }
 
 async function saveConfig(config: SiteConfig): Promise<void> {
-  const res = await fetch('/api/site-config', {
+  await fetchJSON('/api/site-config', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(config)
   });
-  if (!res.ok) throw new Error('Failed to save config');
 }
 
-function Field({
-  label,
-  children
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <div className="text-xs font-medium text-slate-600">{label}</div>
@@ -54,6 +85,362 @@ function BlockBadge({ type }: { type: string }) {
   );
 }
 
+function SecurityTab({ me }: { me: MeUser | null }) {
+  const [roles, setRoles] = useState<RoleDoc[]>([]);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [status, setStatus] = useState<string>('');
+
+  const [activeRoleId, setActiveRoleId] = useState<string>('');
+  const [activeUserId, setActiveUserId] = useState<string>('');
+
+  const activeRole = roles.find((r) => r.id === activeRoleId) || null;
+  const activeUser = users.find((u) => u.id === activeUserId) || null;
+
+  const [roleDraft, setRoleDraft] = useState<{ id: string; name: string; description: string; permissions: string }>(
+    { id: '', name: '', description: '', permissions: '' }
+  );
+
+  const [userDraft, setUserDraft] = useState<{ email: string; displayName: string; password: string; roleIds: string[]; isActive: boolean }>(
+    { email: '', displayName: '', password: '', roleIds: [], isActive: true }
+  );
+
+  async function loadAll() {
+    try {
+      setStatus('Загрузка…');
+      const r = can(me, 'roles:manage') ? await fetchJSON<{ roles: RoleDoc[] }>('/api/admin/roles') : { roles: [] };
+      const u = can(me, 'users:manage') ? await fetchJSON<{ users: UserRow[] }>('/api/admin/users') : { users: [] };
+      setRoles(r.roles || []);
+      setUsers(u.users || []);
+      setStatus('');
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  useEffect(() => {
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!activeRole) return;
+    setRoleDraft({
+      id: activeRole.id,
+      name: activeRole.name,
+      description: activeRole.description || '',
+      permissions: (activeRole.permissions || []).join(', ')
+    });
+  }, [activeRoleId]);
+
+  useEffect(() => {
+    if (!activeUser) return;
+    setUserDraft({
+      email: activeUser.email,
+      displayName: activeUser.displayName,
+      password: '',
+      roleIds: activeUser.roleIds || [],
+      isActive: activeUser.isActive
+    });
+  }, [activeUserId]);
+
+  async function createRole() {
+    try {
+      setStatus('Создаю роль…');
+      const perms = roleDraft.permissions
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      await fetchJSON('/api/admin/roles', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          id: roleDraft.id.trim(),
+          name: roleDraft.name.trim(),
+          description: roleDraft.description.trim() || undefined,
+          permissions: perms
+        })
+      });
+      await loadAll();
+      setStatus('Роль создана ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function updateRole() {
+    if (!activeRole) return;
+    try {
+      setStatus('Сохраняю роль…');
+      const perms = roleDraft.permissions
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      await fetchJSON(`/api/admin/roles/${encodeURIComponent(activeRole.id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: roleDraft.name.trim(),
+          description: roleDraft.description.trim() || undefined,
+          permissions: perms
+        })
+      });
+      await loadAll();
+      setStatus('Сохранено ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function deleteRole() {
+    if (!activeRole) return;
+    if (!confirm(`Удалить роль ${activeRole.id}?`)) return;
+    try {
+      setStatus('Удаляю роль…');
+      await fetchJSON(`/api/admin/roles/${encodeURIComponent(activeRole.id)}`, { method: 'DELETE' });
+      setActiveRoleId('');
+      await loadAll();
+      setStatus('Удалено ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function createUser() {
+    try {
+      setStatus('Создаю пользователя…');
+      await fetchJSON('/api/admin/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: userDraft.email.trim(),
+          displayName: userDraft.displayName.trim(),
+          password: userDraft.password,
+          roleIds: userDraft.roleIds,
+          isActive: userDraft.isActive
+        })
+      });
+      await loadAll();
+      setStatus('Пользователь создан ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function updateUser() {
+    if (!activeUser) return;
+    try {
+      setStatus('Сохраняю пользователя…');
+      await fetchJSON(`/api/admin/users/${encodeURIComponent(activeUser.id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          displayName: userDraft.displayName.trim(),
+          password: userDraft.password || undefined,
+          roleIds: userDraft.roleIds,
+          isActive: userDraft.isActive
+        })
+      });
+      await loadAll();
+      setStatus('Сохранено ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function deleteUser() {
+    if (!activeUser) return;
+    if (!confirm(`Удалить пользователя ${activeUser.email}?`)) return;
+    try {
+      setStatus('Удаляю пользователя…');
+      await fetchJSON(`/api/admin/users/${encodeURIComponent(activeUser.id)}`, { method: 'DELETE' });
+      setActiveUserId('');
+      await loadAll();
+      setStatus('Удалено ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  const canRoles = can(me, 'roles:manage');
+  const canUsers = can(me, 'users:manage');
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="lg:col-span-4 rounded-2xl border bg-white p-3 shadow-sm">
+        <div className="text-sm font-semibold">Права (roles)</div>
+        {!canRoles ? (
+          <div className="mt-2 text-sm text-slate-600">Недостаточно прав (roles:manage).</div>
+        ) : (
+          <>
+            <div className="mt-3 space-y-2">
+              {roles.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setActiveRoleId(r.id)}
+                  className={cls(
+                    'w-full text-left rounded-xl border px-3 py-2',
+                    r.id === activeRoleId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">{r.name}</div>
+                      <div className="text-xs text-slate-500">{r.id}{r.isSystem ? ' (system)' : ''}</div>
+                    </div>
+                    <div className="text-xs text-slate-500">{r.permissions?.length ?? 0}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 border-t pt-3">
+              <div className="text-sm font-semibold">Создать роль</div>
+              <div className="mt-2 space-y-2">
+                <Field label="ID (например: site_editor)">
+                  <input className="w-full rounded-xl border px-3 py-2" value={roleDraft.id} onChange={(e) => setRoleDraft({ ...roleDraft, id: e.target.value })} />
+                </Field>
+                <Field label="Название">
+                  <input className="w-full rounded-xl border px-3 py-2" value={roleDraft.name} onChange={(e) => setRoleDraft({ ...roleDraft, name: e.target.value })} />
+                </Field>
+                <Field label="Описание">
+                  <input className="w-full rounded-xl border px-3 py-2" value={roleDraft.description} onChange={(e) => setRoleDraft({ ...roleDraft, description: e.target.value })} />
+                </Field>
+                <Field label="Permissions (через запятую)">
+                  <textarea className="w-full rounded-xl border px-3 py-2" rows={3} value={roleDraft.permissions} onChange={(e) => setRoleDraft({ ...roleDraft, permissions: e.target.value })} />
+                </Field>
+                <div className="flex gap-2">
+                  <button onClick={createRole} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">
+                    Создать
+                  </button>
+                  {activeRole ? (
+                    <>
+                      <button onClick={updateRole} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                        Обновить
+                      </button>
+                      <button onClick={deleteRole} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                        Удалить
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+                <div className="text-xs text-slate-500">
+                  Для доступа к админке добавьте permission <span className="font-mono">admin:access</span>.
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="lg:col-span-8 rounded-2xl border bg-white p-3 shadow-sm">
+        <div className="text-sm font-semibold">Пользователи</div>
+        {!canUsers ? (
+          <div className="mt-2 text-sm text-slate-600">Недостаточно прав (users:manage).</div>
+        ) : (
+          <>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="space-y-2">
+                {users.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => setActiveUserId(u.id)}
+                    className={cls(
+                      'w-full text-left rounded-xl border px-3 py-2',
+                      u.id === activeUserId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold">{u.displayName}</div>
+                        <div className="text-xs text-slate-500">{u.email}</div>
+                      </div>
+                      <div className={cls('text-xs', u.isActive ? 'text-emerald-600' : 'text-slate-400')}>{u.isActive ? 'Active' : 'Disabled'}</div>
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">Roles: {(u.roleIds || []).join(', ') || '—'}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border p-3">
+                <div className="text-sm font-semibold">{activeUser ? 'Редактировать' : 'Создать'} пользователя</div>
+                <div className="mt-2 space-y-2">
+                  {!activeUser ? (
+                    <Field label="Email">
+                      <input className="w-full rounded-xl border px-3 py-2" value={userDraft.email} onChange={(e) => setUserDraft({ ...userDraft, email: e.target.value })} />
+                    </Field>
+                  ) : (
+                    <div className="text-sm text-slate-600">{activeUser.email}</div>
+                  )}
+
+                  <Field label="Display name">
+                    <input className="w-full rounded-xl border px-3 py-2" value={userDraft.displayName} onChange={(e) => setUserDraft({ ...userDraft, displayName: e.target.value })} />
+                  </Field>
+
+                  <Field label={activeUser ? 'Новый пароль (опционально)' : 'Пароль'}>
+                    <input className="w-full rounded-xl border px-3 py-2" type="password" value={userDraft.password} onChange={(e) => setUserDraft({ ...userDraft, password: e.target.value })} />
+                  </Field>
+
+                  <Field label="Роли">
+                    <div className="space-y-1">
+                      {roles.map((r) => (
+                        <label key={r.id} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={userDraft.roleIds.includes(r.id)}
+                            onChange={(e) => {
+                              const on = e.target.checked;
+                              setUserDraft({
+                                ...userDraft,
+                                roleIds: on ? [...userDraft.roleIds, r.id] : userDraft.roleIds.filter((x) => x !== r.id)
+                              });
+                            }}
+                          />
+                          <span>{r.name} <span className="text-xs text-slate-500">({r.id})</span></span>
+                        </label>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={userDraft.isActive} onChange={(e) => setUserDraft({ ...userDraft, isActive: e.target.checked })} />
+                    Активен
+                  </label>
+
+                  <div className="flex gap-2">
+                    {!activeUser ? (
+                      <button onClick={createUser} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">Создать</button>
+                    ) : (
+                      <>
+                        <button onClick={updateUser} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">Сохранить</button>
+                        <button onClick={deleteUser} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">Удалить</button>
+                      </>
+                    )}
+                    <button onClick={() => { setActiveUserId(''); setUserDraft({ email: '', displayName: '', password: '', roleIds: [], isActive: true }); }} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                      Сброс
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {status ? (
+        <div className="lg:col-span-12 text-sm text-slate-600">{status}</div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminClient() {
   const build = formatBuildLabel();
   const [tab, setTab] = useState<Tab>('pages');
@@ -61,8 +448,13 @@ export default function AdminClient() {
   const [activePageId, setActivePageId] = useState<string>('');
   const [activeBlockId, setActiveBlockId] = useState<string>('');
   const [status, setStatus] = useState<string>('');
+  const [me, setMe] = useState<MeUser | null>(null);
 
   useEffect(() => {
+    fetchJSON<{ user: MeUser | null }>('/api/auth/me')
+      .then((r) => setMe(r.user))
+      .catch(() => setMe(null));
+
     fetchConfig()
       .then((c) => {
         setConfig(c);
@@ -178,6 +570,8 @@ export default function AdminClient() {
   const blockDefs = BLOCK_DEFINITIONS;
   const activeDef = activeBlock ? blockDefs.find((d) => d.type === activeBlock.type) : null;
 
+  const showSecurity = can(me, 'roles:manage') || can(me, 'users:manage');
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="border-b bg-white">
@@ -188,6 +582,12 @@ export default function AdminClient() {
             <div className="text-xs text-slate-400">{build}</div>
           </div>
           <div className="flex items-center gap-2">
+            {me ? (
+              <div className="hidden md:block text-xs text-slate-500">{me.email}</div>
+            ) : null}
+            <Link href="/logout?next=/" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+              Выйти
+            </Link>
             <button onClick={onSave} className="rounded-xl bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800">
               Сохранить
             </button>
@@ -199,7 +599,7 @@ export default function AdminClient() {
       </div>
 
       <div className="aicar-container py-4">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             className={cls('rounded-xl px-3 py-2 text-sm', tab === 'pages' ? 'bg-white border shadow-sm' : 'text-slate-600')}
             onClick={() => setTab('pages')}
@@ -212,388 +612,314 @@ export default function AdminClient() {
           >
             Сайт (Nav/Theme/Footer)
           </button>
+          {showSecurity ? (
+            <button
+              className={cls('rounded-xl px-3 py-2 text-sm', tab === 'security' ? 'bg-white border shadow-sm' : 'text-slate-600')}
+              onClick={() => setTab('security')}
+            >
+              Безопасность (RBAC)
+            </button>
+          ) : null}
           {status ? <div className="ml-auto text-sm text-slate-600 self-center">{status}</div> : null}
         </div>
 
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Sidebar */}
-          <aside className="lg:col-span-3">
-            {tab === 'pages' ? (
-              <div className="rounded-2xl border bg-white p-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold">Страницы</div>
-                  <button onClick={addPage} className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50">
-                    + Добавить
-                  </button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {config.pages.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setActivePageId(p.id);
-                        setActiveBlockId('');
-                      }}
-                      className={cls(
-                        'w-full text-left rounded-xl border px-3 py-2',
-                        p.id === activePageId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold truncate">{p.title}</div>
-                          <div className="text-xs text-slate-500 truncate">/{p.slug || ''}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={cls('text-xs', p.isPublished ? 'text-emerald-600' : 'text-slate-400')}>
-                            {p.isPublished ? 'Published' : 'Draft'}
-                          </span>
-                        </div>
-                      </div>
+        {tab === 'security' ? (
+          <div className="mt-4">
+            <SecurityTab me={me} />
+          </div>
+        ) : (
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Sidebar */}
+            <aside className="lg:col-span-3">
+              {tab === 'pages' ? (
+                <div className="rounded-2xl border bg-white p-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold">Страницы</div>
+                    <button onClick={addPage} className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50">
+                      + Добавить
                     </button>
-                  ))}
-                </div>
-
-                {activePage ? (
-                  <div className="mt-4 border-t pt-3">
-                    <div className="text-sm font-semibold">Свойства</div>
-                    <div className="mt-2 space-y-2">
-                      <Field label="Название">
-                        <input
-                          className="w-full rounded-xl border px-3 py-2"
-                          value={activePage.title}
-                          onChange={(e) => updatePage({ title: e.target.value })}
-                        />
-                      </Field>
-                      <Field label="Slug (без /)">
-                        <input
-                          className="w-full rounded-xl border px-3 py-2"
-                          value={activePage.slug}
-                          onChange={(e) => updatePage({ slug: e.target.value.replace(/^\/+/, '') })}
-                        />
-                      </Field>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={activePage.isPublished}
-                          onChange={(e) => updatePage({ isPublished: e.target.checked })}
-                        />
-                        Опубликована
-                      </label>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {config.pages.map((p) => (
                       <button
-                        onClick={() => removePage(activePage.id)}
-                        className="w-full rounded-xl border px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        key={p.id}
+                        onClick={() => {
+                          setActivePageId(p.id);
+                          setActiveBlockId('');
+                        }}
+                        className={cls(
+                          'w-full text-left rounded-xl border px-3 py-2',
+                          p.id === activePageId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
+                        )}
                       >
-                        Удалить страницу
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate">{p.title}</div>
+                            <div className="text-xs text-slate-500 truncate">/{p.slug || ''}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={cls('text-xs', p.isPublished ? 'text-emerald-600' : 'text-slate-400')}>
+                              {p.isPublished ? 'Published' : 'Draft'}
+                            </span>
+                          </div>
+                        </div>
                       </button>
+                    ))}
+                  </div>
+
+                  {activePage ? (
+                    <div className="mt-4 border-t pt-3">
+                      <div className="text-sm font-semibold">Свойства</div>
+                      <div className="mt-2 space-y-2">
+                        <Field label="Title">
+                          <input
+                            className="w-full rounded-xl border px-3 py-2"
+                            value={activePage.title}
+                            onChange={(e) => updatePage({ title: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Slug">
+                          <input
+                            className="w-full rounded-xl border px-3 py-2"
+                            value={activePage.slug}
+                            onChange={(e) => updatePage({ slug: e.target.value.replace(/\s+/g, '-') })}
+                          />
+                        </Field>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={activePage.isPublished}
+                            onChange={(e) => updatePage({ isPublished: e.target.checked })}
+                          />
+                          Published
+                        </label>
+                        <button
+                          onClick={() => removePage(activePage.id)}
+                          className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
+                        >
+                          Удалить страницу
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="rounded-2xl border bg-white p-3 shadow-sm">
+                  <div className="text-sm font-semibold">Сайт</div>
+                  <div className="mt-2 space-y-2">
+                    <Field label="Brand name">
+                      <input
+                        className="w-full rounded-xl border px-3 py-2"
+                        value={config.theme.brandName}
+                        onChange={(e) => setConfig({ ...config, theme: { ...config.theme, brandName: e.target.value } })}
+                      />
+                    </Field>
+                    <Field label="Footer note">
+                      <input
+                        className="w-full rounded-xl border px-3 py-2"
+                        value={config.footer.note}
+                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, note: e.target.value } })}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
+            </aside>
+
+            {/* Main */}
+            <section className="lg:col-span-6">
+              {activePage ? (
+                <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+                  <div className="border-b px-4 py-3 flex items-center justify-between">
+                    <div className="text-sm font-semibold">Блоки</div>
+                    <div className="flex gap-2">
+                      <select
+                        className="rounded-xl border px-3 py-2 text-sm"
+                        onChange={(e) => {
+                          if (e.target.value) addBlock(e.target.value);
+                          e.currentTarget.selectedIndex = 0;
+                        }}
+                      >
+                        <option value="">+ Добавить блок…</option>
+                        {blockDefs.map((d) => (
+                          <option key={d.type} value={d.type}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="rounded-2xl border bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold">Сайт</div>
-                <div className="mt-3 space-y-3">
-                  <Field label="Brand name">
-                    <input
-                      className="w-full rounded-xl border px-3 py-2"
-                      value={config.theme.brandName}
-                      onChange={(e) => setConfig({ ...config, theme: { ...config.theme, brandName: e.target.value } })}
-                    />
-                  </Field>
-                  <Field label="Nav items (формат: Label|/path, по строкам)">
-                    <textarea
-                      className="w-full rounded-xl border px-3 py-2 min-h-[120px]"
-                      value={config.nav.items.map((i) => `${i.label}|${i.href}`).join('\n')}
-                      onChange={(e) => {
-                        const items = e.target.value
-                          .split('\n')
-                          .map((l) => l.trim())
-                          .filter(Boolean)
-                          .map((l) => {
-                            const [label, href] = l.split('|');
-                            return { label: (label ?? '').trim(), href: (href ?? '').trim() };
-                          })
-                          .filter((x) => x.label && x.href);
-                        setConfig({ ...config, nav: { items } });
-                      }}
-                    />
-                  </Field>
-                  <Field label="Footer note">
-                    <input
-                      className="w-full rounded-xl border px-3 py-2"
-                      value={config.footer.note}
-                      onChange={(e) => setConfig({ ...config, footer: { ...config.footer, note: e.target.value } })}
-                    />
-                  </Field>
-                </div>
-              </div>
-            )}
-          </aside>
 
-          {/* Middle: Blocks */}
-          <section className="lg:col-span-4">
-            <div className="rounded-2xl border bg-white p-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">Блоки страницы</div>
-                <div className="flex items-center gap-2">
-                  <select
-                    className="rounded-lg border px-2 py-1 text-sm"
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (!e.target.value) return;
-                      addBlock(e.target.value);
-                      e.currentTarget.value = '';
-                    }}
-                  >
-                    <option value="">+ Добавить блок…</option>
-                    {blockDefs.map((d) => (
-                      <option key={d.type} value={d.type}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  <div className="p-4 space-y-3">
+                    {activePage.blocks.length === 0 ? (
+                      <div className="text-sm text-slate-600">На странице пока нет блоков.</div>
+                    ) : null}
 
-              {!activePage ? (
-                <div className="mt-4 text-sm text-slate-600">Выбери страницу слева.</div>
-              ) : activePage.blocks.length === 0 ? (
-                <div className="mt-4 text-sm text-slate-600">Нет блоков. Добавь первый блок.</div>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {activePage.blocks.map((b) => (
-                    <div
-                      key={b.id}
-                      className={cls(
-                        'rounded-xl border p-3',
-                        b.id === activeBlockId ? 'bg-slate-50' : 'bg-white'
-                      )}
-                    >
-                      <button className="w-full text-left" onClick={() => setActiveBlockId(b.id)}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                    {activePage.blocks.map((b) => (
+                      <div
+                        key={b.id}
+                        className={cls(
+                          'rounded-2xl border p-3',
+                          b.id === activeBlockId ? 'bg-slate-50 border-slate-300' : 'bg-white'
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <button
+                            className="text-left flex items-center gap-2"
+                            onClick={() => setActiveBlockId(b.id)}
+                          >
                             <BlockBadge type={b.type} />
                             <span className="text-xs text-slate-500">{b.id}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
+                          </button>
+                          <div className="flex items-center gap-2">
                             <button
-                              className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveBlock(b.id, -1);
-                              }}
-                              title="Вверх"
+                              className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+                              onClick={() => moveBlock(b.id, -1)}
                             >
                               ↑
                             </button>
                             <button
-                              className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveBlock(b.id, 1);
-                              }}
-                              title="Вниз"
+                              className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+                              onClick={() => moveBlock(b.id, 1)}
                             >
                               ↓
                             </button>
+                            <label className="text-xs text-slate-600 flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={b.isEnabled}
+                                onChange={(e) => updateBlock(b.id, { isEnabled: e.target.checked })}
+                              />
+                              Enabled
+                            </label>
                             <button
-                              className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateBlock(b.id, { isEnabled: b.isEnabled === false ? true : false });
-                              }}
-                              title="Вкл/выкл"
-                            >
-                              {b.isEnabled === false ? 'Off' : 'On'}
-                            </button>
-                            <button
-                              className="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeBlock(b.id);
-                              }}
-                              title="Удалить"
+                              className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+                              onClick={() => removeBlock(b.id)}
                             >
                               ✕
                             </button>
                           </div>
                         </div>
-                      </button>
-                    </div>
-                  ))}
+
+                        <div className="mt-3 rounded-xl border bg-white overflow-hidden">
+                          <BlockRenderer block={b} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
+              ) : null}
+            </section>
 
-            {/* Block editor */}
-            <div className="mt-4 rounded-2xl border bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold">Свойства блока</div>
-              {!activeBlock || !activeDef ? (
-                <div className="mt-3 text-sm text-slate-600">Выбери блок для редактирования.</div>
-              ) : (
-                <div className="mt-3 space-y-3">
-                  {activeDef.fields.map((f) => {
-                    const value = (activeBlock.props as any)[f.key];
-
-                    if (f.type === 'textarea') {
-                      return (
-                        <Field key={f.key} label={f.label}>
-                          <textarea
-                            className="w-full rounded-xl border px-3 py-2 min-h-[90px]"
-                            value={String(value ?? '')}
-                            onChange={(e) => updateBlock(activeBlock.id, { props: { ...activeBlock.props, [f.key]: e.target.value } })}
-                          />
-                        </Field>
-                      );
-                    }
-
-                    if (f.type === 'number') {
-                      return (
-                        <Field key={f.key} label={f.label}>
-                          <input
-                            type="number"
-                            min={f.min}
-                            max={f.max}
-                            className="w-full rounded-xl border px-3 py-2"
-                            value={Number(value ?? 0)}
-                            onChange={(e) => updateBlock(activeBlock.id, { props: { ...activeBlock.props, [f.key]: Number(e.target.value) } })}
-                          />
-                        </Field>
-                      );
-                    }
-
-                    if (f.type === 'boolean') {
-                      return (
-                        <label key={f.key} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(value)}
-                            onChange={(e) => updateBlock(activeBlock.id, { props: { ...activeBlock.props, [f.key]: e.target.checked } })}
-                          />
-                          {f.label}
-                        </label>
-                      );
-                    }
-
-                    if (f.type === 'image') {
-                      return (
-                        <Field key={f.key} label={f.label}>
-                          <div className="flex items-center gap-3">
+            {/* Inspector */}
+            <aside className="lg:col-span-3">
+              <div className="rounded-2xl border bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold">Инспектор</div>
+                {activeBlock && activeDef ? (
+                  <div className="mt-3 space-y-2">
+                    {activeDef.fields.map((f) => {
+                      const value = (activeBlock.props as any)[f.name];
+                      if (f.kind === 'text') {
+                        return (
+                          <Field key={f.name} label={f.label}>
+                            <input
+                              className="w-full rounded-xl border px-3 py-2"
+                              value={value ?? ''}
+                              onChange={(e) =>
+                                updateBlock(activeBlock.id, {
+                                  props: { ...activeBlock.props, [f.name]: e.target.value }
+                                })
+                              }
+                            />
+                          </Field>
+                        );
+                      }
+                      if (f.kind === 'textarea') {
+                        return (
+                          <Field key={f.name} label={f.label}>
+                            <textarea
+                              className="w-full rounded-xl border px-3 py-2"
+                              rows={4}
+                              value={value ?? ''}
+                              onChange={(e) =>
+                                updateBlock(activeBlock.id, {
+                                  props: { ...activeBlock.props, [f.name]: e.target.value }
+                                })
+                              }
+                            />
+                          </Field>
+                        );
+                      }
+                      if (f.kind === 'number') {
+                        return (
+                          <Field key={f.name} label={f.label}>
+                            <input
+                              type="number"
+                              className="w-full rounded-xl border px-3 py-2"
+                              value={value ?? 0}
+                              onChange={(e) =>
+                                updateBlock(activeBlock.id, {
+                                  props: { ...activeBlock.props, [f.name]: Number(e.target.value) }
+                                })
+                              }
+                            />
+                          </Field>
+                        );
+                      }
+                      if (f.kind === 'boolean') {
+                        return (
+                          <label key={f.name} className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(value)}
+                              onChange={(e) =>
+                                updateBlock(activeBlock.id, {
+                                  props: { ...activeBlock.props, [f.name]: e.target.checked }
+                                })
+                              }
+                            />
+                            {f.label}
+                          </label>
+                        );
+                      }
+                      if (f.kind === 'image') {
+                        return (
+                          <Field key={f.name} label={f.label}>
                             <input
                               type="file"
                               accept="image/*"
+                              className="w-full text-sm"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
                                 const reader = new FileReader();
                                 reader.onload = () => {
-                                  const dataUrl = String(reader.result ?? '');
-                                  updateBlock(activeBlock.id, { props: { ...activeBlock.props, [f.key]: dataUrl } });
+                                  updateBlock(activeBlock.id, {
+                                    props: { ...activeBlock.props, [f.name]: String(reader.result) }
+                                  });
                                 };
                                 reader.readAsDataURL(file);
                               }}
                             />
-                            {value ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={String(value)} alt="preview" className="h-12 w-20 rounded-lg border object-cover" />
-                            ) : (
-                              <div className="text-xs text-slate-500">нет</div>
-                            )}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">Это мок-загрузка: картинка хранится прямо в JSON (data:URL).</div>
-                        </Field>
-                      );
-                    }
+                            <div className="mt-2 text-xs text-slate-500">(мок‑загрузка: хранится в JSON как data:URL)</div>
+                          </Field>
+                        );
+                      }
+                      return null;
+                    })}
 
-                    // text/url default
-                    return (
-                      <Field key={f.key} label={f.label}>
-                        <input
-                          className="w-full rounded-xl border px-3 py-2"
-                          value={String(value ?? '')}
-                          onChange={(e) => updateBlock(activeBlock.id, { props: { ...activeBlock.props, [f.key]: e.target.value } })}
-                        />
-                      </Field>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Right: Preview */}
-          <section className="lg:col-span-5">
-            <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-              <div className="border-b px-3 py-2 flex items-center justify-between">
-                <div className="text-sm font-semibold">Превью</div>
-                <div className="text-xs text-slate-500">Обновляется мгновенно</div>
+                    <div className="mt-3 rounded-xl border bg-slate-50 p-2">
+                      <div className="text-xs font-medium text-slate-600">Props JSON</div>
+                      <pre className="mt-1 text-xs overflow-auto">{JSON.stringify(activeBlock.props, null, 2)}</pre>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-slate-600">Выберите блок слева.</div>
+                )}
               </div>
-              <div className="max-h-[calc(100vh-170px)] overflow-auto">
-                {/* Render a “fake” page frame */}
-                <TopNav config={config} />
-                <main>
-                  {activePage?.blocks.map((b) => (
-                    <BlockRenderer
-                      key={b.id}
-                      block={b}
-                      config={config}
-                      ctx={activePage.slug === 'cars/[id]' ? { carId: config.demoData.cars[0]?.id } : undefined}
-                    />
-                  ))}
-                </main>
-                <Footer config={config} />
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold">Экспорт / импорт</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-                  onClick={() => {
-                    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'aicar-site-config.json';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  Скачать JSON
-                </button>
-                <label className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer">
-                  Загрузить JSON
-                  <input
-                    type="file"
-                    accept="application/json"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        try {
-                          const next = JSON.parse(String(reader.result ?? '')) as SiteConfig;
-                          setConfig(next);
-                          setStatus('Импортировано ✅');
-                          setTimeout(() => setStatus(''), 1500);
-                        } catch {
-                          setStatus('Ошибка импорта JSON');
-                        }
-                      };
-                      reader.readAsText(file);
-                    }}
-                  />
-                </label>
-              </div>
-              <div className="mt-2 text-xs text-slate-500">
-                Для демо удобно: можно быстро перенести настройки между машинами/окружениями.
-              </div>
-            </div>
-          </section>
-        </div>
+            </aside>
+          </div>
+        )}
       </div>
     </div>
   );

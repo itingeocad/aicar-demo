@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { SiteConfig } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
+import { getSession, hasPermission } from '@/lib/auth/session.server';
+import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 
-export function TopNav({ config }: { config: SiteConfig }) {
+export async function TopNav({ config }: { config: SiteConfig }) {
+  const session = await getSession();
+  const canAdmin = hasPermission(session, PERM_ADMIN_ACCESS);
+
   return (
     <header className="border-b bg-white">
       <div className="aicar-container h-14 flex items-center justify-between">
@@ -18,10 +23,24 @@ export function TopNav({ config }: { config: SiteConfig }) {
             ))}
           </nav>
         </div>
+
         <div className="flex items-center gap-2">
-          <Link href="/admin" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
-            Admin
-          </Link>
+          {!session ? (
+            <Link href="/login" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+              Войти
+            </Link>
+          ) : (
+            <>
+              {canAdmin ? (
+                <Link href="/admin" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                  Админка
+                </Link>
+              ) : null}
+              <Link href="/logout?next=/" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                Выйти
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -55,6 +74,7 @@ export function Footer({ config }: { config: SiteConfig }) {
 export function SiteFrame({ config, children }: { config: SiteConfig; children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* @ts-expect-error Async Server Component */}
       <TopNav config={config} />
       <main className="flex-1">{children}</main>
       <Footer config={config} />
