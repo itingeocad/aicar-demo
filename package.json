@@ -1,7 +1,7 @@
 {
   "name": "aicar-demo-builder",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@upstash/redis": "^1.35.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "^14.2.24",

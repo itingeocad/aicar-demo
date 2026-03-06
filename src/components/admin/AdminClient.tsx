@@ -7,6 +7,7 @@ import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { Footer, TopNav } from '@/components/SiteChrome';
 import { SiteConfig, PageDoc, BlockInstance } from '@/lib/site/types';
 import { uid } from '@/lib/site/utils';
+import { formatBuildLabel } from '@/lib/version';
 
 type Tab = 'pages' | 'site';
 
@@ -54,6 +55,7 @@ function BlockBadge({ type }: { type: string }) {
 }
 
 export default function AdminClient() {
+  const build = formatBuildLabel();
   const [tab, setTab] = useState<Tab>('pages');
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [activePageId, setActivePageId] = useState<string>('');
@@ -183,6 +185,7 @@ export default function AdminClient() {
           <div className="flex items-center gap-2">
             <div className="font-bold">AICar Admin</div>
             <div className="text-xs text-slate-500">Tilda-like builder (demo)</div>
+            <div className="text-xs text-slate-400">{build}</div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onSave} className="rounded-xl bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800">

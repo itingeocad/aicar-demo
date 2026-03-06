@@ -18,8 +18,21 @@ npm run dev
 - Конфиг сайта хранится в `.tmp/site-config.json` (создаётся при первом сохранении из админки).
 - Если файла нет, берётся дефолтный конфиг `src/lib/site/defaultConfig.ts`.
 
-> Для деплоя на платформы с read-only FS (например, Vercel) нужно заменить storage-адаптер на внешнее хранилище (Supabase/Redis/KV). Архитектура уже готова: меняется только `src/lib/site/store.server.ts`.
+> Для деплоя на платформы с read-only FS (например, Vercel/Netlify) нужен внешний storage.
+> В демо уже встроен **Upstash Redis adapter**: если заданы переменные `UPSTASH_REDIS_REST_URL` и `UPSTASH_REDIS_REST_TOKEN`, конфиг будет читаться/сохраняться в Redis.
+
+### Переменные окружения (для хостинга)
+
+- `UPSTASH_REDIS_REST_URL` — URL из Upstash (REST)
+- `UPSTASH_REDIS_REST_TOKEN` — токен из Upstash (REST)
+- `AICAR_SITE_CONFIG_KEY` — ключ (опционально), по умолчанию `aicar:siteConfig`
 
 ## Мок загрузки медиа
 
 В редакторе блока `Hero` есть поле «Фон (мок-загрузка)» — картинка сохраняется как data:URL прямо в JSON-конфиге.
+
+## Версионирование
+
+- Версия приложения берётся из `package.json` и автоматически прокидывается в клиент/сервер через `next.config.mjs`.
+- Версия отображается в футере публичного сайта и в шапке админки.
+- Проверить можно также через `GET /api/version`.

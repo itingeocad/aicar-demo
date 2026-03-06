@@ -1,7 +1,19 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { Redis } from '@upstash/redis';
 import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
+
+function upstash() {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  return new Redis({ url, token });
+}
+
+function upstashKey() {
+  return process.env.AICAR_SITE_CONFIG_KEY || 'aicar:siteConfig';
+}
 
 function configPath() {
   const p = process.env.AICAR_CONFIG_PATH;
@@ -10,6 +22,16 @@ function configPath() {
 }
 
 export async function getSiteConfig(): Promise<SiteConfig> {
+  const redis = upstash();
+  if (redis) {
+    try {
+      const raw = await redis.get<string>(upstashKey());
+      if (raw && typeof raw === 'string') return JSON.parse(raw) as SiteConfig;
+    } catch {
+      // ignore and fall back
+    }
+  }
+
   const p = configPath();
   try {
     const raw = await fs.readFile(p, 'utf8');
@@ -20,6 +42,12 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 }
 
 export async function saveSiteConfig(next: SiteConfig): Promise<void> {
+  const redis = upstash();
+  if (redis) {
+    await redis.set(upstashKey(), JSON.stringify(next));
+    return;
+  }
+
   const p = configPath();
   await fs.mkdir(path.dirname(p), { recursive: true });
   await fs.writeFile(p, JSON.stringify(next, null, 2), 'utf8');

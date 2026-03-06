@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SiteConfig } from '@/lib/site/types';
+import { formatBuildLabel } from '@/lib/version';
 
 export function TopNav({ config }: { config: SiteConfig }) {
   return (
@@ -28,6 +29,7 @@ export function TopNav({ config }: { config: SiteConfig }) {
 }
 
 export function Footer({ config }: { config: SiteConfig }) {
+  const build = formatBuildLabel();
   return (
     <footer className="border-t bg-white">
       <div className="aicar-container py-8">
@@ -35,6 +37,7 @@ export function Footer({ config }: { config: SiteConfig }) {
           <div>
             <div className="font-semibold">{config.theme.brandName}</div>
             <div className="text-sm text-slate-600">{config.footer.note}</div>
+            <div className="mt-2 text-xs text-slate-400">{build}</div>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-slate-600">
             {config.footer.links.map((l) => (
