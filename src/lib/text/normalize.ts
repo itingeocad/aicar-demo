@@ -1,70 +1,27 @@
 /**
- * Fixes mojibake caused by decoding UTF‑8 bytes as CP1251 or ISO‑8859‑1.
+ * Encoding repair utilities.
  *
- * Examples:
- *   "Р‘Р°РЅРµСЂ"  -> "Банер"
- *   "Ð‘Ð°Ð½ÐµÑ€" -> "Банер"
+ * We see two recurring corruptions in stored content:
+ *  1) UTF‑8 bytes decoded as CP1251 => "РђРІС‚Рѕ"
+ *  2) UTF‑8 bytes decoded as Latin1/Windows-1252 => "ÐÐ²Ñ‚Ð¾"
  *
- * We apply this to demo/admin content pulled from storage.
+ * This module attempts to repair such strings conservatively.
  */
 
-function isCyrillicCodePoint(cp: number) {
+function isCyrillic(cp: number) {
   return (cp >= 0x0400 && cp <= 0x04ff) || (cp >= 0x0500 && cp <= 0x052f);
 }
 
-function countCyrillic(s: string) {
-  let n = 0;
-  for (const ch of s) {
-    if (isCyrillicCodePoint(ch.codePointAt(0) ?? 0)) n += 1;
-  }
-  return n;
+function countMatches(s: string, re: RegExp) {
+  const m = s.match(re);
+  return m ? m.length : 0;
 }
 
-function looksSuspicious(s: string) {
-  if (!s) return false;
-  if (s.length < 4) return false;
-  // quick checks
-  if (s.includes('Р') || s.includes('С') || s.includes('Ð') || s.includes('Ñ') || s.includes('Â') || s.includes('â')) return true;
-  // CP1251 special chars often show up in mojibake (e.g. "вЂў").
-  if (/[ЂЃЉЊЎўќџ]/.test(s)) return true;
-  // Another corruption we saw in stored configs: Cyrillic text got "low-byte truncated" and
-  // became ASCII like " 0745;K" or "0AH8@5==K9". Detect it by special ASCII chars.
-  if (looksLikeLowByteCyrillic(s)) return true;
-  return false;
+function ratio(n: number, d: number) {
+  return d <= 0 ? 0 : n / d;
 }
 
-function hasControlChars(s: string) {
-  for (let i = 0; i < s.length; i += 1) {
-    const c = s.charCodeAt(i);
-    // ignore common whitespace
-    if (c === 0x09 || c === 0x0a || c === 0x0d) continue;
-    if (c < 0x20) return true;
-  }
-  return false;
-}
-
-function looksLikeLowByteCyrillic(s: string) {
-  // Only consider strings that are currently NOT Cyrillic (otherwise we might break real text).
-  if (countCyrillic(s) > 0) return false;
-  // The corrupted strings usually contain punctuation like @ = ; < > ? ! and/or control chars.
-  if (/[=@;<>?!]/.test(s)) return true;
-  if (hasControlChars(s)) return true;
-  return false;
-}
-
-function mojibakeScore(s: string) {
-  // "Р"/"С" bursts are typical for CP1251-mojibake.
-  const rs = (s.match(/[РС]/g) ?? []).length;
-  // ISO/Latin1 mojibake for Cyrillic often contains Ð/Ñ/Â/â…
-  const latin = (s.match(/[ÐÑÂâ€™]/g) ?? []).length;
-  // CP1251 special chars commonly appear (Ђ, Ѓ, ќ, …)
-  const specials = (s.match(/[ЂЃЉЊЎўќџ]/g) ?? []).length;
-  // Low-byte truncation (ASCII garbage for Cyrillic) should be treated as "very bad".
-  const lowBytePenalty = looksLikeLowByteCyrillic(s) ? 50 : 0;
-  return rs + latin + specials + lowBytePenalty;
-}
-
-// Full CP1251 byte->Unicode table for 0x80..0xFF
+// ---------- CP1251 encode (unicode -> bytes) ----------
 const CP1251_TABLE: number[] = [
   0x0402, 0x0403, 0x201a, 0x0453, 0x201e, 0x2026, 0x2020, 0x2021,
   0x20ac, 0x2030, 0x0409, 0x2039, 0x040a, 0x040c, 0x040b, 0x040f,
@@ -84,130 +41,127 @@ const CP1251_TABLE: number[] = [
   0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f
 ];
 
-const CP1251_INV = new Map<number, number>();
-for (let b = 0; b < 0x80; b += 1) CP1251_INV.set(b, b);
-for (let i = 0; i < CP1251_TABLE.length; i += 1) CP1251_INV.set(CP1251_TABLE[i]!, 0x80 + i);
+const CP1251_ENC: Map<number, number> = (() => {
+  const m = new Map<number, number>();
+  for (let i = 0; i < CP1251_TABLE.length; i += 1) m.set(CP1251_TABLE[i], 0x80 + i);
+  return m;
+})();
 
 function encodeCp1251(s: string): Uint8Array | null {
-  const bytes: number[] = [];
+  const out: number[] = [];
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
-    const b = CP1251_INV.get(cp);
-    if (b === undefined) {
-      // Some mojibake strings contain stray ISO-8859-1 / control bytes (e.g. U+0098).
-      // If the code point fits in one byte, treat it as the original byte.
-      if (cp >= 0x00 && cp <= 0xff) {
-        bytes.push(cp);
-        continue;
-      }
-      return null;
+    if (cp <= 0x7f) {
+      out.push(cp);
+      continue;
     }
-    bytes.push(b);
+    const b = CP1251_ENC.get(cp);
+    if (b === undefined) return null;
+    out.push(b);
   }
-  return new Uint8Array(bytes);
+  return new Uint8Array(out);
 }
 
-function decodeUtf8(bytes: Uint8Array): string {
-  // Buffer is available in Node runtime (Vercel).
-  // eslint-disable-next-line no-undef
-  return Buffer.from(bytes).toString('utf8');
+function decodeUtf8(bytes: Uint8Array): string | null {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
 }
 
-function tryFixCp1251(s: string): string | null {
+function tryFixCp1251Mojibake(s: string): string | null {
+  // A conservative trigger: mojibake typically has many "Р"/"С" characters.
+  const rs = countMatches(s, /[РС]/g);
+  if (rs < 3 || ratio(rs, s.length) < 0.15) return null;
+
   const bytes = encodeCp1251(s);
   if (!bytes) return null;
+
   const out = decodeUtf8(bytes);
   if (!out) return null;
-  if (out.includes('�')) return null;
+
+  // Must improve: fewer mojibake markers, more "real" Cyrillic.
+  const outRs = countMatches(out, /[РСÐÑ]/g);
+  const outCyr = (() => {
+    let n = 0;
+    for (const ch of out) if (isCyrillic(ch.codePointAt(0) ?? 0)) n += 1;
+    return n;
+  })();
+
+  if (outCyr === 0) return null;
+  if (outRs > rs) return null;
   return out;
 }
 
-function tryFixLatin1(s: string): string | null {
-  // eslint-disable-next-line no-undef
-  const out = Buffer.from(s, 'latin1').toString('utf8');
+function tryFixLatin1Mojibake(s: string): string | null {
+  // Latin1 mojibake for Cyrillic usually has lots of Ð/Ñ.
+  const dn = countMatches(s, /[ÐÑ]/g);
+  if (dn < 2 || ratio(dn, s.length) < 0.08) return null;
+
+  const bytes = new Uint8Array([...s].map((c) => c.charCodeAt(0) & 0xff));
+  const out = decodeUtf8(bytes);
   if (!out) return null;
-  if (out.includes('�')) return null;
+
+  let outCyr = 0;
+  for (const ch of out) if (isCyrillic(ch.codePointAt(0) ?? 0)) outCyr += 1;
+  if (outCyr === 0) return null;
   return out;
 }
 
-function tryFixLowByteCyrillic(s: string): string | null {
-  if (!looksLikeLowByteCyrillic(s)) return null;
+export function fixMojibake(input: string): string {
+  if (!input) return input;
 
-  // This corruption happens when someone incorrectly converts each Unicode char
-  // to a single byte by keeping only the low byte (cp & 0xFF). For Cyrillic
-  // (U+04xx) that low byte is the original byte value.
-  const outChars: string[] = [];
-  for (let i = 0; i < s.length; i += 1) {
-    const b = s.charCodeAt(i) & 0xff;
-    outChars.push(String.fromCharCode(0x0400 + b));
-  }
-  const out = outChars.join('');
+  // Fast path: if no typical markers, do nothing.
+  const hasMarkers =
+    /[ÐÑ]/.test(input) ||
+    ((input.includes('Р') || input.includes('С')) && ratio(countMatches(input, /[РС]/g), input.length) >= 0.15) ||
+    /вЂ/.test(input); // bullets, quotes, etc.
 
-  // Validate: must actually look like Cyrillic text.
-  const cy = countCyrillic(out);
-  if (cy < Math.max(3, Math.floor(out.length * 0.6))) return null;
-  // Simple "language" heuristic: at least one vowel.
-  const vowels = (out.match(/[аеёиоуыэюя]/gi) ?? []).length;
-  if (vowels < 1) return null;
-  return out;
-}
+  if (!hasMarkers) return input;
 
-export function fixMojibake(s: string) {
-  // Some datasets end up double-encoded (rare), so we allow up to 2 repair passes.
-  let cur = s;
+  // Allow up to 2 passes (rare double-encoding).
+  let cur = input;
   for (let i = 0; i < 2; i += 1) {
-    if (!looksSuspicious(cur)) return cur;
+    const fixed =
+      tryFixCp1251Mojibake(cur) ??
+      tryFixLatin1Mojibake(cur);
 
-    const inScore = mojibakeScore(cur);
-    const candidates: string[] = [];
-
-    // Prefer CP1251 fix when we see many "Р/С".
-    const cp = tryFixCp1251(cur);
-    if (cp) candidates.push(cp);
-
-    // Also try Latin1 fix (handles "Ð…" style).
-    const latin = tryFixLatin1(cur);
-    if (latin) candidates.push(latin);
-
-    // Repair "low-byte truncation" corruption.
-    const lb = tryFixLowByteCyrillic(cur);
-    if (lb) candidates.push(lb);
-
-    if (candidates.length === 0) return cur;
-
-    // Pick the candidate with the lowest mojibake score; prefer more Cyrillic.
-    let best = cur;
-    let bestScore = inScore;
-    let bestCyr = countCyrillic(cur);
-
-    for (const c of candidates) {
-      const sc = mojibakeScore(c);
-      const cy = countCyrillic(c);
-      if (sc < bestScore || (sc === bestScore && cy > bestCyr)) {
-        best = c;
-        bestScore = sc;
-        bestCyr = cy;
-      }
-    }
-
-    // If nothing improved, stop.
-    if (!(bestScore < inScore)) return cur;
-
-    // Continue with repaired string (maybe needs another pass).
-    cur = best;
+    if (!fixed || fixed === cur) break;
+    cur = fixed;
   }
+
+  // Fix common “вЂў” / “вЂ” artifacts that may remain after partial repair.
+  cur = cur
+    .replace(/вЂў/g, '•')
+    .replace(/вЂ“/g, '–')
+    .replace(/вЂ”/g, '—')
+    .replace(/вЂ™/g, '’')
+    .replace(/вЂњ/g, '“')
+    .replace(/вЂќ/g, '”')
+    .replace(/Â /g, ' ');
+
   return cur;
 }
 
 export function normalizeDeep<T>(val: T): T {
-  if (typeof val === 'string') return fixMojibake(val) as unknown as T;
-  if (Array.isArray(val)) return val.map((v) => normalizeDeep(v)) as unknown as T;
-  if (val && typeof val === 'object') {
-    const out: any = Array.isArray(val) ? [] : {};
-    for (const [k, v] of Object.entries(val as any)) {
-      out[k] = normalizeDeep(v);
-    }
-    return out as T;
+  if (val === null || val === undefined) return val;
+  if (typeof val === 'string') return fixMojibake(val) as any;
+
+  if (Array.isArray(val)) {
+    return val.map((v) => normalizeDeep(v)) as any;
   }
+
+  if (typeof val === 'object') {
+    const out: any = {};
+    for (const [k, v] of Object.entries(val as any)) {
+      // We generally don't want to rewrite keys, but sometimes stored configs contain mojibake keys
+      // (rare). Fix keys only if they clearly look broken.
+      const fixedKey = fixMojibake(k);
+      out[fixedKey] = normalizeDeep(v);
+    }
+    return out;
+  }
+
   return val;
 }
