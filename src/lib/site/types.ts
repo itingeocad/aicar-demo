@@ -50,6 +50,8 @@ export type StoreBadge = { label: string; href: string; kind?: string };
 export type ThemeTokens = {
   brandName: string;
   accent: string; // tailwind color string, e.g. "indigo"
+  headerBg?: string; // tailwind class suffix, e.g. 'slate-200'
+  footerBg?: string;
 };
 
 export type SiteConfig = {
