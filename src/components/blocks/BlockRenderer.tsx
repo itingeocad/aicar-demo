@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bike, Bus, Car, Search, Truck, Plus } from 'lucide-react';
+import { Bike, Bus, Car, Search, Truck, Plus, ChevronRight } from 'lucide-react';
 import { SiteConfig, BlockInstance } from '@/lib/site/types';
 import { ReelsStripClient } from '@/components/blocks/ReelsStripClient';
 
