@@ -34,7 +34,18 @@ export type PageDoc = {
   blocks: BlockInstance[];
 };
 
-export type SiteNavItem = { label: string; href: string };
+export type NavChildItem = { label: string; href: string };
+export type SiteNavItem = {
+  label: string;
+  /** Optional for items that act as dropdown groups */
+  href?: string;
+  children?: NavChildItem[];
+};
+
+export type FooterLink = { label: string; href: string };
+export type FooterGroup = { title: string; links: FooterLink[] };
+export type SocialLink = { label: string; href: string; kind?: string };
+export type StoreBadge = { label: string; href: string; kind?: string };
 
 export type ThemeTokens = {
   brandName: string;
@@ -48,8 +59,13 @@ export type SiteConfig = {
     items: SiteNavItem[];
   };
   footer: {
-    links: { label: string; href: string }[];
     note: string;
+    /** New grouped footer (preferred). */
+    groups?: FooterGroup[];
+    socials?: SocialLink[];
+    storeBadges?: StoreBadge[];
+    /** Legacy flat links (kept for backward compatibility). */
+    links?: FooterLink[];
   };
   pages: PageDoc[];
   demoData: {
@@ -59,6 +75,8 @@ export type SiteConfig = {
     faq: DemoFaq[];
   };
 };
+
+export type VehicleType = 'car' | 'truck' | 'bus' | 'bike';
 
 export type DemoCar = {
   id: string;
@@ -71,6 +89,7 @@ export type DemoCar = {
   imageUrl: string;
   fuel?: string;
   gearbox?: string;
+  vehicleType?: VehicleType;
 };
 
 export type DemoReel = {

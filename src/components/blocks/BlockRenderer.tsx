@@ -127,155 +127,220 @@ function AIPrompt({
   );
 }
 
-function LabeledInput({ label, placeholder }: { label: string; placeholder?: string }) {
+function LabeledInput({
+  label,
+  name,
+  placeholder,
+  defaultValue
+}: {
+  label: string;
+  name: string;
+  placeholder?: string;
+  defaultValue?: string;
+}) {
   return (
     <label className="block">
       <div className="mb-1 text-xs text-slate-600">{label}</div>
-      <input className="w-full rounded-lg border bg-white px-3 py-2 text-sm" placeholder={placeholder ?? ''} />
+      <input
+        name={name}
+        defaultValue={defaultValue}
+        className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
+        placeholder={placeholder ?? ''}
+      />
     </label>
   );
 }
 
-function VehicleTypeRail({ orientation }: { orientation: 'vertical' | 'horizontal' }) {
-  const Item = ({
-    icon,
-    active
-  }: {
-    icon: React.ReactNode;
-    active?: boolean;
-  }) => (
-    <div
-      className={
-        (orientation === 'vertical' ? 'h-12' : 'w-16') +
-        ' flex items-center justify-center ' +
-        (active ? 'bg-white' : 'bg-slate-400/70')
-      }
-    >
-      {icon}
-    </div>
-  );
+type VehicleTypeKey = 'car' | 'truck' | 'bus' | 'bike';
 
-  const base = orientation === 'vertical'
-    ? 'w-16 overflow-hidden rounded-l-2xl'
-    : 'w-full overflow-hidden rounded-t-2xl flex';
+function VehicleTypeRail({
+  orientation,
+  name,
+  value
+}: {
+  orientation: 'vertical' | 'horizontal';
+  name: string;
+  value: VehicleTypeKey;
+}) {
+  const items: { key: VehicleTypeKey; icon: React.ReactNode; label: string }[] = [
+    { key: 'car', icon: <Car className="h-6 w-6 text-slate-700" />, label: 'Авто' },
+    { key: 'truck', icon: <Truck className="h-6 w-6 text-slate-700" />, label: 'Груз.' },
+    { key: 'bus', icon: <Bus className="h-6 w-6 text-slate-700" />, label: 'Вэн' },
+    { key: 'bike', icon: <Bike className="h-6 w-6 text-slate-700" />, label: 'Мото' }
+  ];
+
+  const Item = ({ k, icon }: { k: VehicleTypeKey; icon: React.ReactNode }) => {
+    const active = value === k;
+    return (
+      <label
+        className={
+          (orientation === 'vertical' ? 'h-12' : 'w-16') +
+          ' flex items-center justify-center cursor-pointer select-none ' +
+          (active ? 'bg-white' : 'bg-slate-400/70 hover:bg-slate-300/70')
+        }
+        title={items.find((i) => i.key === k)?.label}
+      >
+        <input type="radio" className="sr-only" name={name} value={k} defaultChecked={active} />
+        {icon}
+      </label>
+    );
+  };
+
+  const base =
+    orientation === 'vertical'
+      ? 'w-16 overflow-hidden rounded-l-2xl'
+      : 'w-full overflow-hidden rounded-t-2xl flex';
 
   return (
     <div className={base}>
       {orientation === 'vertical' ? (
         <div className="flex flex-col">
-          <Item icon={<Car className="h-6 w-6 text-slate-700" />} active />
-          <Item icon={<Truck className="h-6 w-6 text-slate-700" />} />
-          <Item icon={<Bus className="h-6 w-6 text-slate-700" />} />
-          <Item icon={<Bike className="h-6 w-6 text-slate-700" />} />
+          {items.map((it) => (
+            <Item key={it.key} k={it.key} icon={it.icon} />
+          ))}
         </div>
       ) : (
         <>
-          <Item icon={<Car className="h-6 w-6 text-slate-700" />} active />
-          <Item icon={<Truck className="h-6 w-6 text-slate-700" />} />
-          <Item icon={<Bus className="h-6 w-6 text-slate-700" />} />
-          <Item icon={<Bike className="h-6 w-6 text-slate-700" />} />
+          {items.map((it) => (
+            <Item key={it.key} k={it.key} icon={it.icon} />
+          ))}
         </>
       )}
     </div>
   );
 }
 
-function SearchWidget({ title, cta, mode }: { title: string; cta: string; mode?: string }) {
+function pick1(v: string | string[] | undefined): string {
+  if (Array.isArray(v)) return v[0] ?? '';
+  return v ?? '';
+}
+
+function SearchWidget({
+  title,
+  cta,
+  mode,
+  initial
+}: {
+  title: string;
+  cta: string;
+  mode?: string;
+  initial?: Record<string, string | string[] | undefined>;
+}) {
   const isPrototype = (mode ?? '').toLowerCase() === 'prototype';
+
+  const initType = (pick1(initial?.type) as VehicleTypeKey) || 'car';
 
   if (!isPrototype) {
     return (
       <Section title={title}>
-        <div className="rounded-2xl border bg-white p-4 md:p-5 shadow-sm">
+        <form action="/search" method="GET" className="rounded-2xl border bg-white p-4 md:p-5 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-            <select className="rounded-xl border px-3 py-3 md:col-span-1">
-              <option>Авто</option>
-              <option>Мото</option>
-              <option>Коммерч.</option>
+            <select name="type" defaultValue={initType} className="rounded-xl border px-3 py-3 md:col-span-1">
+              <option value="car">Авто</option>
+              <option value="bike">Мото</option>
+              <option value="truck">Груз.</option>
+              <option value="bus">Вэн</option>
             </select>
-            <input className="rounded-xl border px-3 py-3 md:col-span-2" placeholder="Марка / модель" />
-            <input className="rounded-xl border px-3 py-3 md:col-span-1" placeholder="Цена от" />
-            <input className="rounded-xl border px-3 py-3 md:col-span-1" placeholder="Цена до" />
-            <Link href="/search" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-center hover:bg-slate-800">
+            <input
+              name="q"
+              defaultValue={pick1(initial?.q)}
+              className="rounded-xl border px-3 py-3 md:col-span-2"
+              placeholder="Марка / модель"
+            />
+            <input
+              name="priceFrom"
+              defaultValue={pick1(initial?.priceFrom)}
+              className="rounded-xl border px-3 py-3 md:col-span-1"
+              placeholder="Цена от"
+            />
+            <input
+              name="priceTo"
+              defaultValue={pick1(initial?.priceTo)}
+              className="rounded-xl border px-3 py-3 md:col-span-1"
+              placeholder="Цена до"
+            />
+            <button type="submit" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-center hover:bg-slate-800">
               {cta}
-            </Link>
+            </button>
           </div>
-        </div>
+        </form>
       </Section>
     );
   }
 
   return (
     <Section title={title} align="center">
-      {/* Desktop layout */}
-      <div className="hidden md:block">
-        <div className="mx-auto max-w-4xl rounded-2xl bg-white shadow-sm overflow-hidden">
-          <div className="flex">
-            <VehicleTypeRail orientation="vertical" />
-            <div className="flex-1 p-5">
-              <div className="grid grid-cols-4 gap-4">
-                <LabeledInput label="Марка" />
-                <LabeledInput label="Модель" />
-                <LabeledInput label="Год выпуска" />
-                <LabeledInput label="Километраж" />
-                <LabeledInput label="Тип топлива" />
-                <LabeledInput label="Город" />
-                <LabeledInput label="Цена от" />
-                <LabeledInput label="Цена до" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex justify-center">
-          <Link href="/search" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
-            {cta}
-          </Link>
-        </div>
-      </div>
-
-      {/* Mobile layout */}
-      <div className="md:hidden">
-        <div className="mx-auto max-w-md rounded-2xl bg-white shadow-sm overflow-hidden">
-          <VehicleTypeRail orientation="horizontal" />
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1">
-                <LabeledInput label="Марка" />
-              </div>
-              <div className="col-span-1">
-                <LabeledInput label="Модель" />
-              </div>
-              <div className="col-span-1">
-                <LabeledInput label="Год" />
-              </div>
-              <div className="col-span-1">
-                <LabeledInput label="Километраж" />
-              </div>
-              <div className="col-span-1">
-                <LabeledInput label="Тип топлива" />
-              </div>
-              <div className="col-span-1">
-                <LabeledInput label="Город" />
-              </div>
-              <div className="col-span-3 flex gap-3">
-                <div className="flex-1">
-                  <LabeledInput label="Цена от" />
-                </div>
-                <div className="flex-1">
-                  <LabeledInput label="Цена до" />
+      <form action="/search" method="GET">
+        {/* Desktop layout */}
+        <div className="hidden md:block">
+          <div className="mx-auto max-w-4xl rounded-2xl bg-white shadow-sm overflow-hidden">
+            <div className="flex">
+              <VehicleTypeRail orientation="vertical" name="type" value={initType} />
+              <div className="flex-1 p-5">
+                <div className="grid grid-cols-4 gap-4">
+                  <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
+                  <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
+                  <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
+                  <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
+                  <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
+                  <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
+                  <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
+                  <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
                 </div>
               </div>
             </div>
           </div>
+
+          <div className="mt-5 flex justify-center">
+            <button type="submit" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
+              {cta}
+            </button>
+          </div>
         </div>
 
-        <div className="mt-5 flex justify-center">
-          <Link href="/search" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
-            {cta}
-          </Link>
+        {/* Mobile layout */}
+        <div className="md:hidden">
+          <div className="mx-auto max-w-md rounded-2xl bg-white shadow-sm overflow-hidden">
+            <VehicleTypeRail orientation="horizontal" name="type" value={initType} />
+            <div className="p-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
+                  <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
+                </div>
+                <div className="col-span-1">
+                  <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
+                </div>
+                <div className="col-span-1">
+                  <LabeledInput label="Год" name="year" defaultValue={pick1(initial?.year)} />
+                </div>
+                <div className="col-span-1">
+                  <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
+                </div>
+                <div className="col-span-1">
+                  <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
+                </div>
+                <div className="col-span-1">
+                  <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
+                </div>
+                <div className="col-span-3 flex gap-3">
+                  <div className="flex-1">
+                    <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
+                  </div>
+                  <div className="flex-1">
+                    <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex justify-center">
+            <button type="submit" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
+              {cta}
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
     </Section>
   );
 }
@@ -352,7 +417,11 @@ function CarGrid({
   moreLabel?: string;
   moreHref?: string;
 }) {
-  const cars = config.demoData.cars.slice(0, limit);
+  const allCars = config.demoData.cars;
+  const cars = ((variant ?? '').toLowerCase() === 'offers'
+    ? allCars.filter((c) => (c.vehicleType ?? 'car') === 'car')
+    : allCars
+  ).slice(0, limit);
 
   if ((variant ?? '').toLowerCase() === 'offers') {
     return (
@@ -389,8 +458,53 @@ function CarGrid({
   );
 }
 
-function CarList({ title, limit, config, withSidebarHint }: { title: string; limit: number; config: SiteConfig; withSidebarHint?: boolean }) {
-  const cars = config.demoData.cars.slice(0, limit);
+function getNum(v: string) {
+  const n = Number(String(v).replace(/[^\d.]/g, ''));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function CarList({
+  title,
+  limit,
+  config,
+  withSidebarHint,
+  search
+}: {
+  title: string;
+  limit: number;
+  config: SiteConfig;
+  withSidebarHint?: boolean;
+  search?: Record<string, string | string[] | undefined>;
+}) {
+  const sp = search ?? {};
+
+  const type = pick1(sp.type) as any;
+  const brand = pick1(sp.brand).trim().toLowerCase();
+  const model = pick1(sp.model).trim().toLowerCase();
+  const city = pick1(sp.city).trim().toLowerCase();
+  const fuel = pick1(sp.fuel).trim().toLowerCase();
+
+  const year = getNum(pick1(sp.year));
+  const mileage = getNum(pick1(sp.mileageKm));
+  const priceFrom = getNum(pick1(sp.priceFrom));
+  const priceTo = getNum(pick1(sp.priceTo));
+
+  let cars = [...config.demoData.cars];
+
+  if (type) {
+    cars = cars.filter((c) => (c.vehicleType ?? 'car') === type);
+  }
+  if (brand) cars = cars.filter((c) => c.title.toLowerCase().includes(brand));
+  if (model) cars = cars.filter((c) => c.title.toLowerCase().includes(model));
+  if (city) cars = cars.filter((c) => c.city.toLowerCase().includes(city));
+  if (fuel) cars = cars.filter((c) => (c.fuel ?? '').toLowerCase().includes(fuel));
+  if (!Number.isNaN(year)) cars = cars.filter((c) => c.year >= year);
+  if (!Number.isNaN(mileage)) cars = cars.filter((c) => c.mileageKm <= mileage);
+  if (!Number.isNaN(priceFrom)) cars = cars.filter((c) => c.price >= priceFrom);
+  if (!Number.isNaN(priceTo)) cars = cars.filter((c) => c.price <= priceTo);
+
+  cars = cars.slice(0, limit);
+
   return (
     <Section title={title}>
       {withSidebarHint ? (
@@ -398,26 +512,62 @@ function CarList({ title, limit, config, withSidebarHint }: { title: string; lim
           Вариант 2 поиска (как на wireframe): слева будет сайдбар фильтров. В демо — подсказка.
         </div>
       ) : null}
-      <div className="space-y-3">
-        {cars.map((car) => (
-          <Link key={car.id} href={`/cars/${car.id}`} className="flex gap-3 rounded-2xl border bg-white p-3 shadow-sm hover:shadow">
-            <div className="h-24 w-36 flex-none overflow-hidden rounded-xl bg-slate-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold truncate">{car.title}</div>
-                  <div className="text-xs text-slate-500">{car.city} • {car.year} • {car.mileageKm.toLocaleString()} km</div>
-                </div>
-                <div className="font-bold whitespace-nowrap">{car.price.toLocaleString()} {car.currency}</div>
+
+      {(type || brand || model || city || fuel || !Number.isNaN(year) || !Number.isNaN(mileage) || !Number.isNaN(priceFrom) || !Number.isNaN(priceTo)) ? (
+        <div className="mb-4 rounded-xl border bg-white p-3 text-sm text-slate-600">
+          Применены фильтры (demo):{' '}
+          <span className="font-medium">
+            {[
+              type ? `type=${type}` : null,
+              brand ? `brand=${brand}` : null,
+              model ? `model=${model}` : null,
+              year ? `year>=${year}` : null,
+              mileage ? `km<=${mileage}` : null,
+              fuel ? `fuel=${fuel}` : null,
+              city ? `city=${city}` : null,
+              !Number.isNaN(priceFrom) ? `price>=${priceFrom}` : null,
+              !Number.isNaN(priceTo) ? `price<=${priceTo}` : null
+            ]
+              .filter(Boolean)
+              .join(', ')}
+          </span>
+        </div>
+      ) : null}
+
+      {cars.length === 0 ? (
+        <div className="rounded-2xl border bg-white p-6 text-slate-600 shadow-sm">Ничего не найдено (demo).</div>
+      ) : (
+        <div className="space-y-3">
+          {cars.map((car) => (
+            <Link
+              key={car.id}
+              href={`/cars/${car.id}`}
+              className="flex gap-3 rounded-2xl border bg-white p-3 shadow-sm hover:shadow"
+            >
+              <div className="h-24 w-36 flex-none overflow-hidden rounded-xl bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
               </div>
-              <div className="mt-2 text-xs text-slate-600">Топливо: {car.fuel ?? '—'} • КПП: {car.gearbox ?? '—'}</div>
-            </div>
-          </Link>
-        ))}
-      </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">{car.title}</div>
+                    <div className="text-xs text-slate-500">
+                      {car.city} • {car.year} • {car.mileageKm.toLocaleString()} km
+                    </div>
+                  </div>
+                  <div className="font-bold whitespace-nowrap">
+                    {car.price.toLocaleString()} {car.currency}
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-slate-600">
+                  Топливо: {car.fuel ?? '—'} • КПП: {car.gearbox ?? '—'} • Тип: {car.vehicleType ?? 'car'}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
@@ -663,7 +813,7 @@ export function BlockRenderer({
 }: {
   block: BlockInstance;
   config: SiteConfig;
-  ctx?: { carId?: string };
+  ctx?: { carId?: string; search?: Record<string, string | string[] | undefined> };
 }) {
   if (block.isEnabled === false) return null;
 
@@ -692,7 +842,14 @@ export function BlockRenderer({
         />
       );
     case 'search_widget':
-      return <SearchWidget title={String(p.title ?? '')} cta={String(p.cta ?? '')} mode={String(p.mode ?? '')} />;
+      return (
+        <SearchWidget
+          title={String(p.title ?? '')}
+          cta={String(p.cta ?? '')}
+          mode={String(p.mode ?? '')}
+          initial={ctx?.search}
+        />
+      );
     case 'section_title': {
       const align = (String(p.align ?? 'left') as 'left' | 'center') || 'left';
       return (
@@ -816,6 +973,7 @@ export function BlockRenderer({
           limit={Number(p.limit ?? 10)}
           withSidebarHint={Boolean(p.withSidebarHint ?? false)}
           config={config}
+          search={ctx?.search}
         />
       );
     case 'reels_strip':

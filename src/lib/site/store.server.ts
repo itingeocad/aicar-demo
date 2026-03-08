@@ -3,6 +3,7 @@ import path from 'node:path';
 import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
 import { getRedis } from '@/lib/kv/upstash.server';
+import { normalizeDeep } from '@/lib/text/normalize';
 
 function upstashKey() {
   return process.env.AICAR_SITE_CONFIG_KEY || 'aicar:siteConfig';
@@ -31,22 +32,63 @@ function lt(a: [number, number, number], b: [number, number, number]) {
   return a[2] < b[2];
 }
 
-function ensureDemoData016(cfg: SiteConfig) {
-  // Ensure enough demo items for landing layout (9 offers, 4 clips)
-  if (cfg.demoData.cars.length < 9) {
+function ensureDemoData(cfg: SiteConfig) {
+  // Ensure enough demo items and vehicle types.
+  for (const c of cfg.demoData.cars) {
+    if (!c.vehicleType) c.vehicleType = 'car';
+  }
+
+  const hasTruck = cfg.demoData.cars.some((c) => c.vehicleType === 'truck');
+  const hasBus = cfg.demoData.cars.some((c) => c.vehicleType === 'bus');
+  const hasBike = cfg.demoData.cars.some((c) => c.vehicleType === 'bike');
+
+  const img = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/1200/800`;
+  if (!hasBus) {
     cfg.demoData.cars.push({
-      id: 'c9',
-      title: 'Hyundai Tucson',
-      price: 14500,
+      id: 'c10',
+      title: 'Ford Transit (van)',
+      price: 12900,
       currency: '$',
-      year: 2017,
-      mileageKm: 155000,
+      year: 2016,
+      mileageKm: 210000,
       city: 'Chișinău',
-      fuel: 'Benzină',
-      gearbox: 'AT',
-      imageUrl: 'https://picsum.photos/seed/tucson/1200/800'
+      fuel: 'Diesel',
+      gearbox: 'MT',
+      imageUrl: img('transit'),
+      vehicleType: 'bus'
     });
   }
+  if (!hasTruck) {
+    cfg.demoData.cars.push({
+      id: 'c11',
+      title: 'MAN TGL (truck)',
+      price: 18900,
+      currency: '$',
+      year: 2014,
+      mileageKm: 350000,
+      city: 'Bălți',
+      fuel: 'Diesel',
+      gearbox: 'MT',
+      imageUrl: img('man_tgl'),
+      vehicleType: 'truck'
+    });
+  }
+  if (!hasBike) {
+    cfg.demoData.cars.push({
+      id: 'c12',
+      title: 'Yamaha MT-07',
+      price: 6200,
+      currency: '$',
+      year: 2018,
+      mileageKm: 24000,
+      city: 'Chișinău',
+      fuel: 'Benzină',
+      gearbox: 'MT',
+      imageUrl: img('mt07'),
+      vehicleType: 'bike'
+    });
+  }
+
   if (cfg.demoData.reels.length < 4) {
     cfg.demoData.reels.push({
       id: 'r4',
@@ -54,7 +96,7 @@ function ensureDemoData016(cfg: SiteConfig) {
       author: 'AICar',
       videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=4',
       posterUrl: 'https://picsum.photos/seed/reel4/1200/800',
-      linkedCarId: 'c8'
+      linkedCarId: cfg.demoData.cars[0]?.id
     });
   }
 }
@@ -64,7 +106,6 @@ function migrate016(cfg: SiteConfig): SiteConfig {
   const target = parseVer('0.1.6');
   if (!lt(cur, target)) return cfg;
 
-  // Update landing/home blocks to match the wireframe, but only if page exists.
   const home = getPageBySlug(cfg, '');
   if (home) {
     const byId = new Map(home.blocks.map((b) => [b.id, b]));
@@ -106,7 +147,6 @@ function migrate016(cfg: SiteConfig): SiteConfig {
     }
   }
 
-  // Add /news page if missing
   if (!cfg.pages.some((p) => p.slug === 'news')) {
     cfg.pages.push({
       id: 'p_news',
@@ -120,9 +160,60 @@ function migrate016(cfg: SiteConfig): SiteConfig {
     } as any);
   }
 
-  ensureDemoData016(cfg);
+  ensureDemoData(cfg);
   cfg.version = '0.1.6';
   return cfg;
+}
+
+function migrate017(cfg: SiteConfig): SiteConfig {
+  const cur = parseVer(cfg.version);
+  const target = parseVer('0.1.7');
+  if (!lt(cur, target)) return cfg;
+
+  // Footer groups migration
+  const footer: any = cfg.footer as any;
+  if (!footer.groups || !Array.isArray(footer.groups) || footer.groups.length === 0) {
+    const legacyLinks = Array.isArray(footer.links) ? footer.links : [];
+    footer.groups = [
+      { title: 'О проекте', links: legacyLinks.slice(0, 2) },
+      { title: 'Документы', links: legacyLinks.slice(2) }
+    ].filter((g) => g.links.length > 0);
+  }
+  if (!footer.socials) {
+    footer.socials = [
+      { label: 'Instagram', href: '#', kind: 'instagram' },
+      { label: 'TikTok', href: '#', kind: 'tiktok' },
+      { label: 'Telegram', href: '#', kind: 'telegram' },
+      { label: 'Facebook', href: '#', kind: 'facebook' }
+    ];
+  }
+  if (!footer.storeBadges) {
+    footer.storeBadges = [
+      { label: 'Get it on Google Play', href: '#', kind: 'google_play' },
+      { label: 'Download on the App Store', href: '#', kind: 'app_store' }
+    ];
+  }
+
+  // Ensure nav items have href
+  cfg.nav.items = (cfg.nav.items as any[]).map((it) => {
+    const href = it.href || (it.children && it.children[0] ? it.children[0].href : '/');
+    return { ...it, href };
+  });
+
+  ensureDemoData(cfg);
+  cfg.version = '0.1.7';
+  return cfg;
+}
+
+function migrateAll(cfg: SiteConfig): SiteConfig {
+  // Normalize mojibake first (helps migrations match strings).
+  const normalized = normalizeDeep(cfg);
+  let out = normalized;
+  out = migrate016(out);
+  out = migrate017(out);
+  // Normalize again to fix any stored legacy values.
+  out = normalizeDeep(out);
+  return out;
 }
 
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -132,8 +223,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       const raw = await redis.get<string>(upstashKey());
       if (raw && typeof raw === 'string') {
         const parsed = JSON.parse(raw) as SiteConfig;
-        const migrated = migrate016(parsed);
-        if (migrated.version !== parsed.version) await redis.set(upstashKey(), JSON.stringify(migrated));
+        const migrated = migrateAll(parsed);
+        if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+          await redis.set(upstashKey(), JSON.stringify(migrated));
+        }
         return migrated;
       }
     } catch {
@@ -145,8 +238,8 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   try {
     const raw = await fs.readFile(p, 'utf8');
     const parsed = JSON.parse(raw) as SiteConfig;
-    const migrated = migrate016(parsed);
-    if (migrated.version !== parsed.version) {
+    const migrated = migrateAll(parsed);
+    if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
       await fs.mkdir(path.dirname(p), { recursive: true });
       await fs.writeFile(p, JSON.stringify(migrated, null, 2), 'utf8');
     }
@@ -157,13 +250,14 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 }
 
 export async function saveSiteConfig(next: SiteConfig): Promise<void> {
+  const cleaned = normalizeDeep(next);
   const redis = getRedis();
   if (redis) {
-    await redis.set(upstashKey(), JSON.stringify(next));
+    await redis.set(upstashKey(), JSON.stringify(cleaned));
     return;
   }
 
   const p = configPath();
   await fs.mkdir(path.dirname(p), { recursive: true });
-  await fs.writeFile(p, JSON.stringify(next, null, 2), 'utf8');
+  await fs.writeFile(p, JSON.stringify(cleaned, null, 2), 'utf8');
 }

@@ -10,25 +10,62 @@ function vid(seed: string) {
 }
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
-  version: '0.1.6',
+  version: '0.1.7',
   theme: {
     brandName: 'AICar',
     accent: 'indigo'
   },
   nav: {
     items: [
-      { label: 'РђРІС‚Рѕ', href: '/search' },
+      {
+        label: 'РђРІС‚Рѕ',
+        href: '/search',
+        children: [
+          { label: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', href: '/search' },
+          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' },
+          { label: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ', href: '/sell' }
+        ]
+      },
       { label: 'AIClips', href: '/aiclips' },
       { label: 'AIChat', href: '/aichat' }
     ]
   },
   footer: {
-    links: [
-      { label: 'Рћ РїСЂРѕРµРєС‚Рµ', href: '/about' },
-      { label: 'РџРѕР»РёС‚РёРєР°', href: '/privacy' },
-      { label: 'РљРѕРЅС‚Р°РєС‚С‹', href: '/contacts' }
+    note: 'Demo build вЂў РєРѕРЅС‚РµРЅС‚ Рё РјРµРґРёР° РјРѕРіСѓС‚ Р±С‹С‚СЊ РјРѕРєРѕРІС‹РјРё',
+    groups: [
+      {
+        title: 'Рћ РїСЂРѕРµРєС‚Рµ',
+        links: [
+          { label: 'Рћ РїСЂРѕРµРєС‚Рµ', href: '/about' },
+          { label: 'РљРѕРЅС‚Р°РєС‚С‹', href: '/contacts' }
+        ]
+      },
+      {
+        title: 'Р”РѕРєСѓРјРµРЅС‚С‹',
+        links: [
+          { label: 'РџРѕР»РёС‚РёРєР°', href: '/privacy' },
+          { label: 'РЈСЃР»РѕРІРёСЏ', href: '/terms' }
+        ]
+      },
+      {
+        title: 'Р Р°Р·РґРµР»С‹',
+        links: [
+          { label: 'AIClips', href: '/aiclips' },
+          { label: 'AIChat', href: '/aichat' },
+          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' }
+        ]
+      }
     ],
-    note: 'Demo build вЂў РєРѕРЅС‚РµРЅС‚ Рё РјРµРґРёР° РјРѕРіСѓС‚ Р±С‹С‚СЊ РјРѕРєРѕРІС‹РјРё'
+    socials: [
+      { label: 'Instagram', href: '#', kind: 'instagram' },
+      { label: 'TikTok', href: '#', kind: 'tiktok' },
+      { label: 'Telegram', href: '#', kind: 'telegram' },
+      { label: 'Facebook', href: '#', kind: 'facebook' }
+    ],
+    storeBadges: [
+      { label: 'Get it on Google Play', href: '#', kind: 'google_play' },
+      { label: 'Download on the App Store', href: '#', kind: 'app_store' }
+    ]
   },
   pages: [
     {
@@ -38,7 +75,17 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       isPublished: true,
       blocks: [
         { id: 'b_hero', type: 'hero', props: { mode: 'banner', bannerHeight: 220, headline: 'Р‘Р°РЅРµСЂ + Р›РѕРіРѕ', subline: '' } },
-        { id: 'b_ai', type: 'ai_prompt', props: { title: 'AIChat', subtitle: 'Р’РІРµРґРёС‚Рµ РІР°С€Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏ Рё РР РїРѕРјРѕР¶РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ РґР»СЏ Р’Р°СЃ РёРґРµР°Р»СЊРЅС‹Р№ РІР°СЂРёР°РЅС‚', placeholder: 'РЎРµРјРµР№РЅС‹Р№ Р°РІС‚РѕРјРѕР±РёР»СЊ, РІРЅРµРґРѕСЂРѕР¶РЅРёРє. РћС‚ 2020 РіРѕРґР° Рё РІС‹С€Рµ. РџРѕР»РЅР°СЏ РєРѕРјРїР»РµРєС‚Р°С†РёСЏвЂ¦', showButton: false, cta: 'РЎРїСЂРѕСЃРёС‚СЊ' } },
+        {
+          id: 'b_ai',
+          type: 'ai_prompt',
+          props: {
+            title: 'AIChat',
+            subtitle: 'Р’РІРµРґРёС‚Рµ РІР°С€Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏ Рё РР РїРѕРјРѕР¶РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ РґР»СЏ Р’Р°СЃ РёРґРµР°Р»СЊРЅС‹Р№ РІР°СЂРёР°РЅС‚',
+            placeholder: 'РЎРµРјРµР№РЅС‹Р№ Р°РІС‚РѕРјРѕР±РёР»СЊ, РІРЅРµРґРѕСЂРѕР¶РЅРёРє. РћС‚ 2020 РіРѕРґР° Рё РІС‹С€Рµ. РџРѕР»РЅР°СЏ РєРѕРјРїР»РµРєС‚Р°С†РёСЏвЂ¦',
+            showButton: false,
+            cta: 'РЎРїСЂРѕСЃРёС‚СЊ'
+          }
+        },
         { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', cta: 'РќР°Р№С‚Рё Р°РІС‚Рѕ' } },
         { id: 'b_strip', type: 'reels_strip', props: { title: 'Р›СѓС‡С€РёРµ AIClips', moreLabel: 'Р‘РѕР»СЊС€Рµ', moreHref: '/aiclips', showArrows: true } },
         { id: 'b_offers', type: 'car_grid', props: { title: 'РЎРїРµС†РёР°Р»СЊРЅС‹Рµ РїСЂРµРґР»РѕР¶РµРЅРёСЏ', limit: 9, variant: 'offers', moreLabel: 'Р‘РѕР»СЊС€Рµ', moreHref: '/search' } },
@@ -53,9 +100,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       isPublished: true,
       blocks: [
         { id: 'b_title', type: 'section_title', props: { title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє' } },
-        { id: 'b_search', type: 'search_widget', props: { title: 'Р¤РёР»СЊС‚СЂС‹', cta: 'РќР°Р№С‚Рё' } },
-        { id: 'b_hot', type: 'car_grid', props: { title: 'Р“РѕСЂСЏС‡РёРµ РїСЂРµРґР»РѕР¶РµРЅРёСЏ', limit: 4 } },
-        { id: 'b_list', type: 'car_list', props: { title: 'Р РµР·СѓР»СЊС‚Р°С‚С‹', limit: 10 } }
+        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: 'Р¤РёР»СЊС‚СЂС‹', cta: 'РќР°Р№С‚Рё' } },
+        { id: 'b_hot', type: 'car_grid', props: { title: 'Р“РѕСЂСЏС‡РёРµ РїСЂРµРґР»РѕР¶РµРЅРёСЏ', limit: 6 } },
+        { id: 'b_list', type: 'car_list', props: { title: 'Р РµР·СѓР»СЊС‚Р°С‚С‹', limit: 12 } }
       ]
     },
     {
@@ -65,7 +112,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       isPublished: true,
       blocks: [
         { id: 'b_title', type: 'section_title', props: { title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє вЂ” РІР°СЂРёР°РЅС‚ 2' } },
-        { id: 'b_search', type: 'search_widget', props: { title: 'Р¤РёР»СЊС‚СЂС‹', cta: 'РќР°Р№С‚Рё' } },
+        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: 'Р¤РёР»СЊС‚СЂС‹', cta: 'РќР°Р№С‚Рё' } },
         { id: 'b_list', type: 'car_list', props: { title: 'Р РµР·СѓР»СЊС‚Р°С‚С‹', limit: 12, withSidebarHint: true } }
       ]
     },
@@ -115,21 +162,24 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       isPublished: true,
       blocks: [
         { id: 'b_car', type: 'car_detail', props: { showAskAi: true, showLeadButton: true } },
-        { id: 'b_sim', type: 'car_grid', props: { title: 'РџРѕС…РѕР¶РёРµ РѕР±СЉСЏРІР»РµРЅРёСЏ', limit: 4 } }
+        { id: 'b_sim', type: 'car_grid', props: { title: 'РџРѕС…РѕР¶РёРµ РѕР±СЉСЏРІР»РµРЅРёСЏ', limit: 6 } }
       ]
     }
   ],
   demoData: {
     cars: [
-      { id: 'c1', title: 'Toyota Corolla', price: 9800, currency: '$', year: 2014, mileageKm: 165000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('corolla') },
-      { id: 'c2', title: 'BMW 3 Series', price: 13900, currency: '$', year: 2013, mileageKm: 190000, city: 'BДѓlИ›i', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('bmw3') },
-      { id: 'c3', title: 'Volkswagen Passat', price: 11700, currency: '$', year: 2015, mileageKm: 175000, city: 'Cahul', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('passat') },
-      { id: 'c4', title: 'Honda CR-V', price: 15800, currency: '$', year: 2012, mileageKm: 210000, city: 'Orhei', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('crv') },
-      { id: 'c5', title: 'Skoda Octavia', price: 10500, currency: '$', year: 2016, mileageKm: 150000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'MT', imageUrl: img('octavia') },
-      { id: 'c6', title: 'Mercedes C-Class', price: 16900, currency: '$', year: 2012, mileageKm: 220000, city: 'Ungheni', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('cclass') },
-      { id: 'c7', title: 'Mazda 6', price: 12400, currency: '$', year: 2015, mileageKm: 160000, city: 'Soroca', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('mazda6') },
-      { id: 'c8', title: 'Nissan Qashqai', price: 13200, currency: '$', year: 2016, mileageKm: 170000, city: 'ChiИ™inДѓu', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('qashqai') },
-      { id: 'c9', title: 'Hyundai Tucson', price: 14500, currency: '$', year: 2017, mileageKm: 155000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('tucson') }
+      { id: 'c1', title: 'Toyota Corolla', price: 9800, currency: '$', year: 2014, mileageKm: 165000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('corolla'), vehicleType: 'car' },
+      { id: 'c2', title: 'BMW 3 Series', price: 13900, currency: '$', year: 2013, mileageKm: 190000, city: 'BДѓlИ›i', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('bmw3'), vehicleType: 'car' },
+      { id: 'c3', title: 'Volkswagen Passat', price: 11700, currency: '$', year: 2015, mileageKm: 175000, city: 'Cahul', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('passat'), vehicleType: 'car' },
+      { id: 'c4', title: 'Honda CR-V', price: 15800, currency: '$', year: 2012, mileageKm: 210000, city: 'Orhei', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('crv'), vehicleType: 'car' },
+      { id: 'c5', title: 'Skoda Octavia', price: 10500, currency: '$', year: 2016, mileageKm: 150000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'MT', imageUrl: img('octavia'), vehicleType: 'car' },
+      { id: 'c6', title: 'Mercedes C-Class', price: 16900, currency: '$', year: 2012, mileageKm: 220000, city: 'Ungheni', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('cclass'), vehicleType: 'car' },
+      { id: 'c7', title: 'Mazda 6', price: 12400, currency: '$', year: 2015, mileageKm: 160000, city: 'Soroca', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('mazda6'), vehicleType: 'car' },
+      { id: 'c8', title: 'Nissan Qashqai', price: 13200, currency: '$', year: 2016, mileageKm: 170000, city: 'ChiИ™inДѓu', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('qashqai'), vehicleType: 'car' },
+      { id: 'c9', title: 'Hyundai Tucson', price: 14500, currency: '$', year: 2017, mileageKm: 155000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'AT', imageUrl: img('tucson'), vehicleType: 'car' },
+      { id: 'c10', title: 'Ford Transit (van)', price: 12900, currency: '$', year: 2016, mileageKm: 210000, city: 'ChiИ™inДѓu', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('transit'), vehicleType: 'bus' },
+      { id: 'c11', title: 'MAN TGL (truck)', price: 18900, currency: '$', year: 2014, mileageKm: 350000, city: 'BДѓlИ›i', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('man_tgl'), vehicleType: 'truck' },
+      { id: 'c12', title: 'Yamaha MT-07', price: 6200, currency: '$', year: 2018, mileageKm: 24000, city: 'ChiИ™inДѓu', fuel: 'BenzinДѓ', gearbox: 'MT', imageUrl: img('mt07'), vehicleType: 'bike' }
     ],
     reels: [
       { id: 'r1', title: 'Corolla: РїР»СЋСЃС‹/РјРёРЅСѓСЃС‹', author: 'AICar', videoUrl: vid('1'), posterUrl: img('reel1'), linkedCarId: 'c1' },
