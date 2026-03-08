@@ -20,6 +20,38 @@ function countCyrillic(s: string) {
   return n;
 }
 
+function looksSuspicious(s: string) {
+  if (!s) return false;
+  if (s.length < 4) return false;
+  // quick checks
+  if (s.includes('Р') || s.includes('С') || s.includes('Ð') || s.includes('Ñ') || s.includes('Â') || s.includes('â')) return true;
+  // CP1251 special chars often show up in mojibake (e.g. "вЂў").
+  if (/[ЂЃЉЊЎўќџ]/.test(s)) return true;
+  // Another corruption we saw in stored configs: Cyrillic text got "low-byte truncated" and
+  // became ASCII like " 0745;K" or "0AH8@5==K9". Detect it by special ASCII chars.
+  if (looksLikeLowByteCyrillic(s)) return true;
+  return false;
+}
+
+function hasControlChars(s: string) {
+  for (let i = 0; i < s.length; i += 1) {
+    const c = s.charCodeAt(i);
+    // ignore common whitespace
+    if (c === 0x09 || c === 0x0a || c === 0x0d) continue;
+    if (c < 0x20) return true;
+  }
+  return false;
+}
+
+function looksLikeLowByteCyrillic(s: string) {
+  // Only consider strings that are currently NOT Cyrillic (otherwise we might break real text).
+  if (countCyrillic(s) > 0) return false;
+  // The corrupted strings usually contain punctuation like @ = ; < > ? ! and/or control chars.
+  if (/[=@;<>?!]/.test(s)) return true;
+  if (hasControlChars(s)) return true;
+  return false;
+}
+
 function mojibakeScore(s: string) {
   // "Р"/"С" bursts are typical for CP1251-mojibake.
   const rs = (s.match(/[РС]/g) ?? []).length;
@@ -27,15 +59,9 @@ function mojibakeScore(s: string) {
   const latin = (s.match(/[ÐÑÂâ€™]/g) ?? []).length;
   // CP1251 special chars commonly appear (Ђ, Ѓ, ќ, …)
   const specials = (s.match(/[ЂЃЉЊЎўќџ]/g) ?? []).length;
-  return rs + latin + specials;
-}
-
-function looksSuspicious(s: string) {
-  if (!s) return false;
-  if (s.length < 4) return false;
-  // quick checks
-  if (s.includes('Р') || s.includes('С') || s.includes('Ð') || s.includes('Ñ') || s.includes('Â') || s.includes('â')) return true;
-  return false;
+  // Low-byte truncation (ASCII garbage for Cyrillic) should be treated as "very bad".
+  const lowBytePenalty = looksLikeLowByteCyrillic(s) ? 50 : 0;
+  return rs + latin + specials + lowBytePenalty;
 }
 
 // Full CP1251 byte->Unicode table for 0x80..0xFF
@@ -67,7 +93,15 @@ function encodeCp1251(s: string): Uint8Array | null {
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
     const b = CP1251_INV.get(cp);
-    if (b === undefined) return null;
+    if (b === undefined) {
+      // Some mojibake strings contain stray ISO-8859-1 / control bytes (e.g. U+0098).
+      // If the code point fits in one byte, treat it as the original byte.
+      if (cp >= 0x00 && cp <= 0xff) {
+        bytes.push(cp);
+        continue;
+      }
+      return null;
+    }
     bytes.push(b);
   }
   return new Uint8Array(bytes);
@@ -96,6 +130,28 @@ function tryFixLatin1(s: string): string | null {
   return out;
 }
 
+function tryFixLowByteCyrillic(s: string): string | null {
+  if (!looksLikeLowByteCyrillic(s)) return null;
+
+  // This corruption happens when someone incorrectly converts each Unicode char
+  // to a single byte by keeping only the low byte (cp & 0xFF). For Cyrillic
+  // (U+04xx) that low byte is the original byte value.
+  const outChars: string[] = [];
+  for (let i = 0; i < s.length; i += 1) {
+    const b = s.charCodeAt(i) & 0xff;
+    outChars.push(String.fromCharCode(0x0400 + b));
+  }
+  const out = outChars.join('');
+
+  // Validate: must actually look like Cyrillic text.
+  const cy = countCyrillic(out);
+  if (cy < Math.max(3, Math.floor(out.length * 0.6))) return null;
+  // Simple "language" heuristic: at least one vowel.
+  const vowels = (out.match(/[аеёиоуыэюя]/gi) ?? []).length;
+  if (vowels < 1) return null;
+  return out;
+}
+
 export function fixMojibake(s: string) {
   // Some datasets end up double-encoded (rare), so we allow up to 2 repair passes.
   let cur = s;
@@ -112,6 +168,10 @@ export function fixMojibake(s: string) {
     // Also try Latin1 fix (handles "Ð…" style).
     const latin = tryFixLatin1(cur);
     if (latin) candidates.push(latin);
+
+    // Repair "low-byte truncation" corruption.
+    const lb = tryFixLowByteCyrillic(cur);
+    if (lb) candidates.push(lb);
 
     if (candidates.length === 0) return cur;
 
