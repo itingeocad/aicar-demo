@@ -1,58 +1,54 @@
 /**
- * Fixes mojibake caused by decoding UTF‑8 bytes as CP1251 or ISO‑8859‑1/Windows-1252.
+ * Robust mojibake repair utilities.
  *
- * Examples:
- *   "Р‘Р°РЅРµСЂ"  -> "Банер"
- *   "РђРІС‚Рѕ"    -> "Авто"
- *   "ÐÐ²Ñ‚Ð¾"   -> "Авто"
+ * In demo content (Upstash JSON + admin-entered strings) we occasionally see:
+ *  - UTF‑8 bytes decoded as CP1251 => "РђРІС‚Рѕ"
+ *  - UTF‑8 bytes decoded as Latin1/Win-1252 => "ÐÐ²Ñ‚Ð¾"
+ *  - Double CP1251 decode (UTF‑8 -> CP1251 -> UTF‑8 -> CP1251) which produces
+ *    strings with NBSP and "вЂ..." fragments.
  *
- * NOTE:
- * - This runs on content loaded from storage (Upstash / local JSON).
- * - We keep it conservative to avoid touching already-correct strings.
+ * This module repairs such strings conservatively and supports multiple passes.
  */
 
-function isCyrillicCodePoint(cp: number) {
+function isCyrillic(cp: number) {
   return (cp >= 0x0400 && cp <= 0x04ff) || (cp >= 0x0500 && cp <= 0x052f);
 }
 
-function countCyrillic(s: string) {
-  let n = 0;
-  for (const ch of s) {
-    if (isCyrillicCodePoint(ch.codePointAt(0) ?? 0)) n += 1;
-  }
-  return n;
-}
-
 function countMatches(s: string, re: RegExp) {
-  return (s.match(re) ?? []).length;
-}
-
-function rsRatio(s: string) {
-  const rs = countMatches(s, /[РС]/g);
-  return s.length ? rs / s.length : 0;
+  const m = s.match(re);
+  return m ? m.length : 0;
 }
 
 function markerScore(s: string) {
-  // Strong markers of mojibake.
-  const latin = countMatches(s, /[ÐÑÂâ]/g);
-  const cp1 = countMatches(s, /[ЂЃЉЊЎўќџ]/g);
-  const quotes = countMatches(s, /[‘’“”‚„…†‡•–—™‹›]/g);
-  const vd = countMatches(s, /вЂ/g);
+  // Higher means "more broken".
   const rs = countMatches(s, /[РС]/g);
-  return latin * 3 + cp1 * 3 + quotes * 2 + vd * 4 + (rsRatio(s) > 0.22 ? rs : 0);
+  const dn = countMatches(s, /[ÐÑ]/g);
+  const vd = countMatches(s, /вЂ/g);
+  const repl = countMatches(s, /\uFFFD/g);
+  return rs + dn + vd * 2 + repl * 5;
+}
+
+function cyrCount(s: string) {
+  let n = 0;
+  for (const ch of s) if (isCyrillic(ch.codePointAt(0) ?? 0)) n += 1;
+  return n;
 }
 
 function looksSuspicious(s: string) {
-  if (!s || s.length < 3) return false;
-  if (/[ÐÑÂâ]/.test(s)) return true; // latin1 mojibake
-  if (/вЂ/.test(s)) return true; // bullets/quotes rendered as "вЂ..."
-  if (/[ЂЃЉЊЎўќџ]/.test(s)) return true; // cp1251 special letters
-  // CP1251-mojibake often has very high density of 'Р'/'С'
-  if ((s.includes('Р') || s.includes('С')) && rsRatio(s) >= 0.22) return true;
+  if (!s) return false;
+  // Fast checks for common mojibake markers.
+  if (/[ÐÑ]/.test(s)) return true;
+  if (/вЂ/.test(s)) return true;
+  const rs = countMatches(s, /[РС]/g);
+  // In CP1251 mojibake the ratio of Р/С is noticeably high.
+  if (rs >= 3 && rs / Math.max(1, s.length) >= 0.12) return true;
+  // Double-encoded strings often contain NBSP very frequently.
+  const nbsp = countMatches(s, /\u00A0/g);
+  if (nbsp >= 4 && nbsp / Math.max(1, s.length) >= 0.05) return true;
   return false;
 }
 
-// Full CP1251 byte->Unicode table for 0x80..0xFF
+// ---------- CP1251 mapping (bytes -> unicode) ----------
 const CP1251_TABLE: number[] = [
   0x0402, 0x0403, 0x201a, 0x0453, 0x201e, 0x2026, 0x2020, 0x2021,
   0x20ac, 0x2030, 0x0409, 0x2039, 0x040a, 0x040c, 0x040b, 0x040f,
@@ -72,111 +68,166 @@ const CP1251_TABLE: number[] = [
   0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f
 ];
 
-const CP1251_INV = new Map<number, number>();
-for (let b = 0; b < 0x80; b += 1) CP1251_INV.set(b, b);
-for (let i = 0; i < CP1251_TABLE.length; i += 1) CP1251_INV.set(CP1251_TABLE[i]!, 0x80 + i);
+const CP1251_INV: Map<number, number> = (() => {
+  const m = new Map<number, number>();
+  for (let i = 0; i < 0x80; i += 1) m.set(i, i); // ASCII
+  for (let i = 0; i < CP1251_TABLE.length; i += 1) {
+    m.set(CP1251_TABLE[i], 0x80 + i);
+  }
+  return m;
+})();
 
-function encodeCp1251(s: string): Uint8Array | null {
-  const bytes: number[] = [];
+function encodeCp1251BytesLossless(s: string): Uint8Array | null {
+  const out: number[] = [];
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
+
+    // Drop replacement characters introduced by previous decode attempts.
+    if (cp === 0xfffd) continue;
+
+    // IMPORTANT: allow raw byte codepoints (0x80..0xFF).
+    // In double-encoded strings you can get C1 controls like U+0098.
+    if (cp <= 0xff) {
+      out.push(cp);
+      continue;
+    }
+
     const b = CP1251_INV.get(cp);
     if (b === undefined) return null;
-    bytes.push(b);
+    out.push(b);
   }
-  return new Uint8Array(bytes);
+  return new Uint8Array(out);
 }
 
-function decodeUtf8(bytes: Uint8Array): string {
-  // Buffer is available in Node runtime (Vercel).
-  // eslint-disable-next-line no-undef
-  return Buffer.from(bytes).toString('utf8');
+const UTF8_DECODER = new TextDecoder('utf-8', { fatal: false });
+
+function decodeUtf8(bytes: Uint8Array) {
+  return UTF8_DECODER.decode(bytes);
 }
 
 function tryFixCp1251(s: string): string | null {
-  const bytes = encodeCp1251(s);
+  const rs = countMatches(s, /[РС]/g);
+  if (rs < 2 && !/вЂ/.test(s) && !/\u00A0/.test(s)) return null;
+
+  const bytes = encodeCp1251BytesLossless(s);
   if (!bytes) return null;
+
   const out = decodeUtf8(bytes);
-  if (!out) return null;
-  if (out.includes('�')) return null;
   return out;
 }
 
 function tryFixLatin1(s: string): string | null {
-  // eslint-disable-next-line no-undef
-  const out = Buffer.from(s, 'latin1').toString('utf8');
-  if (!out) return null;
-  if (out.includes('�')) return null;
-  return out;
+  // Only safe if every codepoint fits into a byte.
+  for (const ch of s) {
+    const cp = ch.codePointAt(0) ?? 0;
+    if (cp > 0xff && cp !== 0xfffd) return null;
+  }
+
+  const bytes = new Uint8Array([...s].map((c) => (c.charCodeAt(0) & 0xff)));
+  return decodeUtf8(bytes);
 }
 
-function betterCandidate(orig: string, cand: string) {
-  // Must reduce markers meaningfully.
-  const m0 = markerScore(orig);
-  const m1 = markerScore(cand);
-  if (m1 >= m0) return false;
-
-  // Candidate should look like real text: more (or at least not fewer) Cyrillic when original already had some.
-  const c0 = countCyrillic(orig);
-  const c1 = countCyrillic(cand);
-  if (c0 >= 2 && c1 < Math.floor(c0 / 2)) return false;
-
-  // Avoid pathological results that become mostly control/whitespace.
-  if (cand.trim().length === 0) return false;
-
-  return true;
+function cleanupArtifacts(s: string): string {
+  return s
+    // Strip BOM if it sneaks into stored JSON strings
+    .replace(/\uFEFF/g, '')
+    // Common cp1251 artifacts for punctuation/bullets
+    .replace(/вЂў/g, '•')
+    .replace(/вЂ“/g, '–')
+    .replace(/вЂ”/g, '—')
+    .replace(/вЂ™/g, '’')
+    .replace(/вЂ˜/g, '‘')
+    .replace(/вЂњ/g, '“')
+    .replace(/вЂќ/g, '”')
+    // NBSP normalization (safe for our UI)
+    .replace(/\u00A0/g, ' ')
+    // Some double-encoding leaves a literal "Â" before spaces.
+    .replace(/Â /g, ' ')
+    .replace(/Â\s/g, ' ')
+    // Remove any remaining replacement chars.
+    .replace(/\uFFFD/g, '');
 }
 
-export function fixMojibake(s: string) {
-  let cur = s;
+function bestCandidate(cur: string, candidates: string[]): string {
+  const curScore = markerScore(cur);
+  const curCyr = cyrCount(cur);
 
-  // Allow up to 3 passes (handles rare double / triple encodings).
-  for (let i = 0; i < 3; i += 1) {
-    if (!looksSuspicious(cur)) return cur;
+  let best = cur;
+  let bestScore = curScore;
+  let bestCyr = curCyr;
+
+  for (const raw of candidates) {
+    const cand = cleanupArtifacts(raw);
+    const sc = markerScore(cand);
+    const cyr = cyrCount(cand);
+
+    // Prefer strictly fewer markers.
+    if (sc < bestScore) {
+      best = cand;
+      bestScore = sc;
+      bestCyr = cyr;
+      continue;
+    }
+
+    // If markers equal, prefer more Cyrillic.
+    if (sc === bestScore && cyr > bestCyr) {
+      best = cand;
+      bestCyr = cyr;
+    }
+  }
+
+  // Don't accept a candidate that loses most Cyrillic unless it also removes lots of markers.
+  if (best !== cur) {
+    const gain = curScore - bestScore;
+    if (bestCyr === 0 && curCyr > 0) return cur;
+    if (bestCyr < curCyr / 2 && gain < 5) return cur;
+  }
+
+  return best;
+}
+
+export function fixMojibake(input: string): string {
+  if (!input) return input;
+
+  let cur = input;
+
+  // Up to 4 passes to handle double-encoding.
+  for (let pass = 0; pass < 4; pass += 1) {
+    if (!looksSuspicious(cur)) break;
 
     const candidates: string[] = [];
-
     const cp = tryFixCp1251(cur);
     if (cp) candidates.push(cp);
 
-    const latin = tryFixLatin1(cur);
-    if (latin) candidates.push(latin);
+    const l1 = tryFixLatin1(cur);
+    if (l1) candidates.push(l1);
 
-    if (candidates.length === 0) return cur;
+    if (candidates.length === 0) break;
 
-    // Pick the best candidate (lowest marker score; tie-breaker: more Cyrillic).
-    let best = cur;
-    let bestM = markerScore(cur);
-    let bestC = countCyrillic(cur);
-
-    for (const c of candidates) {
-      const m = markerScore(c);
-      const cy = countCyrillic(c);
-      if (m < bestM || (m === bestM && cy > bestC)) {
-        best = c;
-        bestM = m;
-        bestC = cy;
-      }
-    }
-
-    if (best === cur) return cur;
-    if (!betterCandidate(cur, best)) return cur;
-
-    cur = best;
+    const next = bestCandidate(cur, candidates);
+    if (next === cur) break;
+    cur = next;
   }
 
-  return cur;
+  return cleanupArtifacts(cur);
 }
 
 export function normalizeDeep<T>(val: T): T {
-  if (typeof val === 'string') return fixMojibake(val) as unknown as T;
-  if (Array.isArray(val)) return val.map((v) => normalizeDeep(v)) as unknown as T;
-  if (val && typeof val === 'object') {
+  if (val === null || val === undefined) return val;
+
+  if (typeof val === 'string') return fixMojibake(val) as any;
+
+  if (Array.isArray(val)) {
+    return val.map((v) => normalizeDeep(v)) as any;
+  }
+
+  if (typeof val === 'object') {
     const out: any = {};
     for (const [k, v] of Object.entries(val as any)) {
       out[k] = normalizeDeep(v);
     }
-    return out as T;
+    return out;
   }
+
   return val;
 }
