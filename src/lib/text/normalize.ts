@@ -97,37 +97,46 @@ function tryFixLatin1(s: string): string | null {
 }
 
 export function fixMojibake(s: string) {
-  if (!looksSuspicious(s)) return s;
+  // Some datasets end up double-encoded (rare), so we allow up to 2 repair passes.
+  let cur = s;
+  for (let i = 0; i < 2; i += 1) {
+    if (!looksSuspicious(cur)) return cur;
 
-  const inScore = mojibakeScore(s);
-  const candidates: string[] = [];
+    const inScore = mojibakeScore(cur);
+    const candidates: string[] = [];
 
-  // Prefer CP1251 fix when we see many "Р/С".
-  const cp = tryFixCp1251(s);
-  if (cp) candidates.push(cp);
+    // Prefer CP1251 fix when we see many "Р/С".
+    const cp = tryFixCp1251(cur);
+    if (cp) candidates.push(cp);
 
-  // Also try Latin1 fix (handles "Ð…" style).
-  const latin = tryFixLatin1(s);
-  if (latin) candidates.push(latin);
+    // Also try Latin1 fix (handles "Ð…" style).
+    const latin = tryFixLatin1(cur);
+    if (latin) candidates.push(latin);
 
-  if (candidates.length === 0) return s;
+    if (candidates.length === 0) return cur;
 
-  // Pick the candidate with the lowest mojibake score; prefer more Cyrillic.
-  let best = s;
-  let bestScore = inScore;
-  let bestCyr = countCyrillic(s);
+    // Pick the candidate with the lowest mojibake score; prefer more Cyrillic.
+    let best = cur;
+    let bestScore = inScore;
+    let bestCyr = countCyrillic(cur);
 
-  for (const c of candidates) {
-    const sc = mojibakeScore(c);
-    const cy = countCyrillic(c);
-    if (sc < bestScore || (sc === bestScore && cy > bestCyr)) {
-      best = c;
-      bestScore = sc;
-      bestCyr = cy;
+    for (const c of candidates) {
+      const sc = mojibakeScore(c);
+      const cy = countCyrillic(c);
+      if (sc < bestScore || (sc === bestScore && cy > bestCyr)) {
+        best = c;
+        bestScore = sc;
+        bestCyr = cy;
+      }
     }
-  }
 
-  return bestScore < inScore ? best : s;
+    // If nothing improved, stop.
+    if (!(bestScore < inScore)) return cur;
+
+    // Continue with repaired string (maybe needs another pass).
+    cur = best;
+  }
+  return cur;
 }
 
 export function normalizeDeep<T>(val: T): T {

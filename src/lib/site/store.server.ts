@@ -220,13 +220,20 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   const redis = getRedis();
   if (redis) {
     try {
-      const raw = await redis.get<string>(upstashKey());
+      const raw = await redis.get(upstashKey());
       if (raw && typeof raw === 'string') {
         const parsed = JSON.parse(raw) as SiteConfig;
         const migrated = migrateAll(parsed);
+
+        // Best-effort writeback (do not fail reads if token is RO / transient errors).
         if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
-          await redis.set(upstashKey(), JSON.stringify(migrated));
+          try {
+            await redis.set(upstashKey(), JSON.stringify(migrated));
+          } catch {
+            // ignore
+          }
         }
+
         return migrated;
       }
     } catch {

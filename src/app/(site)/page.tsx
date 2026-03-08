@@ -1,4 +1,5 @@
 import { getSiteConfig, getPageBySlug } from '@/lib/site/store.server';
+import { normalizeDeep } from '@/lib/text/normalize';
 import { SiteFrame } from '@/components/SiteChrome';
 
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 
 export default async function HomePage() {
-  const config = await getSiteConfig();
+  const config = normalizeDeep(await getSiteConfig());
   const page = getPageBySlug(config, '');
 
   return (

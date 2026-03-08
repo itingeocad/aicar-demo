@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 
 export default async function CarDetail({ params }: { params: { id: string } }) {
-  const config = await getSiteConfig();
+  const config = normalizeDeep(await getSiteConfig());
   const car = config.demoData.cars.find((c) => c.id === params.id);
   if (!car) return notFound();
 

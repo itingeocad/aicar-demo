@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getSiteConfig, saveSiteConfig } from '@/lib/site/store.server';
+import { normalizeDeep } from '@/lib/text/normalize';
 import { SiteConfig } from '@/lib/site/types';
 import { getSession, hasPermission } from '@/lib/auth/session.server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const config = await getSiteConfig();
-  return NextResponse.json(config);
+  const config = normalizeDeep(await getSiteConfig());
+  return NextResponse.json(config, {
+    headers: { 'content-type': 'application/json; charset=utf-8' }
+  });
 }
 
 export async function PUT(req: Request) {

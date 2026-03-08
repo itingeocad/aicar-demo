@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSiteConfig } from '@/lib/site/store.server';
+import { normalizeDeep } from '@/lib/text/normalize';
 
 
 import { SiteFrame } from '@/components/SiteChrome';
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 
 export default async function CarsIndex() {
-  const config = await getSiteConfig();
+  const config = normalizeDeep(await getSiteConfig());
   const cars = config.demoData.cars;
 
   return (
