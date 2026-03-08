@@ -4,6 +4,7 @@ import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
 import { getRedis } from '@/lib/kv/upstash.server';
 import { normalizeDeep } from '@/lib/text/normalize';
+import { repairDeepWithFallback, type RepairStats } from '@/lib/text/repair';
 import { APP_VERSION } from '@/lib/version';
 
 function upstashKey() {
@@ -229,7 +230,7 @@ function migrate016(cfg: SiteConfig): SiteConfig {
 
     const hero = byId.get('b_hero');
     if (hero && hero.type === 'hero') {
-      hero.props = { ...hero.props, mode: 'banner', bannerHeight: 220, headline: 'Банер + Лого', subline: '' };
+      hero.props = { ...hero.props, mode: 'banner', bannerHeight: 220, headline: 'Баннер + Лого', subline: '' };
     }
     const ai = byId.get('b_ai');
     if (ai && ai.type === 'ai_prompt') {
@@ -323,13 +324,20 @@ function migrate017(cfg: SiteConfig): SiteConfig {
 }
 
 function migrateAll(cfg: SiteConfig): SiteConfig {
-  // Normalize mojibake first (helps migrations match strings).
+  // 1) Normalize BOM / NBSP.
   const normalized = normalizeDeep(cfg);
-  let out = normalized;
+
+  // 2) Repair mojibake (UTF-8 decoded as CP1251 / double-encoded) in human-readable text.
+  const stats: RepairStats = { scannedStrings: 0, fixedStrings: 0, fallbackStrings: 0 };
+  let out = repairDeepWithFallback(normalized, DEFAULT_SITE_CONFIG, stats) as SiteConfig;
+
   out = migrate016(out);
   out = migrate017(out);
   // Normalize again to fix any stored legacy values.
   out = normalizeDeep(out);
+
+  // Keep version aligned with the app.
+  out.version = APP_VERSION;
   return out;
 }
 
@@ -369,7 +377,8 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     }
     return migrated;
   } catch {
-    return DEFAULT_SITE_CONFIG;
+    // Return a clone to avoid accidental in-memory mutations.
+    return migrateAll(JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG)) as SiteConfig);
   }
 }
 
