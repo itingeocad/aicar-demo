@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSiteConfig, saveSiteConfig } from '@/lib/site/store.server';
-import { normalizeDeep } from '@/lib/text/normalize';
+import { DEFAULT_SITE_CONFIG } from '@/lib/site/defaultConfig';
+import { repairDeepWithFallback, type RepairStats } from '@/lib/text/repair';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,13 +26,15 @@ export async function GET(req: Request) {
   }
 
   const before = await getSiteConfig();
-  const after = normalizeDeep(before);
+  const stats: RepairStats = { scannedStrings: 0, fixedStrings: 0, fallbackStrings: 0 };
+  const after = repairDeepWithFallback(before, DEFAULT_SITE_CONFIG, stats);
 
   // Always write back (the whole point of this endpoint).
-  await saveSiteConfig(after);
+  await saveSiteConfig(after as any);
 
   return NextResponse.json({
     ok: true,
-    changed: JSON.stringify(before) !== JSON.stringify(after)
+    changed: JSON.stringify(before) !== JSON.stringify(after),
+    stats
   });
 }

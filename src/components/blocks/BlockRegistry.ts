@@ -8,7 +8,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     defaultProps: {
       mode: 'banner',
       bannerHeight: 220,
-      headline: 'Банер + Лого',
+      headline: 'Баннер + Лого',
       subline: '',
       bgImage: ''
     },
