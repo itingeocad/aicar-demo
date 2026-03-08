@@ -1,42 +1,42 @@
 param(
-  [Parameter(Mandatory=$false)][string]$Email,
-  [Parameter(Mandatory=$true)][string]$NewPassword,
-  [Parameter(Mandatory=$true)][string]$Token,
-  [switch]$SuperAdmin,
-  [string]$BaseUrl = "https://aicar-demo.vercel.app"
+  [Parameter(Mandatory=$false)]
+  [string]$Email,
+
+  [Parameter(Mandatory=$true)]
+  [string]$NewPassword,
+
+  [Parameter(Mandatory=$true)]
+  [string]$Token,
+
+  [Parameter(Mandatory=$false)]
+  [switch]$SuperAdmin
 )
 
-$body = @{
-  newPassword = $NewPassword
+$uri = "https://aicar-demo.vercel.app/api/auth/reset-password"
+
+$payload = @{
   t = $Token
+  newPassword = $NewPassword
 }
 
 if ($SuperAdmin) {
-  $body.superAdmin = $true
+  $payload.superAdmin = $true
+} elseif ($Email) {
+  $payload.email = $Email
 }
 
-if ($Email -and $Email.Trim().Length -gt 0) {
-  $body.email = $Email
-}
-
-$json = $body | ConvertTo-Json
+$body = $payload | ConvertTo-Json
 
 try {
-  Invoke-RestMethod -Method Post `
-    -Uri "$BaseUrl/api/auth/reset-password" `
-    -ContentType "application/json" `
-    -Body $json
+  Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 } catch {
-  # Print response body if server returned one (helps disambiguate 404 route vs 404 user)
-  if ($_.Exception -and $_.Exception.Response) {
-    $resp = $_.Exception.Response
-    try {
-      $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
-      $text = $reader.ReadToEnd()
-      Write-Host "HTTP error:" $resp.StatusCode $resp.StatusDescription
-      Write-Host $text
-      exit 1
-    } catch {}
+  $resp = $_.Exception.Response
+  if ($resp -and $resp.GetResponseStream()) {
+    $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
+    $text = $reader.ReadToEnd()
+    Write-Host "HTTP error:" $resp.StatusCode $resp.StatusDescription
+    Write-Host $text
+  } else {
+    throw
   }
-  throw
 }

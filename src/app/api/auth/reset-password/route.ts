@@ -17,6 +17,7 @@ type ReqBody = {
   newPassword?: string;
   password?: string;
   // If true, reset the first user that has ROLE_SUPER_ADMIN.
+  // If no super admin exists yet, we will PROMOTE the first existing user to super admin and reset its password.
   superAdmin?: boolean;
 };
 
@@ -51,18 +52,27 @@ export async function POST(req: Request) {
 
   let idx = -1;
 
+  // 1) By email (if provided)
   if (requestedEmail) {
     idx = users.findIndex((u) => (u.email || '').toLowerCase() === requestedEmail);
   }
 
-  // Optional fallback: reset first super admin if email unknown/missing.
+  // 2) By super admin role (if requested)
   if (idx < 0 && wantSuperAdmin) {
     idx = users.findIndex((u) => Array.isArray(u.roleIds) && u.roleIds.includes(ROLE_SUPER_ADMIN));
+
+    // If there is no super admin yet, PROMOTE the first user.
+    if (idx < 0) {
+      idx = 0;
+    }
   }
 
   if (idx < 0) {
     return NextResponse.json(
-      { error: 'user not found', hint: 'Provide correct email or set superAdmin=true to reset super admin.' },
+      {
+        error: 'user not found',
+        hint: 'Provide correct email, or set superAdmin=true to reset (and possibly promote) a super admin.'
+      },
       { status: 404 }
     );
   }
@@ -71,12 +81,21 @@ export async function POST(req: Request) {
   const passwordHash = await hashPassword(newPassword);
 
   const u = users[idx];
-  const next = { ...u, passwordHash, updatedAt: now };
+  const roleIds = Array.isArray(u.roleIds) ? [...u.roleIds] : [];
+  const promoted = wantSuperAdmin && !roleIds.includes(ROLE_SUPER_ADMIN);
+  if (promoted) roleIds.push(ROLE_SUPER_ADMIN);
+
+  const next = { ...u, passwordHash, roleIds, updatedAt: now };
 
   const nextUsers = [...users];
   nextUsers[idx] = next;
 
   await saveUsers(nextUsers);
 
-  return NextResponse.json({ ok: true, email: next.email, reset: wantSuperAdmin ? 'super_admin' : 'email' });
+  return NextResponse.json({
+    ok: true,
+    email: next.email,
+    reset: wantSuperAdmin ? 'super_admin' : 'email',
+    promoted
+  });
 }
