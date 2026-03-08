@@ -96,9 +96,125 @@ function ensureDemoData(cfg: SiteConfig) {
       title: 'Qashqai: что смотреть',
       author: 'AICar',
       videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=4',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p4',
       posterUrl: 'https://picsum.photos/seed/reel4/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel4/1200/800',
+      views: 7560,
+      likes: 421,
+      badges: [],
       linkedCarId: cfg.demoData.cars[0]?.id
     });
+  }
+
+  // Enrich reels with Instagram-like metadata (non-destructive).
+  // Adds a few extra demo reels if they are missing.
+  const byId = new Map(cfg.demoData.reels.map((r) => [r.id, r]));
+  const want = [
+    {
+      id: 'r1',
+      title: 'Corolla: плюсы/минусы',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=1',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p1',
+      posterUrl: 'https://picsum.photos/seed/reel1/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel1/1200/800',
+      views: 12540,
+      likes: 732,
+      badges: ['Top'] as const,
+      linkedCarId: 'c1'
+    },
+    {
+      id: 'r2',
+      title: 'Passat: что проверить',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=2',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p2',
+      posterUrl: 'https://picsum.photos/seed/reel2/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel2/1200/800',
+      views: 9840,
+      likes: 601,
+      badges: ['AI'] as const,
+      linkedCarId: 'c3'
+    },
+    {
+      id: 'r3',
+      title: 'CR‑V для семьи',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=3',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p3',
+      posterUrl: 'https://picsum.photos/seed/reel3/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel3/1200/800',
+      views: 14320,
+      likes: 812,
+      badges: ['Top', 'AI'] as const,
+      linkedCarId: 'c4'
+    },
+    {
+      id: 'r5',
+      title: 'Tucson: быстрый обзор',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=5',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p5',
+      posterUrl: 'https://picsum.photos/seed/reel5/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel5/1200/800',
+      views: 22110,
+      likes: 1203,
+      badges: ['Top'] as const,
+      linkedCarId: 'c9'
+    },
+    {
+      id: 'r6',
+      title: 'BMW 3: на что смотреть',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=6',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p6',
+      posterUrl: 'https://picsum.photos/seed/reel6/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel6/1200/800',
+      views: 16780,
+      likes: 945,
+      badges: ['AI'] as const,
+      linkedCarId: 'c2'
+    },
+    {
+      id: 'r7',
+      title: 'Transit: вэн для бизнеса',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=7',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p7',
+      posterUrl: 'https://picsum.photos/seed/reel7/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel7/1200/800',
+      views: 6420,
+      likes: 288,
+      badges: [] as const,
+      linkedCarId: 'c10'
+    },
+    {
+      id: 'r8',
+      title: 'MT‑07: звук и динамика',
+      author: 'AICar',
+      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=8',
+      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p8',
+      posterUrl: 'https://picsum.photos/seed/reel8/1200/800',
+      thumbUrl: 'https://picsum.photos/seed/reel8/1200/800',
+      views: 9130,
+      likes: 701,
+      badges: ['Top'] as const,
+      linkedCarId: 'c12'
+    }
+  ];
+
+  for (const w of want) {
+    const existing = byId.get(w.id);
+    if (!existing) {
+      cfg.demoData.reels.push({ ...w });
+      continue;
+    }
+    // Fill missing fields only.
+    if (!existing.previewUrl) existing.previewUrl = w.previewUrl;
+    if (!existing.thumbUrl) existing.thumbUrl = w.thumbUrl;
+    if (typeof existing.views !== 'number') existing.views = w.views;
+    if (typeof existing.likes !== 'number') existing.likes = w.likes;
+    if (!existing.badges) existing.badges = Array.from(w.badges);
   }
 }
 

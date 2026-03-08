@@ -98,6 +98,15 @@ export type DemoReel = {
   author: string;
   videoUrl: string;
   posterUrl: string;
+  /** Optional image for cards (falls back to posterUrl). */
+  thumbUrl?: string;
+  /** Optional short preview video (falls back to videoUrl). */
+  previewUrl?: string;
+  /** Instagram-like counters for UI. */
+  views?: number;
+  likes?: number;
+  /** Badges shown on cards. Example: ["AI"], ["Top"]. */
+  badges?: Array<'AI' | 'Top'>;
   linkedCarId?: string;
 };
 

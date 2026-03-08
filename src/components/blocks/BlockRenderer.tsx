@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Bike, Bus, Car, ChevronLeft, ChevronRight, Search, Truck, Plus } from 'lucide-react';
+import { Bike, Bus, Car, Search, Truck, Plus } from 'lucide-react';
 import { SiteConfig, BlockInstance } from '@/lib/site/types';
+import { ReelsStripClient } from '@/components/blocks/ReelsStripClient';
 
 function Section({
   title,
@@ -585,57 +586,12 @@ function ReelsStrip({
   moreHref?: string;
   showArrows?: boolean;
 }) {
-  const reels = config.demoData.reels.slice(0, 4);
+  const reels = config.demoData.reels;
   const right = moreLabel && moreHref ? <MoreLink label={moreLabel} href={moreHref} /> : null;
 
   return (
     <Section title={title} align="center" right={right}>
-      {/* Desktop */}
-      <div className="hidden md:block relative">
-        {showArrows ? (
-          <>
-            <button
-              aria-label="prev"
-              className="absolute -left-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              type="button"
-            >
-              <ChevronLeft className="h-10 w-10" />
-            </button>
-            <button
-              aria-label="next"
-              className="absolute -right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              type="button"
-            >
-              <ChevronRight className="h-10 w-10" />
-            </button>
-          </>
-        ) : null}
-
-        <div className="grid grid-cols-4 gap-8 justify-items-center">
-          {reels.map((r) => (
-            <Link key={r.id} href="/aiclips" className="w-full max-w-[210px]">
-              <div className="aspect-[9/16] rounded-2xl bg-slate-200 shadow-sm" />
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Mobile */}
-      <div className="md:hidden relative">
-        {showArrows ? (
-          <>
-            <button aria-label="prev" className="absolute -left-6 top-1/2 -translate-y-1/2 text-slate-400" type="button">
-              <ChevronLeft className="h-10 w-10" />
-            </button>
-            <button aria-label="next" className="absolute -right-6 top-1/2 -translate-y-1/2 text-slate-400" type="button">
-              <ChevronRight className="h-10 w-10" />
-            </button>
-          </>
-        ) : null}
-        <div className="mx-auto max-w-xs">
-          <div className="aspect-[9/16] rounded-2xl bg-slate-200 shadow-sm" />
-        </div>
-      </div>
+      <ReelsStripClient reels={reels} showArrows={showArrows} />
     </Section>
   );
 }
