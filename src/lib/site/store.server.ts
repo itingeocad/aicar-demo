@@ -4,6 +4,7 @@ import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
 import { getRedis } from '@/lib/kv/upstash.server';
 import { normalizeDeep } from '@/lib/text/normalize';
+import { APP_VERSION } from '@/lib/version';
 
 function upstashKey() {
   return process.env.AICAR_SITE_CONFIG_KEY || 'aicar:siteConfig';
@@ -161,7 +162,7 @@ function migrate016(cfg: SiteConfig): SiteConfig {
   }
 
   ensureDemoData(cfg);
-  cfg.version = '0.1.6';
+  cfg.version = APP_VERSION;
   return cfg;
 }
 
@@ -201,7 +202,7 @@ function migrate017(cfg: SiteConfig): SiteConfig {
   });
 
   ensureDemoData(cfg);
-  cfg.version = '0.1.7';
+  cfg.version = APP_VERSION;
   return cfg;
 }
 

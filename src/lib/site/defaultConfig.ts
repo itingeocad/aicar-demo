@@ -10,7 +10,7 @@ function vid(seed: string) {
 }
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
-  version: '0.1.9',
+  version: '0.1.10',
   theme: {
     brandName: 'AICar',
     accent: 'indigo'

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getSiteConfig, getPageBySlug } from '@/lib/site/store.server';
 
 
+import { normalizeDeep } from '@/lib/text/normalize';
 import { SiteFrame } from '@/components/SiteChrome';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 
