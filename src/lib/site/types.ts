@@ -106,7 +106,7 @@ export type DemoReel = {
   views?: number;
   likes?: number;
   /** Badges shown on cards. Example: ["AI"], ["Top"]. */
-  badges?: Array<'AI' | 'Top'>;
+  badges?: ReadonlyArray<'AI' | 'Top'>;
   linkedCarId?: string;
 };
 
