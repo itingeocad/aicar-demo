@@ -1,6 +1,11 @@
 import { getSiteConfig, getPageBySlug } from '@/lib/site/store.server';
 import { SiteFrame } from '@/components/SiteChrome';
+
+
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
+
+export const dynamic = 'force-dynamic';
+
 
 export default async function HomePage() {
   const config = await getSiteConfig();

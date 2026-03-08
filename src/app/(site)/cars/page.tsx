@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { getSiteConfig } from '@/lib/site/store.server';
+
+
 import { SiteFrame } from '@/components/SiteChrome';
+
+export const dynamic = 'force-dynamic';
+
 
 export default async function CarsIndex() {
   const config = await getSiteConfig();

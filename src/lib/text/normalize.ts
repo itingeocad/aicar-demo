@@ -1,8 +1,11 @@
 /**
- * Fixes common mojibake where UTF-8 bytes were decoded as CP1251,
- * producing strings like "Р‘Р°РЅРµСЂ" instead of "Банер".
+ * Fixes mojibake caused by decoding UTF‑8 bytes as CP1251 or ISO‑8859‑1.
  *
- * This is a pragmatic helper for demo/admin content.
+ * Examples:
+ *   "Р‘Р°РЅРµСЂ"  -> "Банер"
+ *   "Ð‘Ð°Ð½ÐµÑ€" -> "Банер"
+ *
+ * We apply this to demo/admin content pulled from storage.
  */
 
 function isCyrillicCodePoint(cp: number) {
@@ -17,84 +20,114 @@ function countCyrillic(s: string) {
   return n;
 }
 
-function looksLikeCp1251Mojibake(s: string) {
-  // Heuristic: many "Р" and "С" letters appear when UTF-8 bytes are mis-decoded as CP1251.
-  const score = (s.match(/[РС]/g) ?? []).length;
-  return score >= 3 && s.length >= 6;
+function mojibakeScore(s: string) {
+  // "Р"/"С" bursts are typical for CP1251-mojibake.
+  const rs = (s.match(/[РС]/g) ?? []).length;
+  // ISO/Latin1 mojibake for Cyrillic often contains Ð/Ñ/Â/â…
+  const latin = (s.match(/[ÐÑÂâ€™]/g) ?? []).length;
+  // CP1251 special chars commonly appear (Ђ, Ѓ, ќ, …)
+  const specials = (s.match(/[ЂЃЉЊЎўќџ]/g) ?? []).length;
+  return rs + latin + specials;
 }
 
-function cp1251CharToByte(cp: number): number | null {
-  // Fast-path ASCII
-  if (cp >= 0x00 && cp <= 0x7f) return cp;
-
-  // Latin-1 range
-  if (cp >= 0x00a0 && cp <= 0x00ff) return cp;
-
-  // Cyrillic А-я
-  if (cp >= 0x0410 && cp <= 0x042f) return 0xc0 + (cp - 0x0410);
-  if (cp >= 0x0430 && cp <= 0x044f) return 0xe0 + (cp - 0x0430);
-
-  // Ё/ё
-  if (cp === 0x0401) return 0xa8;
-  if (cp === 0x0451) return 0xb8;
-
-  // A few punctuation commonly present in mojibake strings
-  const map: Record<number, number> = {
-    0x201a: 0x82,
-    0x0192: 0x83,
-    0x201e: 0x84,
-    0x2026: 0x85,
-    0x2020: 0x86,
-    0x2021: 0x87,
-    0x02c6: 0x88,
-    0x2030: 0x89,
-    0x0160: 0x8a,
-    0x2039: 0x8b,
-    0x0152: 0x8c,
-    0x017d: 0x8e,
-    0x2018: 0x91,
-    0x2019: 0x92,
-    0x201c: 0x93,
-    0x201d: 0x94,
-    0x2022: 0x95,
-    0x2013: 0x96,
-    0x2014: 0x97,
-    0x2122: 0x99,
-    0x0161: 0x9a,
-    0x203a: 0x9b,
-    0x0153: 0x9c,
-    0x017e: 0x9e,
-    0x0178: 0x9f
-  };
-
-  return map[cp] ?? null;
+function looksSuspicious(s: string) {
+  if (!s) return false;
+  if (s.length < 4) return false;
+  // quick checks
+  if (s.includes('Р') || s.includes('С') || s.includes('Ð') || s.includes('Ñ') || s.includes('Â') || s.includes('â')) return true;
+  return false;
 }
 
-export function fixMojibake(s: string) {
-  if (!s) return s;
-  if (!looksLikeCp1251Mojibake(s)) return s;
+// Full CP1251 byte->Unicode table for 0x80..0xFF
+const CP1251_TABLE: number[] = [
+  0x0402, 0x0403, 0x201a, 0x0453, 0x201e, 0x2026, 0x2020, 0x2021,
+  0x20ac, 0x2030, 0x0409, 0x2039, 0x040a, 0x040c, 0x040b, 0x040f,
+  0x0452, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
+  0x02dc, 0x2122, 0x0459, 0x203a, 0x045a, 0x045c, 0x045b, 0x045f,
+  0x00a0, 0x040e, 0x045e, 0x0408, 0x00a4, 0x0490, 0x00a6, 0x00a7,
+  0x0401, 0x00a9, 0x0404, 0x00ab, 0x00ac, 0x00ad, 0x00ae, 0x0407,
+  0x00b0, 0x00b1, 0x0406, 0x0456, 0x0491, 0x00b5, 0x00b6, 0x00b7,
+  0x0451, 0x2116, 0x0454, 0x00bb, 0x0458, 0x0405, 0x0455, 0x0457,
+  0x0410, 0x0411, 0x0412, 0x0413, 0x0414, 0x0415, 0x0416, 0x0417,
+  0x0418, 0x0419, 0x041a, 0x041b, 0x041c, 0x041d, 0x041e, 0x041f,
+  0x0420, 0x0421, 0x0422, 0x0423, 0x0424, 0x0425, 0x0426, 0x0427,
+  0x0428, 0x0429, 0x042a, 0x042b, 0x042c, 0x042d, 0x042e, 0x042f,
+  0x0430, 0x0431, 0x0432, 0x0433, 0x0434, 0x0435, 0x0436, 0x0437,
+  0x0438, 0x0439, 0x043a, 0x043b, 0x043c, 0x043d, 0x043e, 0x043f,
+  0x0440, 0x0441, 0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447,
+  0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f
+];
 
+const CP1251_INV = new Map<number, number>();
+for (let b = 0; b < 0x80; b += 1) CP1251_INV.set(b, b);
+for (let i = 0; i < CP1251_TABLE.length; i += 1) CP1251_INV.set(CP1251_TABLE[i]!, 0x80 + i);
+
+function encodeCp1251(s: string): Uint8Array | null {
   const bytes: number[] = [];
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
-    const b = cp1251CharToByte(cp);
-    if (b === null) return s;
+    const b = CP1251_INV.get(cp);
+    if (b === undefined) return null;
     bytes.push(b);
   }
+  return new Uint8Array(bytes);
+}
 
-  try {
-    const dec = new TextDecoder('utf-8', { fatal: false });
-    const out = dec.decode(new Uint8Array(bytes));
+function decodeUtf8(bytes: Uint8Array): string {
+  // Buffer is available in Node runtime (Vercel).
+  // eslint-disable-next-line no-undef
+  return Buffer.from(bytes).toString('utf8');
+}
 
-    // If output became more Cyrillic and less mojibake-like, accept it.
-    if (out && !looksLikeCp1251Mojibake(out) && countCyrillic(out) >= countCyrillic(s)) {
-      return out;
+function tryFixCp1251(s: string): string | null {
+  const bytes = encodeCp1251(s);
+  if (!bytes) return null;
+  const out = decodeUtf8(bytes);
+  if (!out) return null;
+  if (out.includes('�')) return null;
+  return out;
+}
+
+function tryFixLatin1(s: string): string | null {
+  // eslint-disable-next-line no-undef
+  const out = Buffer.from(s, 'latin1').toString('utf8');
+  if (!out) return null;
+  if (out.includes('�')) return null;
+  return out;
+}
+
+export function fixMojibake(s: string) {
+  if (!looksSuspicious(s)) return s;
+
+  const inScore = mojibakeScore(s);
+  const candidates: string[] = [];
+
+  // Prefer CP1251 fix when we see many "Р/С".
+  const cp = tryFixCp1251(s);
+  if (cp) candidates.push(cp);
+
+  // Also try Latin1 fix (handles "Ð…" style).
+  const latin = tryFixLatin1(s);
+  if (latin) candidates.push(latin);
+
+  if (candidates.length === 0) return s;
+
+  // Pick the candidate with the lowest mojibake score; prefer more Cyrillic.
+  let best = s;
+  let bestScore = inScore;
+  let bestCyr = countCyrillic(s);
+
+  for (const c of candidates) {
+    const sc = mojibakeScore(c);
+    const cy = countCyrillic(c);
+    if (sc < bestScore || (sc === bestScore && cy > bestCyr)) {
+      best = c;
+      bestScore = sc;
+      bestCyr = cy;
     }
-  } catch {
-    // ignore
   }
 
-  return s;
+  return bestScore < inScore ? best : s;
 }
 
 export function normalizeDeep<T>(val: T): T {
