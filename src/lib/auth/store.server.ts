@@ -13,15 +13,20 @@ function usersKey() {
 export async function getRoles(): Promise<RoleDoc[]> {
   const redis = getRedis();
   if (!redis) return [...SYSTEM_ROLES];
+
   const raw = await redis.get<string>(rolesKey());
   if (!raw) return [...SYSTEM_ROLES];
+
   try {
     const parsed = JSON.parse(raw) as RoleDoc[];
-    // Ensure system roles always exist.
     const byId = new Map(parsed.map((r) => [r.id, r]));
+
+    // Always force current definitions for system roles.
+    // This protects against stale/broken permissions already stored in Redis.
     for (const sys of SYSTEM_ROLES) {
-      if (!byId.has(sys.id)) byId.set(sys.id, sys);
+      byId.set(sys.id, sys);
     }
+
     return Array.from(byId.values());
   } catch {
     return [...SYSTEM_ROLES];
@@ -31,9 +36,10 @@ export async function getRoles(): Promise<RoleDoc[]> {
 export async function saveRoles(roles: RoleDoc[]): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  // Always keep system roles.
+
   const byId = new Map(roles.map((r) => [r.id, r]));
   for (const sys of SYSTEM_ROLES) byId.set(sys.id, sys);
+
   await redis.set(rolesKey(), JSON.stringify(Array.from(byId.values())));
 }
 

@@ -22,7 +22,12 @@ export async function PUT(req: Request) {
   const session = await getSession();
   if (!canWriteSiteConfig(session)) {
     return NextResponse.json(
-      { error: 'forbidden', requiredAny: ['site:write', PERM_ADMIN_ACCESS, `role:${ROLE_SUPER_ADMIN}`] },
+      {
+        error: 'forbidden',
+        requiredAny: ['site:write', PERM_ADMIN_ACCESS, `role:${ROLE_SUPER_ADMIN}`],
+        actualRoleIds: session?.roleIds || [],
+        actualPermissions: session?.permissions || []
+      },
       { status: 403 }
     );
   }

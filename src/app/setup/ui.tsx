@@ -11,7 +11,7 @@ export default function SetupClient() {
 
   const token = sp.get('t') || sp.get('token') || '';
 
-  const [mode, setMode] = useState<Mode>('setup');
+  const [mode, setMode] = useState<Mode>('reset');
   const [email, setEmail] = useState('admin@aicar.md');
   const [name, setName] = useState('Super Admin');
   const [password, setPassword] = useState('');
@@ -31,8 +31,8 @@ export default function SetupClient() {
     }
 
     const endpoint = mode === 'setup' ? '/api/auth/bootstrap' : '/api/auth/reset-password';
-    const pendingLabel = mode === 'setup' ? 'Создаём супер-админа…' : 'Сбрасываем пароль…';
-    const doneLabel = mode === 'setup' ? 'Готово ✅ Переходим в админку…' : 'Пароль обновлён ✅ Переходим в админку…';
+    const pendingLabel = mode === 'setup' ? 'Создаём супер-админа…' : 'Сбрасываем пароль и права супер-админа…';
+    const doneLabel = mode === 'setup' ? 'Готово ✅ Переходим в админку…' : 'Пароль и права супер-админа обновлены ✅ Переходим в админку…';
 
     setStatus(pendingLabel);
     try {
@@ -70,6 +70,11 @@ export default function SetupClient() {
             Не найден token в URL. Откройте эту страницу как <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span>.
           </div>
         ) : null}
+
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+          Для уже инициализированного проекта используйте режим <span className="font-medium">Сброс пароля</span> — он также
+          восстанавливает роль <span className="font-mono">super_admin</span> и права на сохранение конфигурации.
+        </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 text-sm">
           <button
@@ -127,7 +132,7 @@ export default function SetupClient() {
               required
               className="mt-1 w-full rounded-xl border px-3 py-2"
               placeholder={mode === 'setup' ? 'Придумайте надёжный пароль' : 'Введите новый пароль'}
-              autoComplete={mode === 'setup' ? 'new-password' : 'current-password'}
+              autoComplete="new-password"
             />
           </label>
 
@@ -160,7 +165,7 @@ export default function SetupClient() {
             disabled={missingToken || !password || !confirmPassword || !passwordsMatch}
             className="w-full rounded-xl bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
           >
-            {mode === 'setup' ? 'Создать супер-админа' : 'Сбросить пароль'}
+            {mode === 'setup' ? 'Создать супер-админа' : 'Сбросить пароль и права'}
           </button>
         </form>
 

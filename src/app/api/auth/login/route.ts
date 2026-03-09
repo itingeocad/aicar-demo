@@ -3,7 +3,7 @@ import { findUserByEmail, rolePermissions } from '@/lib/auth/store.server';
 import { verifyPassword } from '@/lib/auth/crypto.server';
 import { signSession } from '@/lib/auth/token';
 import { sessionCookieOptions } from '@/lib/auth/cookies';
-import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
+import { PERM_ADMIN_ACCESS, PERM_ALL, ROLE_SUPER_ADMIN } from '@/lib/auth/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,31 +27,39 @@ export async function POST(req: Request) {
   }
 
   const permissions = await rolePermissions(user.roleIds);
+  const effectivePermissions = new Set(permissions);
 
-  // Safety: require admin:access to access admin UI. Users without it can still log in,
-  // but for demo we keep login oriented around admin.
+  // Safety net for legacy data in Redis.
+  if (user.roleIds.includes(ROLE_SUPER_ADMIN)) {
+    effectivePermissions.add(PERM_ALL);
+    effectivePermissions.add(PERM_ADMIN_ACCESS);
+    effectivePermissions.add('site:write');
+  }
+
   const payloadBase = {
     uid: user.id,
     email: user.email,
     displayName: user.displayName,
     roleIds: user.roleIds,
-    permissions
+    permissions: Array.from(effectivePermissions)
   };
 
   const { token, payload } = await signSession(payloadBase, 60 * 60 * 24 * 7);
 
-  const res = NextResponse.json({ ok: true, user: { email: payload.email, displayName: payload.displayName, permissions: payload.permissions } });
+  const res = NextResponse.json({
+    ok: true,
+    user: {
+      email: payload.email,
+      displayName: payload.displayName,
+      permissions: payload.permissions,
+      roleIds: payload.roleIds
+    }
+  });
   res.cookies.set({
     ...sessionCookieOptions(),
     value: token,
     maxAge: 60 * 60 * 24 * 7
   });
-
-  // If user does not have admin access, still set session, but client can redirect elsewhere.
-  // (Keeping for future public accounts.)
-  if (!permissions.includes(PERM_ADMIN_ACCESS) && !permissions.includes('*')) {
-    // no-op
-  }
 
   return res;
 }

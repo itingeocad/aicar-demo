@@ -60,12 +60,13 @@ export async function POST(req: Request) {
   const existing = users.find((u) => u.email.toLowerCase() === email);
   const id = existing?.id || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`);
 
+  // Recovery via bootstrap token should always restore a full super-admin account.
   const doc = {
     id,
     email,
     displayName: existing?.displayName || name,
     passwordHash,
-    roleIds: existing?.roleIds?.length ? existing.roleIds : [ROLE_SUPER_ADMIN],
+    roleIds: [ROLE_SUPER_ADMIN],
     isActive: true,
     createdAt: existing?.createdAt || now,
     updatedAt: now
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
     60 * 60 * 24 * 7
   );
 
-  const res = NextResponse.json({ ok: true, created: !existing });
+  const res = NextResponse.json({ ok: true, created: !existing, roleIds: doc.roleIds, permissions });
   res.cookies.set({
     ...sessionCookieOptions(),
     value: sessionToken,
