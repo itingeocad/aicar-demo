@@ -85,8 +85,9 @@ export default function LoginClient() {
           </button>
         </form>
 
-        <div className="mt-4 text-xs text-slate-500">
-          Если это первый запуск, откройте <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span> (токен задаётся в переменной окружения <span className="font-mono">AICAR_BOOTSTRAP_TOKEN</span>).
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          Если первый вход после <span className="font-mono">/setup</span> сработал, а повторный логин даёт <span className="font-mono">invalid credentials</span>, это обычно означает ошибку при первичном вводе пароля.
+          Для восстановления откройте <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span> и используйте режим <span className="font-medium">Сброс пароля</span>.
         </div>
 
         {status ? <div className="mt-3 text-sm text-slate-700">{status}</div> : null}
