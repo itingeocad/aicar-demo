@@ -18,26 +18,33 @@ function normalizeUserEmail(user: Pick<UserDoc, 'email'>): string {
   return normalizeEmail(user.email);
 }
 
+function decodeArray<T>(raw: unknown): T[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export async function getRoles(): Promise<RoleDoc[]> {
   const redis = getRedis();
   if (!redis) return [...SYSTEM_ROLES];
 
-  const raw = await redis.get<string>(rolesKey());
-  if (!raw) return [...SYSTEM_ROLES];
+  const raw = await redis.get(rolesKey());
+  const parsed = decodeArray<RoleDoc>(raw);
 
-  try {
-    const parsed = JSON.parse(raw) as RoleDoc[];
-    const byId = new Map(parsed.map((r) => [r.id, r]));
-
-    // Always force current definitions for system roles.
-    for (const sys of SYSTEM_ROLES) {
-      byId.set(sys.id, sys);
-    }
-
-    return Array.from(byId.values());
-  } catch {
-    return [...SYSTEM_ROLES];
+  const byId = new Map(parsed.map((r) => [r.id, r]));
+  for (const sys of SYSTEM_ROLES) {
+    byId.set(sys.id, sys);
   }
+
+  return Array.from(byId.values());
 }
 
 export async function saveRoles(roles: RoleDoc[]): Promise<void> {
@@ -53,13 +60,9 @@ export async function saveRoles(roles: RoleDoc[]): Promise<void> {
 export async function getUsers(): Promise<UserDoc[]> {
   const redis = getRedis();
   if (!redis) return [];
-  const raw = await redis.get<string>(usersKey());
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as UserDoc[];
-  } catch {
-    return [];
-  }
+
+  const raw = await redis.get(usersKey());
+  return decodeArray<UserDoc>(raw);
 }
 
 export async function saveUsers(users: UserDoc[]): Promise<void> {
@@ -74,7 +77,6 @@ export async function findUserByEmail(email: string): Promise<UserDoc | null> {
   const matches = users.filter((u) => normalizeUserEmail(u) === norm);
   if (!matches.length) return null;
 
-  // Prefer active users, then the most recently updated one.
   matches.sort((a, b) => {
     const activeDelta = Number(Boolean(b.isActive)) - Number(Boolean(a.isActive));
     if (activeDelta !== 0) return activeDelta;
@@ -95,7 +97,6 @@ export async function upsertUserUniqueByEmail(doc: UserDoc): Promise<UserDoc[]> 
   const users = await getUsers();
   const norm = normalizeEmail(doc.email);
 
-  // Drop legacy duplicates for the same normalized email, keep only the new doc.
   const kept = users.filter((u) => normalizeUserEmail(u) !== norm && u.id !== doc.id);
   const next = [...kept, { ...doc, email: norm }];
   await saveUsers(next);
