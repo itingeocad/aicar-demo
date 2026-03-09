@@ -1,352 +1,73 @@
-import type { SiteConfig } from './types';
+import { SiteConfig } from './types';
 
-// NOTE: Keep this file UTF-8 (no BOM). Cyrillic text is expected.
+function img(seed: string) {
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/1200/800`;
+}
 
-const img = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/1200/800`;
-const reelPoster = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/900/1600`;
+function vid(seed: string) {
+  // demo-friendly public mp4. You can replace later with S3/CDN.
+  return `https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=${encodeURIComponent(seed)}`;
+}
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
-  version: '0.1.192',
+  version: '0.1.6',
   theme: {
     brandName: 'AICar',
-    accent: 'slate',
+    accent: 'indigo',
+    logoImage: ''
   },
   nav: {
     items: [
-      {
-        label: 'РђРІС‚Рѕ',
-children: [
-          { label: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', href: '/search' },
-          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' },
-          { label: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ', href: '/sell' }
-        ]
-      },
+      { label: 'Авто', href: '/search' },
       { label: 'AIClips', href: '/aiclips' },
       { label: 'AIChat', href: '/aichat' }
     ]
   },
   footer: {
-    note: 'Demo build вЂў РєРѕРЅС‚РµРЅС‚ Рё РјРµРґРёР° РјРѕРіСѓС‚ Р±С‹С‚СЊ РјРѕРєРѕРІС‹РјРё',
-    groups: [
-      {
-        title: 'Рћ РїСЂРѕРµРєС‚Рµ',
-        links: [
-          { label: 'Рћ РїСЂРѕРµРєС‚Рµ', href: '/about' },
-          { label: 'РљРѕРЅС‚Р°РєС‚С‹', href: '/contacts' }
-        ]
-      },
-      {
-        title: 'Р”РѕРєСѓРјРµРЅС‚С‹',
-        links: [
-          { label: 'РџРѕР»РёС‚РёРєР°', href: '/privacy' },
-          { label: 'РЈСЃР»РѕРІРёСЏ', href: '/terms' }
-        ]
-      },
-      {
-        title: 'Р Р°Р·РґРµР»С‹',
-        links: [
-          { label: 'AIClips', href: '/aiclips' },
-          { label: 'AIChat', href: '/aichat' },
-          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' }
-        ]
-      }
+    links: [
+      { label: 'О проекте', href: '/about' },
+      { label: 'Политика', href: '/privacy' },
+      { label: 'Контакты', href: '/contacts' }
     ],
-    socials: [
-      { label: 'Instagram', href: '#', kind: 'instagram' },
-      { label: 'TikTok', href: '#', kind: 'tiktok' },
-      { label: 'Telegram', href: '#', kind: 'telegram' },
-      { label: 'Facebook', href: '#', kind: 'facebook' }
-    ],
-    storeBadges: [
-      { label: 'Get it on Google Play', href: '#', kind: 'google_play' },
-      { label: 'Download on the App Store', href: '#', kind: 'app_store' }
-    ]
-  },
-  demoData: {
-    cars: [
-      {
-        id: 'c1',
-        title: 'Toyota Corolla',
-        price: 10200,
-        currency: '$',
-        year: 2019,
-        mileageKm: 78000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'BenzinДѓ',
-        gearbox: 'AT',
-        imageUrl: img('corolla'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c2',
-        title: 'BMW 3 Series',
-        price: 18500,
-        currency: '$',
-        year: 2018,
-        mileageKm: 98000,
-        city: 'BДѓlИ›i',
-        fuel: 'Diesel',
-        gearbox: 'AT',
-        imageUrl: img('bmw3'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c3',
-        title: 'Volkswagen Passat',
-        price: 12900,
-        currency: '$',
-        year: 2017,
-        mileageKm: 146000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'Diesel',
-        gearbox: 'MT',
-        imageUrl: img('passat'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c4',
-        title: 'Honda CR-V',
-        price: 21400,
-        currency: '$',
-        year: 2020,
-        mileageKm: 54000,
-        city: 'Cahul',
-        fuel: 'BenzinДѓ',
-        gearbox: 'AT',
-        imageUrl: img('crv'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c5',
-        title: 'Skoda Octavia',
-        price: 11800,
-        currency: '$',
-        year: 2018,
-        mileageKm: 112000,
-        city: 'Orhei',
-        fuel: 'BenzinДѓ',
-        gearbox: 'MT',
-        imageUrl: img('octavia'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c6',
-        title: 'Mercedes C-Class',
-        price: 23900,
-        currency: '$',
-        year: 2019,
-        mileageKm: 86000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'Diesel',
-        gearbox: 'AT',
-        imageUrl: img('cclass'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c7',
-        title: 'Mazda 6',
-        price: 14900,
-        currency: '$',
-        year: 2017,
-        mileageKm: 121000,
-        city: 'Soroca',
-        fuel: 'BenzinДѓ',
-        gearbox: 'AT',
-        imageUrl: img('mazda6'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c8',
-        title: 'Nissan Qashqai',
-        price: 16700,
-        currency: '$',
-        year: 2020,
-        mileageKm: 69000,
-        city: 'Ungheni',
-        fuel: 'BenzinДѓ',
-        gearbox: 'AT',
-        imageUrl: img('qashqai'),
-        vehicleType: 'car'
-      },
-      {
-        id: 'c9',
-        title: 'Hyundai Tucson',
-        price: 19800,
-        currency: '$',
-        year: 2021,
-        mileageKm: 42000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'BenzinДѓ',
-        gearbox: 'AT',
-        imageUrl: img('tucson'),
-        vehicleType: 'car'
-      }
-    ],
-    reels: [
-      {
-        id: 'r1',
-        title: 'Corolla: РїР»СЋСЃС‹/РјРёРЅСѓСЃС‹',
-        author: 'AICar',
-        videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=1',
-        previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p1',
-        posterUrl: reelPoster('reel1'),
-        thumbUrl: reelPoster('reel1'),
-        views: 12540,
-        likes: 732,
-        badges: ['Top'],
-        linkedCarId: 'c1'
-      },
-      {
-        id: 'r2',
-        title: 'Passat: С‡С‚Рѕ РїСЂРѕРІРµСЂРёС‚СЊ',
-        author: 'AICar',
-        videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=2',
-        previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p2',
-        posterUrl: reelPoster('reel2'),
-        thumbUrl: reelPoster('reel2'),
-        views: 9840,
-        likes: 601,
-        badges: ['AI'],
-        linkedCarId: 'c3'
-      },
-      {
-        id: 'r3',
-        title: 'CRвЂ‘V РґР»СЏ СЃРµРјСЊРё',
-        author: 'AICar',
-        videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=3',
-        previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p3',
-        posterUrl: reelPoster('reel3'),
-        thumbUrl: reelPoster('reel3'),
-        views: 14320,
-        likes: 812,
-        badges: ['Top', 'AI'],
-        linkedCarId: 'c4'
-      }
-    ],
-    faq: [
-      {
-              id: 'faq1',
-              q: 'Р­С‚Рѕ СЂРµР°Р»СЊРЅС‹Р№ РјР°СЂРєРµС‚РїР»РµР№СЃ?',
-              a: 'РќРµС‚, СЌС‚Рѕ РґРµРјРѕ: РґР°РЅРЅС‹Рµ Рё РјРµРґРёР° Р·Р°РјРѕРєР°РЅС‹. Р’ РїСЂРѕРґРµ Р±СѓРґРµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р‘Р”, РѕРїР»Р°С‚Р°Рј Рё РјРѕРґРµСЂР°С†РёРё.'
-            },
-      { id: 'faq2', q: 'РњРѕР¶РЅРѕ Р»Рё РїСЂРѕРґР°РІР°С‚СЊ Р°РІС‚Рѕ?', a: 'Р’ РґРµРјРѕ вЂ” С‚РѕР»СЊРєРѕ РІРёР·СѓР°Р»СЊРЅРѕ. Р’ РїСЂРѕРґРµ РїРѕСЏРІСЏС‚СЃСЏ СЂРѕР»Рё, СЃС‚Р°С‚СѓСЃС‹ Рё РїСѓР±Р»РёРєР°С†РёСЏ.' },
-      {
-              id: 'faq3',
-              q: 'Р§С‚Рѕ С‚Р°РєРѕРµ AIChat?',
-              a: 'РљРѕРЅСЃСѓР»СЊС‚Р°РЅС‚, РєРѕС‚РѕСЂС‹Р№ РїРѕРјРѕРіР°РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ Р°РІС‚Рѕ РїРѕ Р±СЋРґР¶РµС‚Сѓ Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏРј, Р° С‚Р°РєР¶Рµ РѕР±СЉСЏСЃРЅСЏРµС‚ РЅСЋР°РЅСЃС‹ РІС‹Р±РѕСЂР°.'
-            },
-      {
-              id: 'faq4',
-              q: 'AIClips вЂ” СЌС‚Рѕ РєР°Рє Reels?',
-              a: 'Р”Р°: РєРѕСЂРѕС‚РєРёРµ РІРёРґРµРѕ СЃ РїСЂРµРІСЊСЋ, Р»Р°Р№РєР°РјРё/РїСЂРѕСЃРјРѕС‚СЂР°РјРё Рё РїРµСЂРµС…РѕРґРѕРј РЅР° РѕР±СЉСЏРІР»РµРЅРёРµ.'
-            },
-      { id: 'faq5', q: 'Р•СЃС‚СЊ Р»Рё Р°РґРјРёРЅРєР°?', a: 'Р”Р°, Tilda-like builder (РґРµРјРѕ) РґР»СЏ РїСЂР°РІРєРё СЃС‚СЂР°РЅРёС†, РјРµРЅСЋ Рё С„СѓС‚РµСЂР°.' },
-      {
-              id: 'faq6',
-              q: 'РџРѕС‡РµРјСѓ С‡Р°СЃС‚СЊ С„СѓРЅРєС†РёР№ РЅРµРґРѕСЃС‚СѓРїРЅР°?',
-              a: 'Р”РµРјРѕ С„РѕРєСѓСЃРёСЂСѓРµС‚СЃСЏ РЅР° UX Рё СЃС†РµРЅР°СЂРёСЏС…. Р›РѕРіРёРєСѓ РѕРїР»Р°С‚С‹/РґРѕСЃС‚Р°РІРєРё/РјРµРґРёР° Р·Р°РіСЂСѓР·РєРё РґРѕР±Р°РІРёРј РЅР° СЌС‚Р°РїРµ РїСЂРѕРґ-Р°РґР°РїС‚Р°С†РёРё.'
-            }
-    ],
-    news: [
-      {
-        id: 'n1',
-        title: 'РћРїРёСЃР°РЅРёРµ РЅРѕРІРѕСЃС‚Рё',
-        excerpt: 'РљРѕСЂРѕС‚РєРёР№ С‡РµРєвЂ‘Р»РёСЃС‚ РґР»СЏ СЂР°Р·СѓРјРЅРѕР№ РїРѕРєСѓРїРєРё.',
-        imageUrl: '',
-}
-    ]
+    note: 'Demo build • контент и медиа могут быть моковыми'
   },
   pages: [
     {
       id: 'p_home',
-      title: 'Р“Р»Р°РІРЅР°СЏ',
+      title: 'Главная',
       slug: '',
       isPublished: true,
       blocks: [
-        {
-          id: 'b_hero',
-          type: 'hero',
-          props: {
-            mode: 'banner',
-            bannerHeight: 220,
-            headline: 'Р‘Р°РЅРЅРµСЂ + Р›РѕРіРѕ',
-            subline: '',
-            bgImage: ''
-          }
-        },
-        {
-          id: 'b_ai',
-          type: 'ai_prompt',
-          props: {
-            title: 'AIChat',
-            subtitle: 'Р’РІРµРґРёС‚Рµ РІР°С€Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏ Рё РР РїРѕРјРѕР¶РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ РґР»СЏ Р’Р°СЃ РёРґРµР°Р»СЊРЅС‹Р№ РІР°СЂРёР°РЅС‚',
-            placeholder: 'РЎРµРјРµР№РЅС‹Р№ Р°РІС‚РѕРјРѕР±РёР»СЊ, РІРЅРµРґРѕСЂРѕР¶РЅРёРє. РћС‚ 2020 РіРѕРґР° Рё РІС‹С€Рµ. РџРѕР»РЅР°СЏ РєРѕРјРїР»РµРєС‚Р°С†РёСЏвЂ¦',
-            showButton: false,
-            cta: 'РЎРїСЂРѕСЃРёС‚СЊ'
-          }
-        },
-        {
-          id: 'b_search',
-          type: 'search_widget',
-          props: {
-            mode: 'prototype',
-            title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє',
-            cta: 'РќР°Р№С‚Рё Р°РІС‚Рѕ'
-          }
-        },
-        {
-          id: 'b_strip',
-          type: 'reels_strip',
-          props: {
-            title: 'Р›СѓС‡С€РёРµ AIClips',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ',
-            moreHref: '/aiclips',
-            showArrows: true
-          }
-        },
-        {
-          id: 'b_offers',
-          type: 'car_grid',
-          props: {
-            title: 'РЎРїРµС†РёР°Р»СЊРЅС‹Рµ РїСЂРµРґР»РѕР¶РµРЅРёСЏ',
-            limit: 9,
-            variant: 'offers',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ',
-            moreHref: '/search'
-          }
-        },
-        {
-          id: 'b_sell',
-          type: 'cta_sell',
-          props: {
-            title: 'РџРѕРґР°Р№ РѕР±СЉСЏРІР»РµРЅРёРµ',
-            text: '',
-            cta: '+',
-variant: 'plus_tile'
-          }
-        },
-        {
-          id: 'b_news',
-          type: 'news_cards',
-          props: {
-            title: 'РќРѕРІРѕСЃС‚Рё AICar',
-            limit: 1,
-            variant: 'feature',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ РЅРѕРІРѕСЃС‚РµР№',
-            moreHref: '/news'
-          }
-        }
+        { id: 'b_hero', type: 'hero', props: { mode: 'banner', bannerHeight: 260, headline: 'Баннер + Лого', subline: '' } },
+        { id: 'b_ai', type: 'ai_prompt', props: { title: 'AIChat', subtitle: 'Введите ваши предпочтения и ИИ поможет подобрать для Вас идеальный вариант', placeholder: 'Семейный автомобиль, внедорожник. От 2020 года и выше. Полная комплектация…', showButton: false, cta: 'Спросить' } },
+        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: 'Расширенный поиск', cta: 'Найти авто' } },
+        { id: 'b_strip', type: 'reels_strip', props: { title: 'Лучшие AIClips', moreLabel: 'Больше', moreHref: '/aiclips', showArrows: true } },
+        { id: 'b_offers', type: 'car_grid', props: { title: 'Специальные предложения', limit: 9, variant: 'offers', moreLabel: 'Больше', moreHref: '/search' } },
+        { id: 'b_sell', type: 'cta_sell', props: { title: 'Подай объявление', text: '', cta: '+', href: '/sell', variant: 'plus_tile' } },
+        { id: 'b_news', type: 'news_cards', props: { title: 'Новости AICar', limit: 1, variant: 'feature', moreLabel: 'Больше новостей', moreHref: '/news' } }
       ]
     },
     {
       id: 'p_search',
-      title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє',
+      title: 'Расширенный поиск',
       slug: 'search',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', align: 'center' } },
-        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: '', cta: 'РќР°Р№С‚Рё Р°РІС‚Рѕ' } },
-        { id: 'b_list', type: 'car_list', props: { title: 'Р РµР·СѓР»СЊС‚Р°С‚С‹', limit: 12 } }
+        { id: 'b_title', type: 'section_title', props: { title: 'Расширенный поиск' } },
+        { id: 'b_search', type: 'search_widget', props: { title: 'Фильтры', cta: 'Найти' } },
+        { id: 'b_hot', type: 'car_grid', props: { title: 'Горячие предложения', limit: 4 } },
+        { id: 'b_list', type: 'car_list', props: { title: 'Результаты', limit: 10 } }
+      ]
+    },
+    {
+      id: 'p_search2',
+      title: 'Расширенный поиск (вариант 2)',
+      slug: 'search-v2',
+      isPublished: true,
+      blocks: [
+        { id: 'b_title', type: 'section_title', props: { title: 'Расширенный поиск — вариант 2' } },
+        { id: 'b_search', type: 'search_widget', props: { title: 'Фильтры', cta: 'Найти' } },
+        { id: 'b_list', type: 'car_list', props: { title: 'Результаты', limit: 12, withSidebarHint: true } }
       ]
     },
     {
@@ -354,10 +75,7 @@ variant: 'plus_tile'
       title: 'AIClips',
       slug: 'aiclips',
       isPublished: true,
-      blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'AIClips', align: 'center' } },
-        { id: 'b_view', type: 'reels_viewer', props: { title: 'AIClips' } }
-      ]
+      blocks: [{ id: 'b_viewer', type: 'reels_viewer', props: { title: 'AIClips' } }]
     },
     {
       id: 'p_aichat',
@@ -365,57 +83,73 @@ variant: 'plus_tile'
       slug: 'aichat',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'AIChat', align: 'center' } },
+        { id: 'b_hero', type: 'hero', props: { headline: 'AIChat', subline: 'Задай вопрос и получи подбор авто и советы' } },
+        { id: 'b_ai', type: 'ai_prompt', props: { placeholder: 'Например: «Какой кроссовер лучше до 15 000$?»', cta: 'Спросить' } },
         { id: 'b_faq', type: 'faq', props: { title: 'FAQ', limit: 6 } }
       ]
     },
     {
-      id: 'p_sell',
-      title: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ',
-      slug: 'sell',
-      isPublished: true,
-      blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ', align: 'center' } },
-        { id: 'b_cta', type: 'cta_sell', props: { title: 'РџРѕРґР°Р№ РѕР±СЉСЏРІР»РµРЅРёРµ', cta: '+', href: '/sell', variant: 'plus_tile' } }
-      ]
-    },
-    {
       id: 'p_news',
-      title: 'РќРѕРІРѕСЃС‚Рё AICar',
+      title: 'Новости AICar',
       slug: 'news',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'РќРѕРІРѕСЃС‚Рё AICar', align: 'center' } },
+        { id: 'b_title', type: 'section_title', props: { title: 'Новости AICar', align: 'center' } },
         { id: 'b_news', type: 'news_cards', props: { title: '', limit: 6, variant: 'cards' } }
       ]
     },
     {
-      id: 'p_about',
-      title: 'Рћ РїСЂРѕРµРєС‚Рµ',
-      slug: 'about',
+      id: 'p_sell',
+      title: 'Подача объявления',
+      slug: 'sell',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Рћ РїСЂРѕРµРєС‚Рµ', align: 'center' } }]
+      blocks: [
+        { id: 'b_title', type: 'section_title', props: { title: 'Подача объявления' } },
+        { id: 'b_spacer', type: 'spacer', props: { h: 12 } },
+        { id: 'b_sell', type: 'cta_sell', props: { title: 'Анкета в демо упрощена', text: 'На следующем шаге добавим полноценную форму и медиа-загрузку.', cta: 'Ок', href: '/' } }
+      ]
     },
     {
-      id: 'p_contacts',
-      title: 'РљРѕРЅС‚Р°РєС‚С‹',
-      slug: 'contacts',
+      id: 'p_car_detail_tpl',
+      title: 'Шаблон: объявление',
+      slug: 'cars/[id]',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РљРѕРЅС‚Р°РєС‚С‹', align: 'center' } }]
-    },
-    {
-      id: 'p_privacy',
-      title: 'РџРѕР»РёС‚РёРєР°',
-      slug: 'privacy',
-      isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РџРѕР»РёС‚РёРєР°', align: 'center' } }]
-    },
-    {
-      id: 'p_terms',
-      title: 'РЈСЃР»РѕРІРёСЏ',
-      slug: 'terms',
-      isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РЈСЃР»РѕРІРёСЏ', align: 'center' } }]
+      blocks: [
+        { id: 'b_car', type: 'car_detail', props: { showAskAi: true, showLeadButton: true } },
+        { id: 'b_sim', type: 'car_grid', props: { title: 'Похожие объявления', limit: 4 } }
+      ]
     }
-  ]
+  ],
+  demoData: {
+    cars: [
+      { id: 'c1', title: 'Toyota Corolla', price: 9800, currency: '$', year: 2014, mileageKm: 165000, city: 'Chișinău', fuel: 'Benzină', gearbox: 'AT', imageUrl: img('corolla') },
+      { id: 'c2', title: 'BMW 3 Series', price: 13900, currency: '$', year: 2013, mileageKm: 190000, city: 'Bălți', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('bmw3') },
+      { id: 'c3', title: 'Volkswagen Passat', price: 11700, currency: '$', year: 2015, mileageKm: 175000, city: 'Cahul', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('passat') },
+      { id: 'c4', title: 'Honda CR-V', price: 15800, currency: '$', year: 2012, mileageKm: 210000, city: 'Orhei', fuel: 'Benzină', gearbox: 'AT', imageUrl: img('crv') },
+      { id: 'c5', title: 'Skoda Octavia', price: 10500, currency: '$', year: 2016, mileageKm: 150000, city: 'Chișinău', fuel: 'Benzină', gearbox: 'MT', imageUrl: img('octavia') },
+      { id: 'c6', title: 'Mercedes C-Class', price: 16900, currency: '$', year: 2012, mileageKm: 220000, city: 'Ungheni', fuel: 'Diesel', gearbox: 'AT', imageUrl: img('cclass') },
+      { id: 'c7', title: 'Mazda 6', price: 12400, currency: '$', year: 2015, mileageKm: 160000, city: 'Soroca', fuel: 'Benzină', gearbox: 'AT', imageUrl: img('mazda6') },
+      { id: 'c8', title: 'Nissan Qashqai', price: 13200, currency: '$', year: 2016, mileageKm: 170000, city: 'Chișinău', fuel: 'Diesel', gearbox: 'MT', imageUrl: img('qashqai') },
+      { id: 'c9', title: 'Hyundai Tucson', price: 14500, currency: '$', year: 2017, mileageKm: 155000, city: 'Chișinău', fuel: 'Benzină', gearbox: 'AT', imageUrl: img('tucson') }
+    ],
+    reels: [
+      { id: 'r1', title: 'Corolla: плюсы/минусы', author: 'AICar', videoUrl: vid('1'), posterUrl: img('reel1'), linkedCarId: 'c1' },
+      { id: 'r2', title: 'Passat: что проверить', author: 'AICar', videoUrl: vid('2'), posterUrl: img('reel2'), linkedCarId: 'c3' },
+      { id: 'r3', title: 'CR-V для семьи', author: 'AICar', videoUrl: vid('3'), posterUrl: img('reel3'), linkedCarId: 'c4' },
+      { id: 'r4', title: 'Qashqai: что смотреть', author: 'AICar', videoUrl: vid('4'), posterUrl: img('reel4'), linkedCarId: 'c8' }
+    ],
+    news: [
+      { id: 'n1', title: 'Как выбрать авто до $10k', excerpt: 'Короткий чек-лист для разумной покупки.', imageUrl: img('news1') },
+      { id: 'n2', title: 'ТОП-5 ошибок при покупке', excerpt: 'На что люди чаще всего не обращают внимание.', imageUrl: img('news2') },
+      { id: 'n3', title: 'Почему важна диагностика', excerpt: 'И как не попасть на ремонт.', imageUrl: img('news3') }
+    ],
+    faq: [
+      { id: 'f1', q: 'Что такое AIChat?', a: 'Это AI-консультант, который помогает подобрать авто и объясняет нюансы.' },
+      { id: 'f2', q: 'AIChat видит реальные объявления?', a: 'В демо — да, из мок-данных. В проде — будет брать из базы объявлений.' },
+      { id: 'f3', q: 'Можно ли продавать авто?', a: 'Да, через раздел «Подать объявление».' },
+      { id: 'f4', q: 'Что такое AIClips?', a: 'Короткие видео-обзоры по моделям, похожие на Reels.' },
+      { id: 'f5', q: 'Будет ли модерация?', a: 'Да, контент и объявления будут проходить модерацию.' },
+      { id: 'f6', q: 'Когда будет прод?', a: 'После демо — перенос на продовую инфраструктуру (БД, медиа, AI RAG).' }
+    ]
+  }
 };

@@ -7,7 +7,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     description: 'Варианты: default (заголовок+подзаголовок) или banner (как в прототипе).',
     defaultProps: {
       mode: 'banner',
-      bannerHeight: 220,
+      bannerHeight: 260,
       headline: 'Баннер + Лого',
       subline: '',
       bgImage: ''
@@ -17,7 +17,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       { key: 'bannerHeight', label: 'Высота баннера (px)', type: 'number', min: 120, max: 520 },
       { key: 'headline', label: 'Заголовок', type: 'text' },
       { key: 'subline', label: 'Подзаголовок', type: 'textarea' },
-      { key: 'bgImage', label: 'Фон (мок-загрузка)', type: 'image' }
+      { key: 'bgImage', label: 'Изображение баннера', type: 'image' }
     ]
   },
   {

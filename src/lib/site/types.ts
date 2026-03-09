@@ -34,24 +34,12 @@ export type PageDoc = {
   blocks: BlockInstance[];
 };
 
-export type NavChildItem = { label: string; href: string };
-export type SiteNavItem = {
-  label: string;
-  /** Optional for items that act as dropdown groups */
-  href?: string;
-  children?: NavChildItem[];
-};
-
-export type FooterLink = { label: string; href: string };
-export type FooterGroup = { title: string; links: FooterLink[] };
-export type SocialLink = { label: string; href: string; kind?: string };
-export type StoreBadge = { label: string; href: string; kind?: string };
+export type SiteNavItem = { label: string; href: string };
 
 export type ThemeTokens = {
   brandName: string;
   accent: string; // tailwind color string, e.g. "indigo"
-  headerBg?: string; // tailwind class suffix, e.g. 'slate-200'
-  footerBg?: string;
+  logoImage?: string; // data URL or regular image URL, editable in admin
 };
 
 export type SiteConfig = {
@@ -61,13 +49,8 @@ export type SiteConfig = {
     items: SiteNavItem[];
   };
   footer: {
+    links: { label: string; href: string }[];
     note: string;
-    /** New grouped footer (preferred). */
-    groups?: FooterGroup[];
-    socials?: SocialLink[];
-    storeBadges?: StoreBadge[];
-    /** Legacy flat links (kept for backward compatibility). */
-    links?: FooterLink[];
   };
   pages: PageDoc[];
   demoData: {
@@ -77,8 +60,6 @@ export type SiteConfig = {
     faq: DemoFaq[];
   };
 };
-
-export type VehicleType = 'car' | 'truck' | 'bus' | 'bike';
 
 export type DemoCar = {
   id: string;
@@ -91,7 +72,6 @@ export type DemoCar = {
   imageUrl: string;
   fuel?: string;
   gearbox?: string;
-  vehicleType?: VehicleType;
 };
 
 export type DemoReel = {
@@ -100,15 +80,6 @@ export type DemoReel = {
   author: string;
   videoUrl: string;
   posterUrl: string;
-  /** Optional image for cards (falls back to posterUrl). */
-  thumbUrl?: string;
-  /** Optional short preview video (falls back to videoUrl). */
-  previewUrl?: string;
-  /** Instagram-like counters for UI. */
-  views?: number;
-  likes?: number;
-  /** Badges shown on cards. Example: ["AI"], ["Top"]. */
-  badges?: ReadonlyArray<'AI' | 'Top'>;
   linkedCarId?: string;
 };
 

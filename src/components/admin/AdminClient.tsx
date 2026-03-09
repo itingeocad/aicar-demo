@@ -76,6 +76,65 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.readAsDataURL(file);
+  });
+}
+
+function ImageDataUrlField({
+  label,
+  value,
+  onChange,
+  hint = '(изображение хранится в JSON как data:URL)'
+}: {
+  label: string;
+  value?: string;
+  onChange: (next: string) => void;
+  hint?: string;
+}) {
+  return (
+    <Field label={label}>
+      <div className="space-y-2">
+        {value ? (
+          <div className="rounded-xl border bg-slate-50 p-3">
+            <img src={value} alt={label} className="max-h-24 w-auto object-contain" />
+          </div>
+        ) : null}
+
+        <input
+          type="file"
+          accept="image/*"
+          className="w-full text-sm"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const dataUrl = await readFileAsDataUrl(file);
+            onChange(dataUrl);
+            e.currentTarget.value = '';
+          }}
+        />
+
+        <div className="flex items-center gap-2">
+          {value ? (
+            <button
+              type="button"
+              className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
+              onClick={() => onChange('')}
+            >
+              Удалить изображение
+            </button>
+          ) : null}
+          <div className="text-xs text-slate-500">{hint}</div>
+        </div>
+      </div>
+    </Field>
+  );
+}
+
 function BlockBadge({ type }: { type: string }) {
   const def = BLOCK_DEFINITIONS.find((d) => d.type === type);
   return (
@@ -706,7 +765,6 @@ export default function AdminClient() {
               ) : (
                 <div className="rounded-2xl border bg-white p-3 shadow-sm">
                   <div className="text-sm font-semibold">Сайт</div>
-                
                   <div className="mt-2 space-y-2">
                     <Field label="Brand name">
                       <input
@@ -715,7 +773,11 @@ export default function AdminClient() {
                         onChange={(e) => setConfig({ ...config, theme: { ...config.theme, brandName: e.target.value } })}
                       />
                     </Field>
-                
+                    <ImageDataUrlField
+                      label="Лого"
+                      value={config.theme.logoImage || ''}
+                      onChange={(next) => setConfig({ ...config, theme: { ...config.theme, logoImage: next } })}
+                    />
                     <Field label="Footer note">
                       <input
                         className="w-full rounded-xl border px-3 py-2"
@@ -723,243 +785,6 @@ export default function AdminClient() {
                         onChange={(e) => setConfig({ ...config, footer: { ...config.footer, note: e.target.value } })}
                       />
                     </Field>
-                
-                    {/* Navigation */} 
-                    <div className="mt-4 border-t pt-3">
-                      <div className="text-sm font-semibold">Навигация (группы)</div>
-                      <div className="mt-2 space-y-3">
-                        {(config.nav.items ?? []).map((it, idx) => (
-                          <div key={(it.href ?? it.label) + idx} className="rounded-xl border p-3">
-                            <div className="flex gap-2">
-                              <input
-                                className="flex-1 rounded-lg border px-2 py-2 text-sm"
-                                placeholder="Label"
-                                value={it.label}
-                                onChange={(e) => {
-                                  const items = [...config.nav.items];
-                                  items[idx] = { ...items[idx], label: e.target.value };
-                                  setConfig({ ...config, nav: { ...config.nav, items } });
-                                }}
-                              />
-                              <input
-                                className="flex-1 rounded-lg border px-2 py-2 text-sm"
-                                placeholder="/path"
-                                value={it.href ?? ''}
-                                onChange={(e) => {
-                                  const items = [...config.nav.items];
-                                  items[idx] = { ...items[idx], href: e.target.value };
-                                  setConfig({ ...config, nav: { ...config.nav, items } });
-                                }}
-                              />
-                            </div>
-                
-                            <div className="mt-2 flex items-center gap-2">
-                              <button
-                                className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
-                                onClick={() => {
-                                  const items = [...config.nav.items];
-                                  const nextIdx = Math.max(0, idx - 1);
-                                  const [m] = items.splice(idx, 1);
-                                  items.splice(nextIdx, 0, m);
-                                  setConfig({ ...config, nav: { ...config.nav, items } });
-                                }}
-                              >
-                                ↑
-                              </button>
-                              <button
-                                className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
-                                onClick={() => {
-                                  const items = [...config.nav.items];
-                                  const nextIdx = Math.min(items.length - 1, idx + 1);
-                                  const [m] = items.splice(idx, 1);
-                                  items.splice(nextIdx, 0, m);
-                                  setConfig({ ...config, nav: { ...config.nav, items } });
-                                }}
-                              >
-                                ↓
-                              </button>
-                              <button
-                                className="ml-auto rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
-                                onClick={() => {
-                                  const items = config.nav.items.filter((_, i) => i !== idx);
-                                  setConfig({ ...config, nav: { ...config.nav, items } });
-                                }}
-                              >
-                                ✕ Удалить
-                              </button>
-                            </div>
-                
-                            {/* Children */} 
-                            <div className="mt-3 rounded-xl bg-slate-50 p-2">
-                              <div className="text-xs font-semibold text-slate-600">Подменю</div>
-                              <div className="mt-2 space-y-2">
-                                {((it.children as any[]) ?? []).map((c, cIdx) => (
-                                  <div key={(c.href ?? c.label) + cIdx} className="flex gap-2">
-                                    <input
-                                      className="flex-1 rounded-lg border px-2 py-2 text-xs"
-                                      placeholder="Label"
-                                      value={c.label ?? ''}
-                                      onChange={(e) => {
-                                        const items = [...config.nav.items];
-                                        const children = [...(((items[idx] as any).children ?? []) as any[])];
-                                        children[cIdx] = { ...children[cIdx], label: e.target.value };
-                                        (items[idx] as any).children = children;
-                                        setConfig({ ...config, nav: { ...config.nav, items } });
-                                      }}
-                                    />
-                                    <input
-                                      className="flex-1 rounded-lg border px-2 py-2 text-xs"
-                                      placeholder="/path"
-                                      value={c.href ?? ''}
-                                      onChange={(e) => {
-                                        const items = [...config.nav.items];
-                                        const children = [...(((items[idx] as any).children ?? []) as any[])];
-                                        children[cIdx] = { ...children[cIdx], href: e.target.value };
-                                        (items[idx] as any).children = children;
-                                        setConfig({ ...config, nav: { ...config.nav, items } });
-                                      }}
-                                    />
-                                    <button
-                                      className="rounded-lg border px-2 text-xs hover:bg-white"
-                                      onClick={() => {
-                                        const items = [...config.nav.items];
-                                        const children = (((items[idx] as any).children ?? []) as any[]).filter((_, j) => j !== cIdx);
-                                        (items[idx] as any).children = children;
-                                        setConfig({ ...config, nav: { ...config.nav, items } });
-                                      }}
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ))}
-                
-                                <button
-                                  className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                                  onClick={() => {
-                                    const items = [...config.nav.items];
-                                    const children = [ ...(((items[idx] as any).children ?? []) as any[]) ];
-                                    children.push({ label: 'Пункт', href: '/' });
-                                    (items[idx] as any).children = children;
-                                    // Ensure href exists for group; keep current or use first child
-                                    (items[idx] as any).href = (items[idx] as any).href || children[0].href;
-                                    setConfig({ ...config, nav: { ...config.nav, items } });
-                                  }}
-                                >
-                                  + Добавить пункт
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                
-                        <button
-                          className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-                          onClick={() => {
-                            const items = [...config.nav.items, { label: 'Новый пункт', href: '/', children: [] as any[] } as any];
-                            setConfig({ ...config, nav: { ...config.nav, items } });
-                          }}
-                        >
-                          + Добавить пункт меню
-                        </button>
-                      </div>
-                    </div>
-                
-                    {/* Footer */} 
-                    <div className="mt-4 border-t pt-3">
-                      <div className="text-sm font-semibold">Футер (группы)</div>
-                      <div className="mt-2 space-y-3">
-                        {((config.footer.groups as any[]) ?? []).map((g, gIdx) => (
-                          <div key={g.title + gIdx} className="rounded-xl border p-3">
-                            <input
-                              className="w-full rounded-lg border px-2 py-2 text-sm"
-                              placeholder="Название группы"
-                              value={g.title ?? ''}
-                              onChange={(e) => {
-                                const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                                groups[gIdx] = { ...groups[gIdx], title: e.target.value };
-                                setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                              }}
-                            />
-                
-                            <div className="mt-2 space-y-2">
-                              {((g.links as any[]) ?? []).map((l, lIdx) => (
-                                <div key={(l.href ?? l.label) + lIdx} className="flex gap-2">
-                                  <input
-                                    className="flex-1 rounded-lg border px-2 py-2 text-xs"
-                                    placeholder="Label"
-                                    value={l.label ?? ''}
-                                    onChange={(e) => {
-                                      const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                                      const links = [ ...(((groups[gIdx] as any).links ?? []) as any[]) ];
-                                      links[lIdx] = { ...links[lIdx], label: e.target.value };
-                                      (groups[gIdx] as any).links = links;
-                                      setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                                    }}
-                                  />
-                                  <input
-                                    className="flex-1 rounded-lg border px-2 py-2 text-xs"
-                                    placeholder="/path"
-                                    value={l.href ?? ''}
-                                    onChange={(e) => {
-                                      const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                                      const links = [ ...(((groups[gIdx] as any).links ?? []) as any[]) ];
-                                      links[lIdx] = { ...links[lIdx], href: e.target.value };
-                                      (groups[gIdx] as any).links = links;
-                                      setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                                    }}
-                                  />
-                                  <button
-                                    className="rounded-lg border px-2 text-xs hover:bg-white"
-                                    onClick={() => {
-                                      const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                                      const links = (((groups[gIdx] as any).links ?? []) as any[]).filter((_, j) => j !== lIdx);
-                                      (groups[gIdx] as any).links = links;
-                                      setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                                    }}
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                
-                              <button
-                                className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                                onClick={() => {
-                                  const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                                  const links = [ ...(((groups[gIdx] as any).links ?? []) as any[]) ];
-                                  links.push({ label: 'Ссылка', href: '/' });
-                                  (groups[gIdx] as any).links = links;
-                                  setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                                }}
-                              >
-                                + Добавить ссылку
-                              </button>
-                
-                              <button
-                                className="rounded-lg border px-2 py-1 text-xs hover:bg-white"
-                                onClick={() => {
-                                  const groups = (((config.footer as any).groups ?? []) as any[]).filter((_, j) => j !== gIdx);
-                                  setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                                }}
-                              >
-                                ✕ Удалить группу
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                
-                        <button
-                          className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-                          onClick={() => {
-                            const groups = [ ...(((config.footer as any).groups ?? []) as any[]) ];
-                            groups.push({ title: 'Новая группа', links: [] as any[] });
-                            setConfig({ ...config, footer: { ...config.footer, groups } as any });
-                          }}
-                        >
-                          + Добавить группу футера
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
@@ -1134,25 +959,16 @@ export default function AdminClient() {
 
                       if (f.type === 'image') {
                         return (
-                          <Field key={key} label={f.label}>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="w-full text-sm"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                  updateBlock(activeBlock.id, {
-                                    props: { ...activeBlock.props, [key]: String(reader.result) }
-                                  });
-                                };
-                                reader.readAsDataURL(file);
-                              }}
-                            />
-                            <div className="mt-2 text-xs text-slate-500">(мок‑загрузка: хранится в JSON как data:URL)</div>
-                          </Field>
+                          <ImageDataUrlField
+                            key={key}
+                            label={f.label}
+                            value={typeof value === 'string' ? value : ''}
+                            onChange={(next) =>
+                              updateBlock(activeBlock.id, {
+                                props: { ...activeBlock.props, [key]: next }
+                              })
+                            }
+                          />
                         );
                       }
 
