@@ -3,8 +3,6 @@ import path from 'node:path';
 import { DEFAULT_SITE_CONFIG } from './defaultConfig';
 import { SiteConfig } from './types';
 import { getRedis } from '@/lib/kv/upstash.server';
-import { normalizeDeep } from '@/lib/text/normalize';
-import { repairDeepWithFallback, type RepairStats } from '@/lib/text/repair';
 import { APP_VERSION } from '@/lib/version';
 
 function upstashKey() {
@@ -35,7 +33,6 @@ function lt(a: [number, number, number], b: [number, number, number]) {
 }
 
 function ensureDemoData(cfg: SiteConfig) {
-  // Ensure enough demo items and vehicle types.
   for (const c of cfg.demoData.cars) {
     if (!c.vehicleType) c.vehicleType = 'car';
   }
@@ -106,117 +103,6 @@ function ensureDemoData(cfg: SiteConfig) {
       linkedCarId: cfg.demoData.cars[0]?.id
     });
   }
-
-  // Enrich reels with Instagram-like metadata (non-destructive).
-  // Adds a few extra demo reels if they are missing.
-  const byId = new Map(cfg.demoData.reels.map((r) => [r.id, r]));
-  const want = [
-    {
-      id: 'r1',
-      title: 'Corolla: плюсы/минусы',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=1',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p1',
-      posterUrl: 'https://picsum.photos/seed/reel1/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel1/1200/800',
-      views: 12540,
-      likes: 732,
-      badges: ['Top'] as const,
-      linkedCarId: 'c1'
-    },
-    {
-      id: 'r2',
-      title: 'Passat: что проверить',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=2',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p2',
-      posterUrl: 'https://picsum.photos/seed/reel2/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel2/1200/800',
-      views: 9840,
-      likes: 601,
-      badges: ['AI'] as const,
-      linkedCarId: 'c3'
-    },
-    {
-      id: 'r3',
-      title: 'CR‑V для семьи',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=3',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p3',
-      posterUrl: 'https://picsum.photos/seed/reel3/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel3/1200/800',
-      views: 14320,
-      likes: 812,
-      badges: ['Top', 'AI'] as const,
-      linkedCarId: 'c4'
-    },
-    {
-      id: 'r5',
-      title: 'Tucson: быстрый обзор',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=5',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p5',
-      posterUrl: 'https://picsum.photos/seed/reel5/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel5/1200/800',
-      views: 22110,
-      likes: 1203,
-      badges: ['Top'] as const,
-      linkedCarId: 'c9'
-    },
-    {
-      id: 'r6',
-      title: 'BMW 3: на что смотреть',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=6',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p6',
-      posterUrl: 'https://picsum.photos/seed/reel6/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel6/1200/800',
-      views: 16780,
-      likes: 945,
-      badges: ['AI'] as const,
-      linkedCarId: 'c2'
-    },
-    {
-      id: 'r7',
-      title: 'Transit: вэн для бизнеса',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=7',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p7',
-      posterUrl: 'https://picsum.photos/seed/reel7/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel7/1200/800',
-      views: 6420,
-      likes: 288,
-      badges: [] as const,
-      linkedCarId: 'c10'
-    },
-    {
-      id: 'r8',
-      title: 'MT‑07: звук и динамика',
-      author: 'AICar',
-      videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=8',
-      previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p8',
-      posterUrl: 'https://picsum.photos/seed/reel8/1200/800',
-      thumbUrl: 'https://picsum.photos/seed/reel8/1200/800',
-      views: 9130,
-      likes: 701,
-      badges: ['Top'] as const,
-      linkedCarId: 'c12'
-    }
-  ];
-
-  for (const w of want) {
-    const existing = byId.get(w.id);
-    if (!existing) {
-      cfg.demoData.reels.push({ ...w });
-      continue;
-    }
-    // Fill missing fields only.
-    if (!existing.previewUrl) existing.previewUrl = w.previewUrl;
-    if (!existing.thumbUrl) existing.thumbUrl = w.thumbUrl;
-    if (typeof existing.views !== 'number') existing.views = w.views;
-    if (typeof existing.likes !== 'number') existing.likes = w.likes;
-    if (!existing.badges) existing.badges = Array.from(w.badges);
-  }
 }
 
 function migrate016(cfg: SiteConfig): SiteConfig {
@@ -230,7 +116,7 @@ function migrate016(cfg: SiteConfig): SiteConfig {
 
     const hero = byId.get('b_hero');
     if (hero && hero.type === 'hero') {
-      hero.props = { ...hero.props, mode: 'banner', bannerHeight: 220, headline: 'Баннер + Лого', subline: '' };
+      hero.props = { ...hero.props, mode: 'banner', bannerHeight: 260, headline: 'Баннер + Лого', subline: '' };
     }
     const ai = byId.get('b_ai');
     if (ai && ai.type === 'ai_prompt') {
@@ -288,7 +174,6 @@ function migrate017(cfg: SiteConfig): SiteConfig {
   const target = parseVer('0.1.7');
   if (!lt(cur, target)) return cfg;
 
-  // Footer groups migration
   const footer: any = cfg.footer as any;
   if (!footer.groups || !Array.isArray(footer.groups) || footer.groups.length === 0) {
     const legacyLinks = Array.isArray(footer.links) ? footer.links : [];
@@ -312,7 +197,6 @@ function migrate017(cfg: SiteConfig): SiteConfig {
     ];
   }
 
-  // Ensure nav items have href
   cfg.nav.items = (cfg.nav.items as any[]).map((it) => {
     const href = it.href || (it.children && it.children[0] ? it.children[0].href : '/');
     return { ...it, href };
@@ -324,21 +208,30 @@ function migrate017(cfg: SiteConfig): SiteConfig {
 }
 
 function migrateAll(cfg: SiteConfig): SiteConfig {
-  // 1) Normalize BOM / NBSP.
-  const normalized = normalizeDeep(cfg);
-
-  // 2) Repair mojibake (UTF-8 decoded as CP1251 / double-encoded) in human-readable text.
-  const stats: RepairStats = { scannedStrings: 0, fixedStrings: 0, fallbackStrings: 0 };
-  let out = repairDeepWithFallback(normalized, DEFAULT_SITE_CONFIG, stats) as SiteConfig;
-
+  let out = cfg;
   out = migrate016(out);
   out = migrate017(out);
-  // Normalize again to fix any stored legacy values.
-  out = normalizeDeep(out);
-
-  // Keep version aligned with the app.
   out.version = APP_VERSION;
   return out;
+}
+
+function cloneDefault(): SiteConfig {
+  return JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG)) as SiteConfig;
+}
+
+function decodeConfig(raw: unknown): SiteConfig | null {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as SiteConfig;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === 'object') {
+    return raw as SiteConfig;
+  }
+  return null;
 }
 
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -346,19 +239,16 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   if (redis) {
     try {
       const raw = await redis.get(upstashKey());
-      if (raw && typeof raw === 'string') {
-        const parsed = JSON.parse(raw) as SiteConfig;
+      const parsed = decodeConfig(raw);
+      if (parsed) {
         const migrated = migrateAll(parsed);
-
-        // Best-effort writeback (do not fail reads if token is RO / transient errors).
         if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
           try {
             await redis.set(upstashKey(), JSON.stringify(migrated));
           } catch {
-            // ignore
+            // ignore write-back failures on read
           }
         }
-
         return migrated;
       }
     } catch {
@@ -377,20 +267,18 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     }
     return migrated;
   } catch {
-    // Return a clone to avoid accidental in-memory mutations.
-    return migrateAll(JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG)) as SiteConfig);
+    return migrateAll(cloneDefault());
   }
 }
 
 export async function saveSiteConfig(next: SiteConfig): Promise<void> {
-  const cleaned = normalizeDeep(next);
   const redis = getRedis();
   if (redis) {
-    await redis.set(upstashKey(), JSON.stringify(cleaned));
+    await redis.set(upstashKey(), JSON.stringify(next));
     return;
   }
 
   const p = configPath();
   await fs.mkdir(path.dirname(p), { recursive: true });
-  await fs.writeFile(p, JSON.stringify(cleaned, null, 2), 'utf8');
+  await fs.writeFile(p, JSON.stringify(next, null, 2), 'utf8');
 }

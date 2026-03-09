@@ -1,17 +1,5 @@
 /**
  * Text repair with safe fallback to defaults.
- *
- * This module is used by /api/admin/config/repair to recover user-facing strings
- * that got corrupted by encoding/decoding issues (classic UTF-8->CP1251 mojibake
- * like "РђРІС‚Рѕ", "Р’" fragments, "вЂ" punctuation, etc.).
- *
- * Strategy:
- *  1) Detect suspicious strings.
- *  2) Try very limited one-step repairs:
- *     - CP1251 bytes interpreted as UTF-8
- *     - Latin1/Win1252 bytes interpreted as UTF-8
- *  3) If still suspicious, fall back to the corresponding DEFAULT value
- *     (when provided).
  */
 
 export type RepairStats = {
@@ -31,7 +19,6 @@ function cyrCount(s: string) {
 }
 
 function markerCount(s: string) {
-  // Typical mojibake markers.
   const badPairs = (s.match(/[РС][\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2030\u2039\u203A\u20AC\u2122]/g) || []).length;
   const rs = (s.match(/[РС]/g) || []).length;
   const dn = (s.match(/[ÐÑ]/g) || []).length;
@@ -44,25 +31,17 @@ function markerCount(s: string) {
 
 export function looksSuspicious(s: string): boolean {
   if (!s) return false;
-
-  // Strong markers.
   if (/[ÐÑ]/.test(s)) return true;
   if (/вЂ/.test(s)) return true;
   if (/[РС][\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2030\u2039\u203A\u20AC\u2122]/.test(s)) return true;
-
-  // Very noisy "stage 2" corruption.
   const ve = (s.match(/В/g) || []).length;
   if (ve >= 4 && /[ЋІ‚„™]/.test(s)) return true;
   if (/В\s{2,}В/.test(s)) return true;
-
-  // High RS ratio is usually suspicious (but keep threshold conservative).
   const rs = (s.match(/[РС]/g) || []).length;
   if (rs >= 6 && rs / Math.max(1, s.length) >= 0.18) return true;
-
   return false;
 }
 
-// --- CP1251 mapping (unicode -> byte) ---
 const CP1251_TABLE: number[] = [
   0x0402, 0x0403, 0x201a, 0x0453, 0x201e, 0x2026, 0x2020, 0x2021,
   0x20ac, 0x2030, 0x0409, 0x2039, 0x040a, 0x040c, 0x040b, 0x040f,
@@ -73,21 +52,19 @@ const CP1251_TABLE: number[] = [
   0x00b0, 0x00b1, 0x0406, 0x0456, 0x0491, 0x00b5, 0x00b6, 0x00b7,
   0x0451, 0x2116, 0x0454, 0x00bb, 0x0458, 0x0405, 0x0455, 0x0457,
   0x0410, 0x0411, 0x0412, 0x0413, 0x0414, 0x0415, 0x0416, 0x0417,
-  0x0418, 0x0419, 0x041a, 0x041b, 0x041c, 0x041d, 0x041e, 0x041f,
+  0x0418, 0x0419, 0x041A, 0x041B, 0x041C, 0x041D, 0x041E, 0x041F,
   0x0420, 0x0421, 0x0422, 0x0423, 0x0424, 0x0425, 0x0426, 0x0427,
-  0x0428, 0x0429, 0x042a, 0x042b, 0x042c, 0x042d, 0x042e, 0x042f,
+  0x0428, 0x0429, 0x042A, 0x042B, 0x042C, 0x042D, 0x042E, 0x042F,
   0x0430, 0x0431, 0x0432, 0x0433, 0x0434, 0x0435, 0x0436, 0x0437,
-  0x0438, 0x0439, 0x043a, 0x043b, 0x043c, 0x043d, 0x043e, 0x043f,
+  0x0438, 0x0439, 0x043A, 0x043B, 0x043C, 0x043D, 0x043E, 0x043F,
   0x0440, 0x0441, 0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447,
-  0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f
+  0x0448, 0x0449, 0x044A, 0x044B, 0x044C, 0x044D, 0x044E, 0x044F
 ];
 
 const CP1251_INV: Map<number, number> = (() => {
   const m = new Map<number, number>();
   for (let i = 0; i < 0x80; i += 1) m.set(i, i);
-  for (let i = 0; i < CP1251_TABLE.length; i += 1) {
-    m.set(CP1251_TABLE[i], 0x80 + i);
-  }
+  for (let i = 0; i < CP1251_TABLE.length; i += 1) m.set(CP1251_TABLE[i], 0x80 + i);
   return m;
 })();
 
@@ -96,12 +73,10 @@ function encodeCp1251Bytes(s: string): Uint8Array | null {
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
     if (cp === 0xfffd) return null;
-
     if (cp <= 0xff) {
       out.push(cp);
       continue;
     }
-
     const b = CP1251_INV.get(cp);
     if (b === undefined) return null;
     out.push(b);
@@ -110,24 +85,17 @@ function encodeCp1251Bytes(s: string): Uint8Array | null {
 }
 
 function decodeUtf8(bytes: Uint8Array): string {
-  // TextDecoder is available in Node 20+ and Edge runtime.
   return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
 }
 
 function tryFixCp1251ToUtf8(s: string): string | null {
-  // Only attempt if there are strong CP1251-mojibake markers.
   if (!looksSuspicious(s)) return null;
-
   const bytes = encodeCp1251Bytes(s);
   if (!bytes) return null;
-
-  const out = decodeUtf8(bytes);
-  return out;
+  return decodeUtf8(bytes);
 }
 
 function tryFixLatin1ToUtf8(s: string): string | null {
-  // Works for "ÐÐ²Ñ‚Ð¾" style corruption.
-  // Only safe if all codepoints fit into a byte.
   for (const ch of s) {
     const cp = ch.codePointAt(0) ?? 0;
     if (cp > 0xff) return null;
@@ -137,45 +105,57 @@ function tryFixLatin1ToUtf8(s: string): string | null {
 }
 
 function cleanup(s: string): string {
-  return s
-    .replace(/\uFEFF/g, '')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\uFFFD/g, '');
+  return s.replace(/\uFEFF/g, '').replace(/\u00A0/g, ' ').replace(/\uFFFD/g, '');
 }
 
 function pickBest(original: string, candidate: string): string {
   const o = cleanup(original);
   const c = cleanup(candidate);
-
-  // Prefer fewer markers, then more Cyrillic.
   const oM = markerCount(o);
   const cM = markerCount(c);
   if (cM < oM) return c;
   if (cM > oM) return o;
-
   const oC = cyrCount(o);
   const cC = cyrCount(c);
   if (cC > oC) return c;
-
   return o;
+}
+
+function fallbackMissingLeadingChar(input: string, fallback?: string): string | null {
+  if (typeof fallback !== 'string' || !fallback) return null;
+  const cur = cleanup(input);
+  const fb = cleanup(fallback);
+  if (fb.length < 2) return null;
+
+  const curNoLead = cur.replace(/^\s+/, '');
+  const fbTail = fb.slice(1);
+  const first = fb.codePointAt(0) ?? 0;
+  const fallbackStartsCyr = isCyrillic(first);
+
+  if (fallbackStartsCyr && curNoLead === fbTail) {
+    return fb;
+  }
+  return null;
 }
 
 export function repairString(input: string, fallback?: string): { value: string; usedFallback: boolean; fixed: boolean } {
   const original = input ?? '';
   const trimmed = cleanup(original);
 
+  const leadingRepair = fallbackMissingLeadingChar(trimmed, fallback);
+  if (leadingRepair) {
+    return { value: leadingRepair, usedFallback: true, fixed: true };
+  }
+
   if (!looksSuspicious(trimmed)) {
     return { value: trimmed, usedFallback: false, fixed: trimmed !== original };
   }
 
   let best = trimmed;
-
   const cp = tryFixCp1251ToUtf8(best);
   if (cp) best = pickBest(best, cp);
-
   const l1 = tryFixLatin1ToUtf8(trimmed);
   if (l1) best = pickBest(best, l1);
-
   const stillBad = looksSuspicious(best) || markerCount(best) >= markerCount(trimmed);
 
   if (stillBad && typeof fallback === 'string' && fallback.length > 0) {
@@ -225,7 +205,6 @@ export function repairDeepWithFallback<T>(val: T, fallback?: any, stats?: Repair
           const fbItem = isRecord(item) && typeof item.id === 'string' ? fbById.get(item.id) : undefined;
           out.push(walk(item, fbItem));
         }
-        // Add missing fallback items (rare, but keeps schema complete)
         for (const [id, fbItem] of fbById.entries()) {
           if (!cur.some((x) => isRecord(x) && x.id === id)) out.push(walk(fbItem, fbItem));
         }
@@ -240,34 +219,13 @@ export function repairDeepWithFallback<T>(val: T, fallback?: any, stats?: Repair
 
     if (isRecord(cur)) {
       const out: Record<string, any> = {};
-      const fbObj = isRecord(fb) ? fb : undefined;
-
-      // keep existing keys
-      for (const [k, v] of Object.entries(cur)) {
-        out[k] = walk(v, fbObj ? fbObj[k] : undefined);
-      }
-      // add missing default keys
-      if (fbObj) {
-        for (const [k, v] of Object.entries(fbObj)) {
-          if (!(k in out)) out[k] = walk(v, v);
-        }
-      }
-
+      const fbRec = isRecord(fb) ? fb : undefined;
+      for (const [k, v] of Object.entries(cur)) out[k] = walk(v, fbRec ? fbRec[k] : undefined);
       return out;
     }
 
     return cur;
   }
 
-  const repaired = walk(val as any, fallback);
-  // ensure stats object updated for caller
-  if (!stats) {
-    // no-op
-  } else {
-    stats.scannedStrings = st.scannedStrings;
-    stats.fixedStrings = st.fixedStrings;
-    stats.fallbackStrings = st.fallbackStrings;
-  }
-
-  return repaired as T;
+  return walk(val as any, fallback) as T;
 }
