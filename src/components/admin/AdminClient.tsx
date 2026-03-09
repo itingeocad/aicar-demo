@@ -76,66 +76,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.readAsDataURL(file);
-  });
-}
-
-function ImageDataUrlField({
-  label,
-  value,
-  onChange,
-  hint = '(изображение хранится в JSON как data:URL)'
-}: {
-  label: string;
-  value?: string;
-  onChange: (next: string) => void;
-  hint?: string;
-}) {
-  return (
-    <Field label={label}>
-      <div className="space-y-2">
-        {value ? (
-          <div className="rounded-xl border bg-slate-50 p-3">
-            <img src={value} alt={label} className="max-h-24 w-auto object-contain" />
-          </div>
-        ) : null}
-
-        <input
-          type="file"
-          accept="image/*"
-          className="w-full text-sm"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const dataUrl = await readFileAsDataUrl(file);
-            onChange(dataUrl);
-            e.currentTarget.value = '';
-          }}
-        />
-
-        <div className="flex items-center gap-2">
-          {value ? (
-            <button
-              type="button"
-              className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-              onClick={() => onChange('')}
-            >
-              Удалить изображение
-            </button>
-          ) : null}
-          <div className="text-xs text-slate-500">{hint}</div>
-        </div>
-      </div>
-    </Field>
-  );
-}
-
 function BlockBadge({ type }: { type: string }) {
   const def = BLOCK_DEFINITIONS.find((d) => d.type === type);
   return (
@@ -591,7 +531,12 @@ export default function AdminClient() {
       setStatus('Сохранено ✅');
       setTimeout(() => setStatus(''), 1500);
     } catch (e) {
-      setStatus(`Ошибка сохранения: ${String(e)}`);
+      const msg = String(e);
+      if (msg.includes('forbidden')) {
+        setStatus('Ошибка сохранения: недостаточно прав для изменения siteConfig (нужны admin:access или site:write).');
+      } else {
+        setStatus(`Ошибка сохранения: ${msg}`);
+      }
     }
   }
 
@@ -776,12 +721,6 @@ export default function AdminClient() {
                       />
                     </Field>
                 
-                                        <ImageDataUrlField
-                      label="Лого"
-                      value={config.theme.logoImage || ''}
-                      onChange={(next) => setConfig({ ...config, theme: { ...config.theme, logoImage: next } })}
-                    />
-
                     <Field label="Footer note">
                       <input
                         className="w-full rounded-xl border px-3 py-2"
@@ -1197,18 +1136,28 @@ export default function AdminClient() {
                           </label>
                         );
                       }
+
                       if (f.type === 'image') {
                         return (
-                          <ImageDataUrlField
-                            key={key}
-                            label={f.label}
-                            value={typeof value === 'string' ? value : ''}
-                            onChange={(next) =>
-                              updateBlock(activeBlock.id, {
-                                props: { ...activeBlock.props, [key]: next }
-                              })
-                            }
-                          />
+                          <Field key={key} label={f.label}>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="w-full text-sm"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  updateBlock(activeBlock.id, {
+                                    props: { ...activeBlock.props, [key]: String(reader.result) }
+                                  });
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                            />
+                            <div className="mt-2 text-xs text-slate-500">(мок‑загрузка: хранится в JSON как data:URL)</div>
+                          </Field>
                         );
                       }
 

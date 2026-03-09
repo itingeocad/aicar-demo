@@ -3,6 +3,7 @@ import { getSiteConfig, saveSiteConfig } from '@/lib/site/store.server';
 import { normalizeDeep } from '@/lib/text/normalize';
 import { SiteConfig } from '@/lib/site/types';
 import { getSession, hasPermission } from '@/lib/auth/session.server';
+import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,12 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   const session = await getSession();
-  if (!hasPermission(session, 'site:write')) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  const canWriteSite = hasPermission(session, 'site:write') || hasPermission(session, PERM_ADMIN_ACCESS);
+  if (!canWriteSite) {
+    return NextResponse.json(
+      { error: 'forbidden', requiredAny: ['site:write', PERM_ADMIN_ACCESS] },
+      { status: 403 }
+    );
   }
 
   const body = (await req.json()) as SiteConfig;
