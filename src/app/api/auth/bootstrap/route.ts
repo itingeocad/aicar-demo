@@ -50,11 +50,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Read users BEFORE enforcing the bootstrap flag. In some cases the bootstrap flag may exist,
-  // while the users key was cleared/changed. In that case we must allow re-bootstrap.
   const users = await getUsers();
   const done = await redis.get<string>(bootstrapFlagKey());
-  if (done && users.length > 0) {
+  const allowRebootstrap = Boolean(done) && users.length === 0;
+
+  if (done && !allowRebootstrap) {
     return NextResponse.json(
       { error: `already initialized (${done})` },
       { status: 409 }
@@ -62,16 +62,13 @@ export async function POST(req: Request) {
   }
 
   const roles = await getRoles();
-  await saveRoles(roles); // ensures system role exists in redis
+  await saveRoles(roles);
 
   const now = new Date().toISOString();
   const passwordHash = await hashPassword(password);
 
-  // Create or update the admin user by email
   const existing = users.find((u) => u.email.toLowerCase() === email);
-  const id =
-    existing?.id ||
-    (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`);
+  const id = existing?.id || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`);
 
   const doc = {
     id,
@@ -86,11 +83,8 @@ export async function POST(req: Request) {
 
   const nextUsers = existing ? users.map((u) => (u.id === existing.id ? doc : u)) : [...users, doc];
   await saveUsers(nextUsers);
-
-  // Mark bootstrap done (overwrites stale flag if users were empty).
   await redis.set(bootstrapFlagKey(), now);
 
-  // Auto-login: set session cookie
   const permissions = await rolePermissions([ROLE_SUPER_ADMIN]);
   const { token: sessionToken } = await signSession(
     {
@@ -103,7 +97,7 @@ export async function POST(req: Request) {
     60 * 60 * 24 * 7
   );
 
-  const res = NextResponse.json({ ok: true, email: doc.email });
+  const res = NextResponse.json({ ok: true, mode: allowRebootstrap ? 'rebootstrap' : 'bootstrap' });
   res.cookies.set({
     ...sessionCookieOptions(),
     value: sessionToken,

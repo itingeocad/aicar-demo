@@ -46,7 +46,7 @@ export default function LoginClient() {
 
         {error === 'forbidden' ? (
           <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
-            У вас нет прав для доступа.
+            У текущей сессии нет прав для доступа.
           </div>
         ) : null}
 
@@ -59,7 +59,7 @@ export default function LoginClient() {
               type="email"
               required
               className="mt-1 w-full rounded-xl border px-3 py-2"
-              placeholder="admin@aicar.local"
+              placeholder="admin@aicar.md"
               autoComplete="email"
             />
           </label>
@@ -86,8 +86,8 @@ export default function LoginClient() {
         </form>
 
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-          Если первый вход после <span className="font-mono">/setup</span> сработал, а повторный логин даёт <span className="font-mono">invalid credentials</span>, это обычно означает ошибку при первичном вводе пароля.
-          Для восстановления откройте <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span> и используйте режим <span className="font-medium">Сброс пароля</span>.
+          Если первый вход через <span className="font-mono">/setup</span> сработал, а повторный логин выдаёт <span className="font-mono">invalid credentials</span>,
+          откройте <span className="font-mono">/setup?t=ВАШ_ТОКЕН</span> и используйте режим <span className="font-medium">Сброс пароля</span>.
         </div>
 
         {status ? <div className="mt-3 text-sm text-slate-700">{status}</div> : null}

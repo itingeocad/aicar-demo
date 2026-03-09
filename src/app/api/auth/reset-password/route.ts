@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, rolePermissions, saveUsers, getUsers } from '@/lib/auth/store.server';
+import { getRedis } from '@/lib/kv/upstash.server';
+import { getRoles, getUsers, saveRoles, saveUsers, rolePermissions } from '@/lib/auth/store.server';
 import { hashPassword } from '@/lib/auth/crypto.server';
+import { ROLE_SUPER_ADMIN } from '@/lib/auth/constants';
 import { signSession } from '@/lib/auth/token';
 import { sessionCookieOptions } from '@/lib/auth/cookies';
 
@@ -8,6 +10,10 @@ export const dynamic = 'force-dynamic';
 
 function bootstrapToken() {
   return (process.env.AICAR_BOOTSTRAP_TOKEN || '').trim();
+}
+
+function bootstrapFlagKey() {
+  return process.env.AICAR_AUTH_BOOTSTRAP_DONE_KEY || 'aicar:auth:bootstrap_done';
 }
 
 export async function POST(req: Request) {
@@ -20,7 +26,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => null)) as
-    | { token?: string; email?: string; password?: string }
+    | { token?: string; email?: string; password?: string; name?: string }
     | null;
 
   const token = (body?.token || '').trim();
@@ -30,49 +36,58 @@ export async function POST(req: Request) {
 
   const email = (body?.email || '').trim().toLowerCase();
   const password = body?.password || '';
+  const name = (body?.name || 'Super Admin').trim();
 
   if (!email || !password) {
     return NextResponse.json({ error: 'email/password required' }, { status: 400 });
   }
 
+  const redis = getRedis();
+  if (!redis) {
+    return NextResponse.json(
+      { error: 'Upstash is not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.' },
+      { status: 500 }
+    );
+  }
+
+  const roles = await getRoles();
+  await saveRoles(roles);
+
   const users = await getUsers();
-  if (!users.length) {
-    return NextResponse.json({ error: 'no users exist yet' }, { status: 404 });
-  }
-
-  const user = await findUserByEmail(email);
-  if (!user) {
-    return NextResponse.json({ error: 'user not found' }, { status: 404 });
-  }
-
   const now = new Date().toISOString();
   const passwordHash = await hashPassword(password);
-  const nextUsers = users.map((u) =>
-    u.id === user.id
-      ? {
-          ...u,
-          passwordHash,
-          isActive: true,
-          updatedAt: now
-        }
-      : u
-  );
 
+  const existing = users.find((u) => u.email.toLowerCase() === email);
+  const id = existing?.id || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`);
+
+  const doc = {
+    id,
+    email,
+    displayName: existing?.displayName || name,
+    passwordHash,
+    roleIds: existing?.roleIds?.length ? existing.roleIds : [ROLE_SUPER_ADMIN],
+    isActive: true,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
+  };
+
+  const nextUsers = existing ? users.map((u) => (u.id === existing.id ? doc : u)) : [...users, doc];
   await saveUsers(nextUsers);
+  await redis.set(bootstrapFlagKey(), now);
 
-  const permissions = await rolePermissions(user.roleIds);
+  const permissions = await rolePermissions(doc.roleIds);
   const { token: sessionToken } = await signSession(
     {
-      uid: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      roleIds: user.roleIds,
+      uid: doc.id,
+      email: doc.email,
+      displayName: doc.displayName,
+      roleIds: doc.roleIds,
       permissions
     },
     60 * 60 * 24 * 7
   );
 
-  const res = NextResponse.json({ ok: true, mode: 'reset-password' });
+  const res = NextResponse.json({ ok: true, created: !existing });
   res.cookies.set({
     ...sessionCookieOptions(),
     value: sessionToken,
