@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, rolePermissions } from '@/lib/auth/store.server';
+import { findUserByEmail, normalizeEmail, rolePermissions } from '@/lib/auth/store.server';
 import { verifyPassword } from '@/lib/auth/crypto.server';
 import { signSession } from '@/lib/auth/token';
 import { sessionCookieOptions } from '@/lib/auth/cookies';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const email = (body?.email || '').trim().toLowerCase();
+  const email = normalizeEmail(body?.email || '');
   const password = body?.password || '';
 
   if (!email || !password) {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   const payloadBase = {
     uid: user.id,
-    email: user.email,
+    email: normalizeEmail(user.email),
     displayName: user.displayName,
     roleIds: user.roleIds,
     permissions: Array.from(effectivePermissions)

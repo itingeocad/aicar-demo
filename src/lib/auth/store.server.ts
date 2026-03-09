@@ -10,6 +10,14 @@ function usersKey() {
   return process.env.AICAR_AUTH_USERS_KEY || 'aicar:auth:users';
 }
 
+export function normalizeEmail(email: string): string {
+  return (email || '').trim().toLowerCase();
+}
+
+function normalizeUserEmail(user: Pick<UserDoc, 'email'>): string {
+  return normalizeEmail(user.email);
+}
+
 export async function getRoles(): Promise<RoleDoc[]> {
   const redis = getRedis();
   if (!redis) return [...SYSTEM_ROLES];
@@ -22,7 +30,6 @@ export async function getRoles(): Promise<RoleDoc[]> {
     const byId = new Map(parsed.map((r) => [r.id, r]));
 
     // Always force current definitions for system roles.
-    // This protects against stale/broken permissions already stored in Redis.
     for (const sys of SYSTEM_ROLES) {
       byId.set(sys.id, sys);
     }
@@ -63,13 +70,36 @@ export async function saveUsers(users: UserDoc[]): Promise<void> {
 
 export async function findUserByEmail(email: string): Promise<UserDoc | null> {
   const users = await getUsers();
-  const norm = email.trim().toLowerCase();
-  return users.find((u) => u.email.toLowerCase() === norm) ?? null;
+  const norm = normalizeEmail(email);
+  const matches = users.filter((u) => normalizeUserEmail(u) === norm);
+  if (!matches.length) return null;
+
+  // Prefer active users, then the most recently updated one.
+  matches.sort((a, b) => {
+    const activeDelta = Number(Boolean(b.isActive)) - Number(Boolean(a.isActive));
+    if (activeDelta !== 0) return activeDelta;
+    const updatedA = Date.parse(a.updatedAt || a.createdAt || '1970-01-01T00:00:00.000Z');
+    const updatedB = Date.parse(b.updatedAt || b.createdAt || '1970-01-01T00:00:00.000Z');
+    return updatedB - updatedA;
+  });
+
+  return matches[0] ?? null;
 }
 
 export async function findUserById(id: string): Promise<UserDoc | null> {
   const users = await getUsers();
   return users.find((u) => u.id === id) ?? null;
+}
+
+export async function upsertUserUniqueByEmail(doc: UserDoc): Promise<UserDoc[]> {
+  const users = await getUsers();
+  const norm = normalizeEmail(doc.email);
+
+  // Drop legacy duplicates for the same normalized email, keep only the new doc.
+  const kept = users.filter((u) => normalizeUserEmail(u) !== norm && u.id !== doc.id);
+  const next = [...kept, { ...doc, email: norm }];
+  await saveUsers(next);
+  return next;
 }
 
 export async function rolePermissions(roleIds: string[]): Promise<string[]> {
