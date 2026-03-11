@@ -479,7 +479,67 @@ function CarList({
     }
   ];
 
+  const guaranteedCars: SiteConfig['demoData']['cars'] = [
+    {
+      id: 'mock_bike_bmw_1',
+      title: 'BMW G 310 R',
+      price: 5600,
+      currency: '$',
+      year: 2020,
+      mileageKm: 12000,
+      city: 'Chisinau',
+      fuel: 'Gasoline',
+      gearbox: 'MT',
+      imageUrl: 'https://picsum.photos/seed/bmw_g310r/1200/800',
+      vehicleType: 'bike'
+    },
+    {
+      id: 'mock_bike_bmw_2',
+      title: 'BMW F 900 XR',
+      price: 9800,
+      currency: '$',
+      year: 2021,
+      mileageKm: 9000,
+      city: 'Balti',
+      fuel: 'Gasoline',
+      gearbox: 'MT',
+      imageUrl: 'https://picsum.photos/seed/bmw_f900xr/1200/800',
+      vehicleType: 'bike'
+    },
+    {
+      id: 'mock_truck_volvo_1',
+      title: 'Volvo FH 460',
+      price: 26800,
+      currency: '$',
+      year: 2016,
+      mileageKm: 540000,
+      city: 'Chisinau',
+      fuel: 'Diesel',
+      gearbox: 'AT',
+      imageUrl: 'https://picsum.photos/seed/volvo_fh460/1200/800',
+      vehicleType: 'truck'
+    },
+    {
+      id: 'mock_bus_sprinter_1',
+      title: 'Mercedes Sprinter',
+      price: 16500,
+      currency: '$',
+      year: 2017,
+      mileageKm: 188000,
+      city: 'Comrat',
+      fuel: 'Diesel',
+      gearbox: 'MT',
+      imageUrl: 'https://picsum.photos/seed/sprinter/1200/800',
+      vehicleType: 'bus'
+    }
+  ];
+
   let cars = [...config.demoData.cars];
+  for (const extra of guaranteedCars) {
+    if (!cars.some((c) => c.id === extra.id)) {
+      cars.push(extra);
+    }
+  }
   for (const extra of guaranteedCars) {
     if (!cars.some((c) => c.id === extra.id)) {
       cars.push(extra);
