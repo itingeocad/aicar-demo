@@ -23,7 +23,10 @@ async function canWriteSiteConfig() {
     return { ok: true as const, session };
   }
 
-  const user = (session.uid ? await findUserById(session.uid) : null) ?? (session.email ? await findUserByEmail(session.email) : null);
+  const user =
+    (session.uid ? await findUserById(session.uid) : null) ??
+    (session.email ? await findUserByEmail(session.email) : null);
+
   if (!user || !user.isActive) {
     return { ok: false as const, session };
   }
