@@ -1,7 +1,16 @@
 import { cookies } from 'next/headers';
-import { SESSION_COOKIE, PERM_ALL } from './constants';
+import { SESSION_COOKIE, PERM_ALL, PERM_ADMIN_ACCESS, ROLE_SUPER_ADMIN } from './constants';
 import { verifySession } from './token';
 import type { SessionPayload } from './types';
+
+function effectivePermissions(session: SessionPayload | null): Set<string> {
+  const perms = new Set<string>(session?.permissions || []);
+  if (session?.roleIds?.includes(ROLE_SUPER_ADMIN)) {
+    perms.add(PERM_ALL);
+    perms.add(PERM_ADMIN_ACCESS);
+  }
+  return perms;
+}
 
 export async function getSession(): Promise<SessionPayload | null> {
   const c = cookies().get(SESSION_COOKIE)?.value;
@@ -11,8 +20,9 @@ export async function getSession(): Promise<SessionPayload | null> {
 
 export function hasPermission(session: SessionPayload | null, perm: string): boolean {
   if (!session) return false;
-  if (session.permissions.includes(PERM_ALL)) return true;
-  return session.permissions.includes(perm);
+  const perms = effectivePermissions(session);
+  if (perms.has(PERM_ALL)) return true;
+  return perms.has(perm);
 }
 
 export function hasAnyPermission(session: SessionPayload | null, perms: string[]): boolean {

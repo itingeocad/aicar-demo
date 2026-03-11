@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getRedis } from '@/lib/kv/upstash.server';
-import {
-  findUserByEmail,
-  getRoles,
-  getUsers,
-  normalizeEmail,
-  rolePermissions,
-  saveRoles,
-  upsertUserUniqueByEmail
-} from '@/lib/auth/store.server';
-import { hashPassword, verifyPassword } from '@/lib/auth/crypto.server';
-import { ROLE_SUPER_ADMIN } from '@/lib/auth/constants';
+import { getRoles, getUsers, saveRoles, saveUsers, rolePermissions } from '@/lib/auth/store.server';
+import { hashPassword } from '@/lib/auth/crypto.server';
+import { ROLE_SUPER_ADMIN, PERM_ALL, PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 import { signSession } from '@/lib/auth/token';
 import { sessionCookieOptions } from '@/lib/auth/cookies';
-import type { UserDoc } from '@/lib/auth/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +14,15 @@ function bootstrapToken() {
 
 function bootstrapFlagKey() {
   return process.env.AICAR_AUTH_BOOTSTRAP_DONE_KEY || 'aicar:auth:bootstrap_done';
+}
+
+function enrichPermissions(roleIds: string[], permissions: string[]) {
+  const perms = new Set<string>(permissions || []);
+  if (roleIds.includes(ROLE_SUPER_ADMIN)) {
+    perms.add(PERM_ALL);
+    perms.add(PERM_ADMIN_ACCESS);
+  }
+  return Array.from(perms);
 }
 
 export async function POST(req: Request) {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid token' }, { status: 401 });
   }
 
-  const email = normalizeEmail(body?.email || '');
+  const email = (body?.email || '').trim().toLowerCase();
   const password = body?.password || '';
   const name = (body?.name || 'Super Admin').trim();
 
@@ -59,11 +59,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const users = await getUsers();
   const done = await redis.get<string>(bootstrapFlagKey());
-  const allowRebootstrap = Boolean(done) && users.length === 0;
-
-  if (done && !allowRebootstrap) {
+  if (done) {
     return NextResponse.json(
       { error: `already initialized (${done})` },
       { status: 409 }
@@ -73,12 +70,16 @@ export async function POST(req: Request) {
   const roles = await getRoles();
   await saveRoles(roles);
 
-  const existing = await findUserByEmail(email);
+  const users = await getUsers();
+
   const now = new Date().toISOString();
   const passwordHash = await hashPassword(password);
 
-  const doc: UserDoc = {
-    id: existing?.id || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`),
+  const existing = users.find((u) => u.email.toLowerCase() === email);
+  const id = existing?.id || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `u_${Date.now()}`);
+
+  const doc = {
+    id,
     email,
     displayName: name,
     passwordHash,
@@ -88,31 +89,24 @@ export async function POST(req: Request) {
     updatedAt: now
   };
 
-  await upsertUserUniqueByEmail(doc);
+  const nextUsers = existing ? users.map((u) => (u.id === existing.id ? doc : u)) : [...users, doc];
+  await saveUsers(nextUsers);
+
   await redis.set(bootstrapFlagKey(), now);
 
-  const saved = await findUserByEmail(email);
-  if (!saved) {
-    return NextResponse.json({ error: 'user not persisted after bootstrap' }, { status: 500 });
-  }
-  const verified = await verifyPassword(password, saved.passwordHash);
-  if (!verified) {
-    return NextResponse.json({ error: 'password verification failed after bootstrap' }, { status: 500 });
-  }
-
-  const permissions = await rolePermissions(saved.roleIds);
+  const permissions = enrichPermissions([ROLE_SUPER_ADMIN], await rolePermissions([ROLE_SUPER_ADMIN]));
   const { token: sessionToken } = await signSession(
     {
-      uid: saved.id,
-      email: saved.email,
-      displayName: saved.displayName,
-      roleIds: saved.roleIds,
+      uid: doc.id,
+      email: doc.email,
+      displayName: doc.displayName,
+      roleIds: doc.roleIds,
       permissions
     },
     60 * 60 * 24 * 7
   );
 
-  const res = NextResponse.json({ ok: true, mode: allowRebootstrap ? 'rebootstrap' : 'bootstrap' });
+  const res = NextResponse.json({ ok: true });
   res.cookies.set({
     ...sessionCookieOptions(),
     value: sessionToken,

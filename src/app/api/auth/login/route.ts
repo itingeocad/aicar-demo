@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, normalizeEmail, rolePermissions } from '@/lib/auth/store.server';
+import { findUserByEmail, rolePermissions } from '@/lib/auth/store.server';
 import { verifyPassword } from '@/lib/auth/crypto.server';
 import { signSession } from '@/lib/auth/token';
 import { sessionCookieOptions } from '@/lib/auth/cookies';
@@ -7,9 +7,18 @@ import { PERM_ADMIN_ACCESS, PERM_ALL, ROLE_SUPER_ADMIN } from '@/lib/auth/consta
 
 export const dynamic = 'force-dynamic';
 
+function enrichPermissions(roleIds: string[], permissions: string[]) {
+  const perms = new Set<string>(permissions || []);
+  if (roleIds.includes(ROLE_SUPER_ADMIN)) {
+    perms.add(PERM_ALL);
+    perms.add(PERM_ADMIN_ACCESS);
+  }
+  return Array.from(perms);
+}
+
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const email = normalizeEmail(body?.email || '');
+  const email = (body?.email || '').trim().toLowerCase();
   const password = body?.password || '';
 
   if (!email || !password) {
@@ -26,22 +35,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid credentials' }, { status: 401 });
   }
 
-  const permissions = await rolePermissions(user.roleIds);
-  const effectivePermissions = new Set(permissions);
-
-  // Safety net for legacy data in Redis.
-  if (user.roleIds.includes(ROLE_SUPER_ADMIN)) {
-    effectivePermissions.add(PERM_ALL);
-    effectivePermissions.add(PERM_ADMIN_ACCESS);
-    effectivePermissions.add('site:write');
-  }
+  const permissions = enrichPermissions(user.roleIds, await rolePermissions(user.roleIds));
 
   const payloadBase = {
     uid: user.id,
-    email: normalizeEmail(user.email),
+    email: user.email,
     displayName: user.displayName,
     roleIds: user.roleIds,
-    permissions: Array.from(effectivePermissions)
+    permissions
   };
 
   const { token, payload } = await signSession(payloadBase, 60 * 60 * 24 * 7);
@@ -51,10 +52,10 @@ export async function POST(req: Request) {
     user: {
       email: payload.email,
       displayName: payload.displayName,
-      permissions: payload.permissions,
-      roleIds: payload.roleIds
+      permissions: payload.permissions
     }
   });
+
   res.cookies.set({
     ...sessionCookieOptions(),
     value: token,
