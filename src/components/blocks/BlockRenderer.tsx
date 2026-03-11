@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Bike, Bus, Car, Search, Truck, Plus, ChevronRight } from 'lucide-react';
 import { SiteConfig, BlockInstance } from '@/lib/site/types';
 import { ReelsStripClient } from '@/components/blocks/ReelsStripClient';
+import { SearchPrototypeForm } from '@/components/blocks/SearchPrototypeForm';
 
 function Section({
   title,
@@ -277,63 +278,7 @@ function SearchWidget({
 
   return (
     <Section title={title} align="center">
-      <form action="/search" method="GET">
-        <div className="hidden md:block">
-          <div className="mx-auto max-w-[960px] overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-            <div className="flex items-stretch">
-              <VehicleTypeRail orientation="vertical" name="type" value={initType} />
-              <div className="flex-1 p-6">
-                <div className="grid grid-cols-4 gap-x-4 gap-y-4">
-                  <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
-                  <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
-                  <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
-                  <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
-                  <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
-                  <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
-                  <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
-                  <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex justify-center">
-            <button
-              type="submit"
-              className="flex h-11 min-w-[124px] items-center justify-center rounded-[8px] bg-[#7f889c] px-8 text-[14px] font-medium text-white transition hover:bg-[#737c90]"
-            >
-              {cta}
-            </button>
-          </div>
-        </div>
-
-        <div className="md:hidden">
-          <div className="mx-auto max-w-md overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-            <VehicleTypeRail orientation="horizontal" name="type" value={initType} />
-            <div className="p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
-                <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
-                <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
-                <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
-                <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
-                <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
-                <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
-                <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex justify-center">
-            <button
-              type="submit"
-              className="flex h-11 min-w-[124px] items-center justify-center rounded-[8px] bg-[#7f889c] px-8 text-[14px] font-medium text-white transition hover:bg-[#737c90]"
-            >
-              {cta}
-            </button>
-          </div>
-        </div>
-      </form>
+      <SearchPrototypeForm cta={cta} initial={initial} />
     </Section>
   );
 }
