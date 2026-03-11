@@ -47,7 +47,7 @@ function can(me: MeUser | null, perm: string) {
 }
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { cache: 'no-store', ...init });
+  const res = await fetch(url, { cache: 'no-store', credentials: 'include', ...init });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error((data as any)?.error || `HTTP ${res.status}`);
@@ -60,7 +60,7 @@ async function fetchConfig(): Promise<SiteConfig> {
 }
 
 async function saveConfig(config: SiteConfig): Promise<void> {
-  await fetchJSON('/api/site-config', {
+  await fetchJSON('/api/admin/site-config', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(config)
