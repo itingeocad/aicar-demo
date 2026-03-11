@@ -13,11 +13,8 @@ function formatCount(n?: number) {
 }
 
 function Badge({ text }: { text: string }) {
-  const cls =
-    text === 'Top'
-      ? 'bg-amber-500/90 text-white'
-      : 'bg-emerald-500/90 text-white';
-  return <span className={`px-2 py-1 text-[10px] font-semibold rounded-full ${cls}`}>{text}</span>;
+  const cls = text === 'Top' ? 'bg-amber-500/90 text-white' : 'bg-emerald-500/90 text-white';
+  return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${cls}`}>{text}</span>;
 }
 
 function ReelCard({ reel }: { reel: DemoReel }) {
@@ -26,10 +23,11 @@ function ReelCard({ reel }: { reel: DemoReel }) {
 
   const thumb = reel.thumbUrl ?? reel.posterUrl;
   const preview = reel.previewUrl ?? reel.videoUrl;
-  const href = reel.linkedCarId ? `/aiclips?reel=${encodeURIComponent(reel.id)}&car=${encodeURIComponent(reel.linkedCarId)}` : `/aiclips?reel=${encodeURIComponent(reel.id)}`;
+  const href = reel.linkedCarId
+    ? `/aiclips?reel=${encodeURIComponent(reel.id)}&car=${encodeURIComponent(reel.linkedCarId)}`
+    : `/aiclips?reel=${encodeURIComponent(reel.id)}`;
 
   const onEnter = async () => {
-    // Only try to auto-play on devices that support hover.
     if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
     setHover(true);
     const el = vref.current;
@@ -37,9 +35,7 @@ function ReelCard({ reel }: { reel: DemoReel }) {
     try {
       el.currentTime = 0;
       await el.play();
-    } catch {
-      // ignore autoplay restrictions
-    }
+    } catch {}
   };
 
   const onLeave = () => {
@@ -49,21 +45,18 @@ function ReelCard({ reel }: { reel: DemoReel }) {
     try {
       el.pause();
       el.currentTime = 0;
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   return (
     <Link
       href={href}
-      className="group w-full"
+      className="group block w-full"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       aria-label={reel.title}
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-2xl bg-slate-200 shadow-sm">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="relative aspect-[200/354] overflow-hidden rounded-[12px] bg-slate-200">
         <img
           src={thumb}
           alt={reel.title}
@@ -71,8 +64,6 @@ function ReelCard({ reel }: { reel: DemoReel }) {
           loading="lazy"
         />
 
-        {/* Hover preview (desktop) */}
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={vref}
           src={preview}
@@ -86,22 +77,19 @@ function ReelCard({ reel }: { reel: DemoReel }) {
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/10" />
 
-        {/* Badges */}
         <div className="absolute left-2 top-2 flex gap-1">
           {(reel.badges ?? []).map((b) => (
             <Badge key={b} text={b} />
           ))}
         </div>
 
-        {/* Play icon */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-black/50 transition">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/35 backdrop-blur-sm transition group-hover:bg-black/45">
             <Play className="h-5 w-5 text-white" fill="white" />
           </div>
         </div>
 
-        {/* Counters */}
-        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-xs">
+        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-white">
           <div className="flex items-center gap-1">
             <Eye className="h-4 w-4" />
             <span>{formatCount(reel.views)}</span>
@@ -128,20 +116,19 @@ export function ReelsStripClient({
 
   return (
     <>
-      {/* Desktop */}
-      <div className="hidden md:block relative">
+      <div className="relative hidden md:block">
         {showArrows ? (
           <>
             <button
               aria-label="prev"
-              className="absolute -left-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute -left-10 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
             >
               <ChevronLeft className="h-10 w-10" />
             </button>
             <button
               aria-label="next"
-              className="absolute -right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute -right-10 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
             >
               <ChevronRight className="h-10 w-10" />
@@ -149,29 +136,29 @@ export function ReelsStripClient({
           </>
         ) : null}
 
-        <div className="grid grid-cols-4 gap-8 justify-items-center">
+        <div className="grid grid-cols-4 justify-items-center gap-6">
           {items.map((r) => (
-            <div key={r.id} className="w-full max-w-[210px]">
+            <div key={r.id} className="w-full max-w-[200px]">
               <ReelCard reel={r} />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Mobile */}
-      <div className="md:hidden relative">
+      <div className="relative md:hidden">
         {showArrows ? (
           <>
-            <button aria-label="prev" className="absolute -left-6 top-1/2 -translate-y-1/2 text-slate-400" type="button">
-              <ChevronLeft className="h-10 w-10" />
+            <button aria-label="prev" className="absolute -left-5 top-1/2 -translate-y-1/2 text-slate-400" type="button">
+              <ChevronLeft className="h-9 w-9" />
             </button>
-            <button aria-label="next" className="absolute -right-6 top-1/2 -translate-y-1/2 text-slate-400" type="button">
-              <ChevronRight className="h-10 w-10" />
+            <button aria-label="next" className="absolute -right-5 top-1/2 -translate-y-1/2 text-slate-400" type="button">
+              <ChevronRight className="h-9 w-9" />
             </button>
           </>
         ) : null}
-        <div className="mx-auto max-w-xs">
-          {first ? <ReelCard reel={first} /> : <div className="aspect-[9/16] rounded-2xl bg-slate-200 shadow-sm" />}
+
+        <div className="mx-auto max-w-[200px]">
+          {first ? <ReelCard reel={first} /> : <div className="aspect-[200/354] rounded-[12px] bg-slate-200" />}
         </div>
       </div>
     </>

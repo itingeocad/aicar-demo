@@ -45,29 +45,30 @@ function Hero({
   bannerHeight?: number;
 }) {
   const isBanner = (mode ?? '').toLowerCase() === 'banner';
-  const height = bannerHeight ?? 260;
+  const height = bannerHeight ?? 280;
+
   if (isBanner) {
     return (
-      <div className="border-b bg-slate-100">
+      <section className="border-b border-black/5 bg-[#e8e8e8]">
         <div className="aicar-container">
-          <div className="flex items-center justify-center overflow-hidden" style={{ height }}>
+          <div className="flex items-center justify-center text-center" style={{ height }}>
             {bgImage ? (
               <img src={bgImage} alt={headline || 'Баннер'} className="h-full w-full object-contain" />
             ) : (
-              <div className="text-center">
-                <div className="text-lg md:text-2xl font-medium">{headline}</div>
-                {subline ? <div className="mt-2 text-sm text-slate-600">{subline}</div> : null}
+              <div className="space-y-2">
+                <div className="text-[18px] font-medium tracking-[-0.02em] md:text-[32px]">{headline}</div>
+                {subline ? <div className="text-sm text-slate-600">{subline}</div> : null}
               </div>
             )}
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
     <div
-      className="border-b"
+      className="border-b border-black/5"
       style={
         bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined
       }
@@ -75,7 +76,7 @@ function Hero({
       <div className={bgImage ? 'bg-white/75' : 'bg-slate-50'}>
         <div className="aicar-container py-10">
           <div className="max-w-3xl">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{headline}</h1>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{headline}</h1>
             <p className="mt-3 text-slate-600">{subline}</p>
           </div>
         </div>
@@ -98,22 +99,25 @@ function AIPrompt({
   cta: string;
 }) {
   return (
-    <section className="relative z-10 -mt-10 pb-8 md:-mt-16">
+    <section className="relative z-10 -mt-10 pb-10 md:-mt-[98px] md:pb-12">
       <div className="aicar-container">
-        <div className="mx-auto max-w-5xl rounded-2xl bg-slate-300/70 p-6 shadow-sm md:px-10 md:py-8">
-          <div className="text-center text-3xl font-bold tracking-tight md:text-4xl">{title}</div>
-          <div className="mt-2 text-center text-sm text-slate-700">{subtitle}</div>
-
-          <div className="mt-4 rounded-xl bg-white px-3 py-3 md:px-4">
-            <Link href="/aichat" className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-slate-500" />
-              <div className="text-sm text-slate-600 truncate">{placeholder}</div>
-            </Link>
+        <div className="mx-auto max-w-[960px] rounded-[12px] bg-[#d5d5d5] px-4 py-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] md:px-10 md:py-8">
+          <div className="text-center text-[28px] font-semibold tracking-[-0.02em] md:text-[52px]">{title}</div>
+          <div className="mx-auto mt-2 max-w-[760px] text-center text-[12px] leading-5 text-slate-700 md:text-[15px]">
+            {subtitle}
           </div>
 
+          <Link
+            href="/aichat"
+            className="mt-5 flex h-12 items-center gap-3 rounded-[8px] bg-white px-4 text-[13px] text-slate-600 ring-1 ring-black/5 transition hover:ring-black/10 md:h-14"
+          >
+            <Search className="h-5 w-5 flex-none text-slate-500" />
+            <span className="truncate">{placeholder}</span>
+          </Link>
+
           {showButton ? (
-            <div className="mt-4 flex justify-center">
-              <Link href="/aichat" className="rounded-xl bg-slate-900 text-white px-6 py-3 hover:bg-slate-800">
+            <div className="mt-5 flex justify-center">
+              <Link href="/aichat" className="rounded-[8px] bg-slate-900 px-6 py-3 text-white hover:bg-slate-800">
                 {cta}
               </Link>
             </div>
@@ -137,11 +141,11 @@ function LabeledInput({
 }) {
   return (
     <label className="block">
-      <div className="mb-1 text-xs text-slate-600">{label}</div>
+      <div className="mb-1 text-[11px] leading-4 text-slate-600 md:text-[12px]">{label}</div>
       <input
         name={name}
         defaultValue={defaultValue}
-        className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
+        className="h-9 w-full rounded-[8px] border border-black/10 bg-white px-3 text-[13px] outline-none transition focus:border-slate-400 md:h-10"
         placeholder={placeholder ?? ''}
       />
     </label>
@@ -171,9 +175,10 @@ function VehicleTypeRail({
     return (
       <label
         className={
-          (orientation === 'vertical' ? 'h-12' : 'w-16') +
-          ' flex items-center justify-center cursor-pointer select-none ' +
-          (active ? 'bg-white' : 'bg-slate-400/70 hover:bg-slate-300/70')
+          (orientation === 'vertical' ? 'h-[54px] w-[74px]' : 'h-[54px] flex-1') +
+          ' flex cursor-pointer select-none items-center justify-center border-black/5 transition ' +
+          (orientation === 'vertical' ? ' border-b last:border-b-0 ' : ' border-r last:border-r-0 ') +
+          (active ? 'bg-[#b7c0cf]' : 'bg-[#cfd5df] hover:bg-[#c3cad6]')
         }
         title={items.find((i) => i.key === k)?.label}
       >
@@ -183,26 +188,23 @@ function VehicleTypeRail({
     );
   };
 
-  const base =
-    orientation === 'vertical'
-      ? 'w-16 overflow-hidden rounded-l-2xl'
-      : 'w-full overflow-hidden rounded-t-2xl flex';
-
-  return (
-    <div className={base}>
-      {orientation === 'vertical' ? (
+  if (orientation === 'vertical') {
+    return (
+      <div className="w-[74px] overflow-hidden rounded-l-[12px] bg-[#cfd5df]">
         <div className="flex flex-col">
           {items.map((it) => (
             <Item key={it.key} k={it.key} icon={it.icon} />
           ))}
         </div>
-      ) : (
-        <>
-          {items.map((it) => (
-            <Item key={it.key} k={it.key} icon={it.icon} />
-          ))}
-        </>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex w-full overflow-hidden rounded-t-[12px] bg-[#cfd5df]">
+      {items.map((it) => (
+        <Item key={it.key} k={it.key} icon={it.icon} />
+      ))}
     </div>
   );
 }
@@ -224,14 +226,13 @@ function SearchWidget({
   initial?: Record<string, string | string[] | undefined>;
 }) {
   const isPrototype = (mode ?? '').toLowerCase() === 'prototype';
-
   const initType = (pick1(initial?.type) as VehicleTypeKey) || 'car';
 
   if (!isPrototype) {
     return (
       <Section title={title}>
-        <form action="/search" method="GET" className="rounded-2xl border bg-white p-4 md:p-5 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <form action="/search" method="GET" className="rounded-2xl border bg-white p-4 shadow-sm md:p-5">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
             <select name="type" defaultValue={initType} className="rounded-xl border px-3 py-3 md:col-span-1">
               <option value="car">Авто</option>
               <option value="bike">Мото</option>
@@ -256,7 +257,7 @@ function SearchWidget({
               className="rounded-xl border px-3 py-3 md:col-span-1"
               placeholder="Цена до"
             />
-            <button type="submit" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-center hover:bg-slate-800">
+            <button type="submit" className="rounded-xl bg-slate-900 px-4 py-3 text-center text-white hover:bg-slate-800">
               {cta}
             </button>
           </div>
@@ -268,13 +269,12 @@ function SearchWidget({
   return (
     <Section title={title} align="center">
       <form action="/search" method="GET">
-        {/* Desktop layout */}
         <div className="hidden md:block">
-          <div className="mx-auto max-w-4xl rounded-2xl bg-white shadow-sm overflow-hidden">
-            <div className="flex">
+          <div className="mx-auto max-w-[960px] overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+            <div className="flex items-stretch">
               <VehicleTypeRail orientation="vertical" name="type" value={initType} />
-              <div className="flex-1 p-5">
-                <div className="grid grid-cols-4 gap-4">
+              <div className="flex-1 p-5 md:p-6">
+                <div className="grid grid-cols-4 gap-x-4 gap-y-4">
                   <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
                   <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
                   <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
@@ -288,51 +288,38 @@ function SearchWidget({
             </div>
           </div>
 
-          <div className="mt-5 flex justify-center">
-            <button type="submit" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
+          <div className="mt-4 flex justify-center">
+            <button
+              type="submit"
+              className="flex h-11 min-w-[124px] items-center justify-center rounded-[8px] bg-[#7f889c] px-8 text-[14px] font-medium text-white transition hover:bg-[#737c90]"
+            >
               {cta}
             </button>
           </div>
         </div>
 
-        {/* Mobile layout */}
         <div className="md:hidden">
-          <div className="mx-auto max-w-md rounded-2xl bg-white shadow-sm overflow-hidden">
+          <div className="mx-auto max-w-md overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
             <VehicleTypeRail orientation="horizontal" name="type" value={initType} />
             <div className="p-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
-                  <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
-                </div>
-                <div className="col-span-1">
-                  <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
-                </div>
-                <div className="col-span-1">
-                  <LabeledInput label="Год" name="year" defaultValue={pick1(initial?.year)} />
-                </div>
-                <div className="col-span-1">
-                  <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
-                </div>
-                <div className="col-span-1">
-                  <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
-                </div>
-                <div className="col-span-1">
-                  <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
-                </div>
-                <div className="col-span-3 flex gap-3">
-                  <div className="flex-1">
-                    <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
-                  </div>
-                  <div className="flex-1">
-                    <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
+                <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
+                <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
+                <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
+                <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
+                <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
+                <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
+                <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
               </div>
             </div>
           </div>
 
-          <div className="mt-5 flex justify-center">
-            <button type="submit" className="rounded-xl bg-slate-500 text-white px-10 py-3 shadow-sm hover:bg-slate-600">
+          <div className="mt-4 flex justify-center">
+            <button
+              type="submit"
+              className="flex h-11 min-w-[124px] items-center justify-center rounded-[8px] bg-[#7f889c] px-8 text-[14px] font-medium text-white transition hover:bg-[#737c90]"
+            >
               {cta}
             </button>
           </div>
@@ -364,28 +351,25 @@ function CarCard({ car }: { car: SiteConfig['demoData']['cars'][number] }) {
 
 function OfferCard({ car }: { car: SiteConfig['demoData']['cars'][number] }) {
   return (
-    <Link href={`/cars/${car.id}`} className="block rounded-2xl bg-white shadow-sm border overflow-hidden">
-      <div className="aspect-[4/3] bg-white flex items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+    <Link href={`/cars/${car.id}`} className="block overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]">
+      <div className="aspect-square bg-white">
         <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
       </div>
-      <div className="bg-slate-400/80 p-4 text-center text-sm text-white">Описание</div>
+      <div className="flex h-[78px] items-center justify-center px-3 text-center text-[12px] text-white">Описание</div>
     </Link>
   );
 }
 
 function OfferRow({ car }: { car: SiteConfig['demoData']['cars'][number] }) {
   return (
-    <Link href={`/cars/${car.id}`} className="block rounded-2xl bg-slate-400/80 border overflow-hidden">
+    <Link href={`/cars/${car.id}`} className="block overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]">
       <div className="flex">
-        <div className="w-28 bg-white p-2">
-          <div className="aspect-square bg-white border rounded-xl overflow-hidden flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="w-[120px] bg-white p-3">
+          <div className="aspect-square overflow-hidden rounded-[8px] border border-black/10 bg-white">
             <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
           </div>
-          <div className="mt-2 text-[10px] text-center text-slate-600">Фото объявления</div>
         </div>
-        <div className="flex-1 p-4 text-white font-medium">Описание</div>
+        <div className="flex flex-1 items-center justify-center px-4 text-[13px] text-white">Описание</div>
       </div>
     </Link>
   );
@@ -428,7 +412,7 @@ function CarGrid({
         right={moreLabel && moreHref ? <MoreLink label={moreLabel} href={moreHref} /> : null}
       >
         {/* Desktop grid */}
-        <div className="hidden md:grid grid-cols-3 gap-6 rounded-2xl bg-white p-6 shadow-sm">
+        <div className="hidden md:grid grid-cols-3 gap-6">
           {cars.map((c) => (
             <OfferCard key={c.id} car={c} />
           ))}
