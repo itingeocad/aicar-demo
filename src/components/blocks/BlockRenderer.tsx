@@ -14,18 +14,28 @@ function Section({
   right?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const centered = align === 'center';
+
   return (
-    <section className="py-10">
+    <section className="py-8 md:py-10">
       <div className="aicar-container">
-        {title ? (
-          <div className="mb-5 flex items-center">
-            <h2 className={align === 'center' ? 'flex-1 text-center text-xl font-semibold' : 'text-xl font-semibold'}>
-              {title}
-            </h2>
-            {right ? <div className={align === 'center' ? 'w-28 flex justify-end' : 'ml-auto'}>{right}</div> : null}
-          </div>
-        ) : null}
-        {children}
+        <div className={centered ? 'mx-auto max-w-[960px]' : ''}>
+          {title ? (
+            centered ? (
+              <div className="mb-6 grid grid-cols-[1fr_auto_1fr] items-center">
+                <div />
+                <h2 className="text-center text-[18px] font-semibold tracking-[-0.02em] md:text-[32px]">{title}</h2>
+                <div className="justify-self-end">{right ?? <span />}</div>
+              </div>
+            ) : (
+              <div className="mb-5 flex items-center">
+                <h2 className="text-xl font-semibold">{title}</h2>
+                {right ? <div className="ml-auto">{right}</div> : null}
+              </div>
+            )
+          ) : null}
+          {children}
+        </div>
       </div>
     </section>
   );
@@ -99,21 +109,20 @@ function AIPrompt({
   cta: string;
 }) {
   return (
-    <section className="relative z-10 -mt-10 pb-10 md:-mt-[98px] md:pb-12">
+    <section className="relative z-10 -mt-10 pb-8 md:-mt-[86px] md:pb-10">
       <div className="aicar-container">
-        <div className="mx-auto max-w-[960px] rounded-[12px] bg-[#d5d5d5] px-4 py-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] md:px-10 md:py-8">
+        <div className="mx-auto max-w-[960px] rounded-[12px] bg-[#d5d5d5] px-4 py-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] md:px-8 md:py-8">
           <div className="text-center text-[28px] font-semibold tracking-[-0.02em] md:text-[52px]">{title}</div>
           <div className="mx-auto mt-2 max-w-[760px] text-center text-[12px] leading-5 text-slate-700 md:text-[15px]">
             {subtitle}
           </div>
 
-          <Link
-            href="/aichat"
-            className="mt-5 flex h-12 items-center gap-3 rounded-[8px] bg-white px-4 text-[13px] text-slate-600 ring-1 ring-black/5 transition hover:ring-black/10 md:h-14"
-          >
-            <Search className="h-5 w-5 flex-none text-slate-500" />
-            <span className="truncate">{placeholder}</span>
-          </Link>
+          <div className="mt-5 rounded-[8px] bg-white px-3 py-3 ring-1 ring-black/5 md:px-4 md:py-4">
+            <Link href="/aichat" className="flex items-center gap-3">
+              <Search className="h-5 w-5 flex-none text-slate-500" />
+              <div className="truncate text-[13px] text-slate-600 md:text-sm">{placeholder}</div>
+            </Link>
+          </div>
 
           {showButton ? (
             <div className="mt-5 flex justify-center">
@@ -273,7 +282,7 @@ function SearchWidget({
           <div className="mx-auto max-w-[960px] overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
             <div className="flex items-stretch">
               <VehicleTypeRail orientation="vertical" name="type" value={initType} />
-              <div className="flex-1 p-5 md:p-6">
+              <div className="flex-1 p-6">
                 <div className="grid grid-cols-4 gap-x-4 gap-y-4">
                   <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
                   <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
@@ -351,8 +360,8 @@ function CarCard({ car }: { car: SiteConfig['demoData']['cars'][number] }) {
 
 function OfferCard({ car }: { car: SiteConfig['demoData']['cars'][number] }) {
   return (
-    <Link href={`/cars/${car.id}`} className="block overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]">
-      <div className="aspect-square bg-white">
+    <Link href={`/cars/${car.id}`} className="mx-auto block w-full max-w-[280px] overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]">
+      <div className="aspect-square bg-white flex items-center justify-center">
         <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
       </div>
       <div className="flex h-[78px] items-center justify-center px-3 text-center text-[12px] text-white">Описание</div>
@@ -696,7 +705,7 @@ function NewsCards({
   if ((variant ?? '').toLowerCase() === 'feature') {
     return (
       <Section title={title} align="center">
-        <div className="mx-auto max-w-5xl rounded-2xl bg-white shadow-sm border overflow-hidden">
+        <div className="mx-auto max-w-[960px] overflow-hidden rounded-[12px] border border-black/10 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
           <div className="flex flex-col md:flex-row">
             <div className="md:w-72 bg-slate-200 flex items-center justify-center">
               <div className="h-44 w-full md:h-full md:w-full flex items-center justify-center text-slate-600">Фото</div>

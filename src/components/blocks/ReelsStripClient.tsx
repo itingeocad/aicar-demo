@@ -56,7 +56,7 @@ function ReelCard({ reel }: { reel: DemoReel }) {
       onMouseLeave={onLeave}
       aria-label={reel.title}
     >
-      <div className="relative aspect-[200/354] overflow-hidden rounded-[12px] bg-slate-200">
+      <div className="relative aspect-[200/354] overflow-hidden rounded-[12px] bg-slate-200 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
         <img
           src={thumb}
           alt={reel.title}
@@ -136,9 +136,9 @@ export function ReelsStripClient({
           </>
         ) : null}
 
-        <div className="grid grid-cols-4 justify-items-center gap-6">
+        <div className="mx-auto grid max-w-[950px] grid-cols-4 justify-items-start gap-x-[50px]">
           {items.map((r) => (
-            <div key={r.id} className="w-full max-w-[200px]">
+            <div key={r.id} className="w-[200px]">
               <ReelCard reel={r} />
             </div>
           ))}
