@@ -62,6 +62,25 @@ function TypeButton({
   );
 }
 
+function SearchFields({
+  initial
+}: {
+  initial?: Record<string, string | string[] | undefined>;
+}) {
+  return (
+    <>
+      <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
+      <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
+      <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
+      <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
+      <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
+      <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
+      <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
+      <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
+    </>
+  );
+}
+
 export function SearchPrototypeForm({
   cta,
   initial
@@ -70,34 +89,28 @@ export function SearchPrototypeForm({
   initial?: Record<string, string | string[] | undefined>;
 }) {
   const initType = (pick1(initial?.type) as VehicleTypeKey) || 'car';
-  const [type, setType] = React.useState<VehicleTypeKey>(initType);
+  const [desktopType, setDesktopType] = React.useState<VehicleTypeKey>(initType);
+  const [mobileType, setMobileType] = React.useState<VehicleTypeKey>(initType);
 
   return (
-    <form action="/search" method="GET">
-      <input type="hidden" name="type" value={type} />
+    <>
+      <form action="/search" method="GET" className="hidden md:block">
+        <input type="hidden" name="type" value={desktopType} />
 
-      <div className="hidden md:block">
         <div className="mx-auto max-w-[960px] overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
           <div className="flex items-stretch">
             <div className="w-[74px] overflow-hidden rounded-l-[12px] bg-[#cfd5df]">
               <div className="flex flex-col">
-                <TypeButton orientation="vertical" active={type === 'car'} label="Авто" onClick={() => setType('car')} icon={<Car className="h-6 w-6 text-slate-700" />} />
-                <TypeButton orientation="vertical" active={type === 'truck'} label="Груз." onClick={() => setType('truck')} icon={<Truck className="h-6 w-6 text-slate-700" />} />
-                <TypeButton orientation="vertical" active={type === 'bus'} label="Вэн" onClick={() => setType('bus')} icon={<Bus className="h-6 w-6 text-slate-700" />} />
-                <TypeButton orientation="vertical" active={type === 'bike'} label="Мото" onClick={() => setType('bike')} icon={<Bike className="h-6 w-6 text-slate-700" />} />
+                <TypeButton orientation="vertical" active={desktopType === 'car'} label="Авто" onClick={() => setDesktopType('car')} icon={<Car className="h-6 w-6 text-slate-700" />} />
+                <TypeButton orientation="vertical" active={desktopType === 'truck'} label="Груз." onClick={() => setDesktopType('truck')} icon={<Truck className="h-6 w-6 text-slate-700" />} />
+                <TypeButton orientation="vertical" active={desktopType === 'bus'} label="Вэн" onClick={() => setDesktopType('bus')} icon={<Bus className="h-6 w-6 text-slate-700" />} />
+                <TypeButton orientation="vertical" active={desktopType === 'bike'} label="Мото" onClick={() => setDesktopType('bike')} icon={<Bike className="h-6 w-6 text-slate-700" />} />
               </div>
             </div>
 
             <div className="flex-1 p-6">
               <div className="grid grid-cols-4 gap-x-4 gap-y-4">
-                <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
-                <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
-                <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
-                <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
-                <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
-                <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
-                <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
-                <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
+                <SearchFields initial={initial} />
               </div>
             </div>
           </div>
@@ -111,27 +124,22 @@ export function SearchPrototypeForm({
             {cta}
           </button>
         </div>
-      </div>
+      </form>
 
-      <div className="md:hidden">
+      <form action="/search" method="GET" className="md:hidden">
+        <input type="hidden" name="type" value={mobileType} />
+
         <div className="mx-auto max-w-md overflow-hidden rounded-[12px] bg-[#f5f5f5] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
           <div className="flex w-full overflow-hidden rounded-t-[12px] bg-[#cfd5df]">
-            <TypeButton orientation="horizontal" active={type === 'car'} label="Авто" onClick={() => setType('car')} icon={<Car className="h-6 w-6 text-slate-700" />} />
-            <TypeButton orientation="horizontal" active={type === 'truck'} label="Груз." onClick={() => setType('truck')} icon={<Truck className="h-6 w-6 text-slate-700" />} />
-            <TypeButton orientation="horizontal" active={type === 'bus'} label="Вэн" onClick={() => setType('bus')} icon={<Bus className="h-6 w-6 text-slate-700" />} />
-            <TypeButton orientation="horizontal" active={type === 'bike'} label="Мото" onClick={() => setType('bike')} icon={<Bike className="h-6 w-6 text-slate-700" />} />
+            <TypeButton orientation="horizontal" active={mobileType === 'car'} label="Авто" onClick={() => setMobileType('car')} icon={<Car className="h-6 w-6 text-slate-700" />} />
+            <TypeButton orientation="horizontal" active={mobileType === 'truck'} label="Груз." onClick={() => setMobileType('truck')} icon={<Truck className="h-6 w-6 text-slate-700" />} />
+            <TypeButton orientation="horizontal" active={mobileType === 'bus'} label="Вэн" onClick={() => setMobileType('bus')} icon={<Bus className="h-6 w-6 text-slate-700" />} />
+            <TypeButton orientation="horizontal" active={mobileType === 'bike'} label="Мото" onClick={() => setMobileType('bike')} icon={<Bike className="h-6 w-6 text-slate-700" />} />
           </div>
 
           <div className="p-4">
             <div className="grid grid-cols-2 gap-3">
-              <LabeledInput label="Марка" name="brand" defaultValue={pick1(initial?.brand)} />
-              <LabeledInput label="Модель" name="model" defaultValue={pick1(initial?.model)} />
-              <LabeledInput label="Год выпуска" name="year" defaultValue={pick1(initial?.year)} />
-              <LabeledInput label="Километраж" name="mileageKm" defaultValue={pick1(initial?.mileageKm)} />
-              <LabeledInput label="Тип топлива" name="fuel" defaultValue={pick1(initial?.fuel)} />
-              <LabeledInput label="Город" name="city" defaultValue={pick1(initial?.city)} />
-              <LabeledInput label="Цена от" name="priceFrom" defaultValue={pick1(initial?.priceFrom)} />
-              <LabeledInput label="Цена до" name="priceTo" defaultValue={pick1(initial?.priceTo)} />
+              <SearchFields initial={initial} />
             </div>
           </div>
         </div>
@@ -144,7 +152,7 @@ export function SearchPrototypeForm({
             {cta}
           </button>
         </div>
-      </div>
-    </form>
+      </form>
+    </>
   );
 }
