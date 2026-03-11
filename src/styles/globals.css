@@ -30,5 +30,10 @@ details > summary::-webkit-details-marker {
 
 .aicar-container {
   @apply mx-auto w-full px-4;
+  max-width: 960px;
+}
+
+.aicar-header-container {
+  @apply mx-auto w-full px-4;
   max-width: 1200px;
 }

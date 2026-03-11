@@ -64,7 +64,7 @@ function MobileMenuPanel({
   return (
     <div className="fixed inset-x-0 top-[57px] z-50 md:hidden">
       <div className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]">
-        <div className="aicar-container">
+        <div className="aicar-header-container">
           <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl">
             <div className="border-b border-black/5 px-4 py-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
               Меню
@@ -154,7 +154,7 @@ export async function TopNav({ config }: { config: SiteConfig }) {
 
   return (
     <header className="border-b border-black/5 bg-[#d9d9d9]">
-      <div className="aicar-container">
+      <div className="aicar-header-container">
         {/* Mobile */}
         <div className="flex h-14 items-center justify-between md:hidden">
           <details className="relative">
