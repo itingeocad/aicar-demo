@@ -394,7 +394,9 @@ function CarGrid({
 }
 
 function getNum(v: string) {
-  const n = Number(String(v).replace(/[^\d.]/g, ''));
+  const cleaned = String(v ?? '').replace(/[^\d.]/g, '').trim();
+  if (!cleaned) return NaN;
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : NaN;
 }
 
@@ -480,6 +482,11 @@ function CarList({
   ];
 
   let cars = [...config.demoData.cars];
+  for (const extra of guaranteedCars) {
+    if (!cars.some((c) => c.id === extra.id)) {
+      cars.push(extra);
+    }
+  }
   for (const extra of guaranteedCars) {
     if (!cars.some((c) => c.id === extra.id)) {
       cars.push(extra);
