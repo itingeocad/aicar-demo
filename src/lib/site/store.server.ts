@@ -32,61 +32,122 @@ function lt(a: [number, number, number], b: [number, number, number]) {
   return a[2] < b[2];
 }
 
-function ensureDemoData(cfg: SiteConfig) {
-  for (const c of cfg.demoData.cars) {
-    if (!c.vehicleType) c.vehicleType = 'car';
-  }
+function ensureDemoData(cfg: SiteConfig): boolean {
+  let changed = false;
 
-  const hasTruck = cfg.demoData.cars.some((c) => c.vehicleType === 'truck');
-  const hasBus = cfg.demoData.cars.some((c) => c.vehicleType === 'bus');
-  const hasBike = cfg.demoData.cars.some((c) => c.vehicleType === 'bike');
+  for (const c of cfg.demoData.cars) {
+    if (!c.vehicleType) {
+      c.vehicleType = 'car';
+      changed = true;
+    }
+  }
 
   const img = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/1200/800`;
-  if (!hasBus) {
-    cfg.demoData.cars.push({
-      id: 'c10',
-      title: 'Ford Transit (van)',
-      price: 12900,
-      currency: '$',
-      year: 2016,
-      mileageKm: 210000,
-      city: 'Chișinău',
-      fuel: 'Diesel',
-      gearbox: 'MT',
-      imageUrl: img('transit'),
-      vehicleType: 'bus'
-    });
-  }
-  if (!hasTruck) {
-    cfg.demoData.cars.push({
-      id: 'c11',
-      title: 'MAN TGL (truck)',
-      price: 18900,
-      currency: '$',
-      year: 2014,
-      mileageKm: 350000,
-      city: 'Bălți',
-      fuel: 'Diesel',
-      gearbox: 'MT',
-      imageUrl: img('man_tgl'),
-      vehicleType: 'truck'
-    });
-  }
-  if (!hasBike) {
-    cfg.demoData.cars.push({
-      id: 'c12',
-      title: 'Yamaha MT-07',
-      price: 6200,
-      currency: '$',
-      year: 2018,
-      mileageKm: 24000,
-      city: 'Chișinău',
-      fuel: 'Benzină',
-      gearbox: 'MT',
-      imageUrl: img('mt07'),
-      vehicleType: 'bike'
-    });
-  }
+
+  const ensureCar = (car: SiteConfig['demoData']['cars'][number]) => {
+    if (!cfg.demoData.cars.some((c) => c.id === car.id)) {
+      cfg.demoData.cars.push(car);
+      changed = true;
+    }
+  };
+
+  ensureCar({
+    id: 'c10',
+    title: 'Ford Transit (van)',
+    price: 12900,
+    currency: '$',
+    year: 2016,
+    mileageKm: 210000,
+    city: 'Chișinău',
+    fuel: 'Diesel',
+    gearbox: 'MT',
+    imageUrl: img('transit'),
+    vehicleType: 'bus'
+  });
+
+  ensureCar({
+    id: 'c11',
+    title: 'MAN TGL (truck)',
+    price: 18900,
+    currency: '$',
+    year: 2014,
+    mileageKm: 350000,
+    city: 'Bălți',
+    fuel: 'Diesel',
+    gearbox: 'MT',
+    imageUrl: img('man_tgl'),
+    vehicleType: 'truck'
+  });
+
+  ensureCar({
+    id: 'c12',
+    title: 'Yamaha MT-07',
+    price: 6200,
+    currency: '$',
+    year: 2018,
+    mileageKm: 24000,
+    city: 'Chișinău',
+    fuel: 'Benzină',
+    gearbox: 'MT',
+    imageUrl: img('mt07'),
+    vehicleType: 'bike'
+  });
+
+  ensureCar({
+    id: 'c13',
+    title: 'BMW G 310 R',
+    price: 5600,
+    currency: '$',
+    year: 2020,
+    mileageKm: 12000,
+    city: 'Chișinău',
+    fuel: 'Benzină',
+    gearbox: 'MT',
+    imageUrl: img('bmw_g310r'),
+    vehicleType: 'bike'
+  });
+
+  ensureCar({
+    id: 'c14',
+    title: 'BMW F 900 XR',
+    price: 9800,
+    currency: '$',
+    year: 2021,
+    mileageKm: 9000,
+    city: 'Bălți',
+    fuel: 'Benzină',
+    gearbox: 'MT',
+    imageUrl: img('bmw_f900xr'),
+    vehicleType: 'bike'
+  });
+
+  ensureCar({
+    id: 'c15',
+    title: 'Mercedes Sprinter',
+    price: 16500,
+    currency: '$',
+    year: 2017,
+    mileageKm: 188000,
+    city: 'Comrat',
+    fuel: 'Diesel',
+    gearbox: 'MT',
+    imageUrl: img('sprinter'),
+    vehicleType: 'bus'
+  });
+
+  ensureCar({
+    id: 'c16',
+    title: 'Volvo FH 460',
+    price: 26800,
+    currency: '$',
+    year: 2016,
+    mileageKm: 540000,
+    city: 'Chișinău',
+    fuel: 'Diesel',
+    gearbox: 'AT',
+    imageUrl: img('volvo_fh460'),
+    vehicleType: 'truck'
+  });
 
   if (cfg.demoData.reels.length < 4) {
     cfg.demoData.reels.push({
@@ -102,7 +163,10 @@ function ensureDemoData(cfg: SiteConfig) {
       badges: [],
       linkedCarId: cfg.demoData.cars[0]?.id
     });
+    changed = true;
   }
+
+  return changed;
 }
 
 function migrate016(cfg: SiteConfig): SiteConfig {
@@ -241,8 +305,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       const raw = await redis.get(upstashKey());
       const parsed = decodeConfig(raw);
       if (parsed) {
+        const before = JSON.stringify(parsed);
+        ensureDemoData(parsed);
         const migrated = migrateAll(parsed);
-        if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+        if (JSON.stringify(migrated) !== before) {
           try {
             await redis.set(upstashKey(), JSON.stringify(migrated));
           } catch {
@@ -260,8 +326,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   try {
     const raw = await fs.readFile(p, 'utf8');
     const parsed = JSON.parse(raw) as SiteConfig;
+    const before = JSON.stringify(parsed);
+    ensureDemoData(parsed);
     const migrated = migrateAll(parsed);
-    if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+    if (JSON.stringify(migrated) !== before) {
       await fs.mkdir(path.dirname(p), { recursive: true });
       await fs.writeFile(p, JSON.stringify(migrated, null, 2), 'utf8');
     }
