@@ -43,8 +43,8 @@ function ResultCard({ car }: { car: Car }) {
       href={`/cars/${car.id}`}
       className="block rounded-[18px] bg-[#f4f4f4] p-4 shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
     >
-      <div className="flex gap-4">
-        <div className="h-[190px] w-[190px] flex-none overflow-hidden rounded-[6px] bg-white">
+      <div className="flex gap-5">
+        <div className="h-[190px] w-[240px] flex-none overflow-hidden rounded-[8px] bg-white">
           <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
         </div>
 
@@ -58,14 +58,13 @@ function ResultCard({ car }: { car: Car }) {
               <div className="mt-3 text-[14px] text-slate-700">
                 Топливо: {car.fuel} • КПП: {car.gearbox} • Тип: {car.vehicleType ?? 'car'}
               </div>
+              <div className="mt-5 text-[14px] text-slate-700">Описание объявления</div>
             </div>
 
             <div className="whitespace-nowrap text-[18px] font-bold">
               {car.price.toLocaleString()} {car.currency}
             </div>
           </div>
-
-          <div className="mt-4 text-[14px] text-slate-700">Описание объявления</div>
         </div>
       </div>
     </Link>
@@ -76,7 +75,7 @@ function MobileResultCard({ car }: { car: Car }) {
   return (
     <Link
       href={`/cars/${car.id}`}
-      className="block rounded-[14px] bg-[#d7d7d7] p-4"
+      className="block rounded-[16px] bg-[#d7d7d7] p-4"
     >
       <div className="flex gap-3">
         <div className="h-[95px] w-[95px] flex-none overflow-hidden rounded-[8px] bg-white">
@@ -163,14 +162,14 @@ export function SearchResultsModeClient({
     return (
       <>
         <div className="hidden md:block">
-          <div className="aicar-container py-6">
-            <div className="grid grid-cols-[170px_minmax(0,1fr)] gap-6">
-              <aside>
-                <div className="mb-4 text-[18px] font-semibold">Фильтр поиска</div>
+          <div className="aicar-container py-8">
+            <div className="grid grid-cols-[160px_minmax(0,1fr)] gap-8">
+              <aside className="pt-1">
+                <div className="mb-5 text-[18px] font-semibold">Фильтр поиска</div>
                 <CompactFilterForm search={search} />
               </aside>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {cars.length === 0 ? (
                   <div className="rounded-[18px] bg-[#f4f4f4] p-6 text-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
                     Ничего не найдено (demo).
@@ -184,8 +183,8 @@ export function SearchResultsModeClient({
         </div>
 
         <div className="md:hidden">
-          <div className="aicar-container py-4">
-            <details className="mb-4">
+          <div className="aicar-container py-5">
+            <details className="mb-5">
               <summary className="flex cursor-pointer list-none items-center gap-2 text-[18px] font-medium [&::-webkit-details-marker]:hidden">
                 Фильтр
                 <ChevronDown className="h-4 w-4" />
@@ -195,7 +194,7 @@ export function SearchResultsModeClient({
               </div>
             </details>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {cars.length === 0 ? (
                 <div className="rounded-[14px] bg-[#d7d7d7] p-4 text-slate-700">
                   Ничего не найдено (demo).

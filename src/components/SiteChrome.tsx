@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell, ChevronDown, Heart, Menu, MessageCircle } from 'lucide-react';
+import { Bell, ChevronDown, Heart, Menu, MessageCircle, X } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
 import { getSession } from '@/lib/auth/session.server';
