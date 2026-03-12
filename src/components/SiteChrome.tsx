@@ -242,14 +242,15 @@ export function Footer({
   const storeBadges = config.footer.storeBadges ?? [];
 
   if (variant === 'aichat') {
-    const compactGroups = fallbackGroups.slice(0, 2);
+    const aichatGroupCols =
+      fallbackGroups.length >= 3 ? 'grid-cols-3' : fallbackGroups.length === 2 ? 'grid-cols-2' : 'grid-cols-1';
 
     return (
       <footer className="bg-[#d9d9d9]">
         <div className="hidden md:block">
           <div className="mx-auto max-w-[1200px] px-4 py-10">
-            <div className="grid grid-cols-12 gap-8">
-              <div className="col-span-3 pt-2">
+            <div className="grid grid-cols-[220px_minmax(0,1fr)_250px] items-start gap-10">
+              <div className="pt-2">
                 {config.theme.logoImage ? (
                   <img
                     src={config.theme.logoImage}
@@ -261,23 +262,25 @@ export function Footer({
                 )}
               </div>
 
-              <div className="col-span-5">
-                <div className="grid grid-cols-2 gap-10 text-[15px] text-slate-800">
-                  {compactGroups.map((g) => (
-                    <div key={g.title}>
-                      <div className="space-y-3">
-                        {g.links.map((l) => (
-                          <Link key={l.href} href={l.href} className="block hover:text-slate-950">
-                            {l.label}
-                          </Link>
-                        ))}
-                      </div>
+              <div className={`grid ${aichatGroupCols} gap-10 pt-1 text-[15px] text-slate-800`}>
+                {fallbackGroups.map((g, idx) => (
+                  <div key={`${g.title}-${idx}`}>
+                    {g.title && g.title.trim() ? (
+                      <div className="mb-3 font-medium text-slate-900">{g.title}</div>
+                    ) : null}
+
+                    <div className="space-y-3">
+                      {g.links.map((l) => (
+                        <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                          {l.label}
+                        </Link>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="col-span-4 justify-self-end">
+              <div className="justify-self-end">
                 <div className="mb-3 text-[15px] text-slate-800">Мы в социальных сетях</div>
                 {socials.length ? <SocialIcons socials={socials} minimal /> : null}
                 {storeBadges.length ? <StoreButtons storeBadges={storeBadges} /> : null}
