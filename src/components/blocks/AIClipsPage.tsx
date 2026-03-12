@@ -52,8 +52,8 @@ function ReelMedia({
 }
 
 function ActionStack({ mobile = false }: { mobile?: boolean }) {
-  const iconSize = mobile ? 'h-7 w-7' : 'h-11 w-11';
-  const gap = mobile ? 'gap-5' : 'gap-7';
+  const iconSize = mobile ? 'h-6 w-6' : 'h-11 w-11';
+  const gap = mobile ? 'gap-4' : 'gap-7';
 
   return (
     <div className={`flex flex-col items-center text-white ${gap}`}>
@@ -238,13 +238,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       </div>
 
       <div className="h-full md:hidden">
-        <section className="h-full overflow-hidden bg-[#a9a9a9] px-3 py-2">
+        <section className="h-full overflow-hidden bg-[#a9a9a9] px-2 py-2">
           <div className="flex h-full items-center justify-center">
             <div
               className="relative aspect-[9/16] w-full"
               style={{
-                maxWidth: 'min(302px, calc(100vw - 24px))',
-                height: 'min(calc(100% - 8px), 520px)'
+                width: 'min(100%, 310px)',
+                height: 'min(calc(100% - 4px), calc((100vw - 16px) * 1.62), 540px)'
               }}
             >
               <div
@@ -267,11 +267,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       }}
                     />
 
-                    <div className="absolute bottom-[84px] right-[12px] z-10">
+                    <div className="absolute bottom-[74px] right-[10px] z-10">
                       <ActionStack mobile />
                     </div>
 
-                    <div className="absolute bottom-[10px] left-[10px] h-[54px] w-[54px] rounded-full bg-white/92 z-10" />
+                    <div className="absolute bottom-[8px] left-[8px] h-[46px] w-[46px] rounded-full bg-white/92 z-10" />
                   </div>
                 ))}
               </div>
@@ -281,13 +281,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   type="button"
                   aria-label="Next reel"
                   onClick={goNext}
-                  className="absolute bottom-[12px] left-1/2 z-20 -translate-x-1/2 text-white transition hover:scale-105"
+                  className="absolute bottom-[10px] left-1/2 z-20 -translate-x-1/2 text-white"
                 >
-                  <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
+                  <ChevronDown className="h-[42px] w-[42px]" strokeWidth={1.7} />
                 </button>
               ) : (
-                <div className="absolute bottom-[12px] left-1/2 z-20 -translate-x-1/2 text-white">
-                  <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
+                <div className="absolute bottom-[10px] left-1/2 z-20 -translate-x-1/2 text-white">
+                  <ChevronDown className="h-[42px] w-[42px]" strokeWidth={1.7} />
                 </div>
               )}
             </div>

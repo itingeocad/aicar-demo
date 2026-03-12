@@ -39,7 +39,7 @@ export default async function CatchAllSitePage({ params, searchParams }: Props) 
 
   if (path === 'aiclips') {
     return (
-      <SiteFrame config={config} variant="aichat">
+      <SiteFrame config={config} variant="aiclips">
         <AIClipsPage reels={config.demoData.reels} />
       </SiteFrame>
     );
