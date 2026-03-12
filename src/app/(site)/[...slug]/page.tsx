@@ -3,6 +3,7 @@ import { SiteFrame } from '@/components/SiteChrome';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { SearchPageModes } from '@/components/blocks/SearchPageModes';
 import { AIChatPage } from '@/components/blocks/AIChatPage';
+import { AIClipsPage } from '@/components/blocks/AIClipsPage';
 import { NewsPage } from '@/components/blocks/NewsPage';
 import { getPageBySlug, getSiteConfig } from '@/lib/site/store.server';
 
