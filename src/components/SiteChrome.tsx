@@ -241,230 +241,151 @@ export function Footer({
   config: SiteConfig;
   variant?: 'default' | 'aichat' | 'aiclips';
 }) {
-  const build = formatBuildLabel();
+  if (variant === 'aiclips') {
+    return null;
+  }
 
-  const groups = config.footer.groups && config.footer.groups.length > 0 ? config.footer.groups : [];
-  const legacyLinks = config.footer.links ?? [];
-  const fallbackGroups: FooterGroup[] = groups.length
-    ? groups
-    : [
-        { title: 'Ссылки', links: legacyLinks.slice(0, Math.ceil(legacyLinks.length / 2)) },
-        { title: ' ', links: legacyLinks.slice(Math.ceil(legacyLinks.length / 2)) }
-      ].filter((g) => g.links.length > 0);
-
+  const groups = config.footer.groups ?? [];
   const socials = config.footer.socials ?? [];
   const storeBadges = config.footer.storeBadges ?? [];
-
-  if (variant === 'aiclips') {
-    const flatLinks = fallbackGroups.flatMap((g) => g.links);
-    const leftCol = flatLinks.slice(0, 5);
-    const rightCol = flatLinks.slice(5, 10);
-
-    return (
-      <footer className="bg-[#d9d9d9]">
-        <div className="hidden h-[220px] md:block">
-          <div className="mx-auto grid h-full max-w-[1320px] grid-cols-[220px_1fr_320px] items-end gap-10 px-8 pb-8 pt-6">
-            <div className="self-end">
-              {config.theme.logoImage ? (
-                <img
-                  src={config.theme.logoImage}
-                  alt={config.theme.brandName || 'Лого'}
-                  className="max-h-14 w-auto object-contain"
-                />
-              ) : (
-                <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-20 text-[15px] text-slate-900">
-              <div className="space-y-4">
-                {leftCol.map((l) => (
-                  <Link key={l.href} href={l.href} className="block hover:text-slate-950">
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                {rightCol.map((l) => (
-                  <Link key={l.href} href={l.href} className="block hover:text-slate-950">
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="justify-self-end">
-              <div className="mb-4 text-[16px] text-slate-900">Мы в социальных сетях</div>
-
-              <div className="mb-5 flex items-center gap-3">
-                {socials.slice(0, 4).map((s) => (
-                  <Link
-                    key={s.label}
-                    href={s.href}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 text-xs text-slate-700 transition hover:bg-white"
-                  >
-                    {s.label.slice(0, 2)}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="flex max-w-[240px] flex-col gap-3">
-                {storeBadges.slice(0, 2).map((b) => (
-                  <Link
-                    key={b.label}
-                    href={b.href}
-                    className="rounded-[14px] bg-white/85 px-5 py-3 text-xs text-slate-700 transition hover:bg-white"
-                  >
-                    {b.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-  className="overflow-hidden text-center transition-all duration-300 md:hidden"
-  style={{
-    height: 'var(--aiclips-mobile-footer-height, 188px)',
-    opacity: 'var(--aiclips-mobile-footer-opacity, 1)',
-    paddingTop: 'var(--aiclips-mobile-footer-padding-top, 16px)',
-    paddingBottom: 'var(--aiclips-mobile-footer-padding-bottom, 16px)'
-  }}
->
-          {config.theme.logoImage ? (
-            <img
-              src={config.theme.logoImage}
-              alt={config.theme.brandName || 'Лого'}
-              className="mx-auto max-h-14 w-auto object-contain"
-            />
-          ) : (
-            <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-          )}
-
-          <div className="mt-4 text-[16px] text-slate-900">Мы в социальных сетях</div>
-
-          <div className="mt-4 flex items-center justify-center gap-3">
-            {socials.slice(0, 4).map((s) => (
-              <Link
-                key={s.label}
-                href={s.href}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-[10px] text-slate-700"
-              >
-                {s.label.slice(0, 2)}
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-4 flex items-center justify-center gap-3">
-            {storeBadges.slice(0, 2).map((b) => (
-              <Link
-                key={b.label}
-                href={b.href}
-                className="rounded-[14px] bg-white/85 px-4 py-3 text-[10px] text-slate-700"
-              >
-                {b.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </footer>
-    );
-  }
-  if (variant === 'aichat') {
-    const aichatGroupCols =
-      fallbackGroups.length >= 3 ? 'grid-cols-3' : fallbackGroups.length === 2 ? 'grid-cols-2' : 'grid-cols-1';
-
-    return (
-      <footer className="bg-[#d9d9d9]">
-        <div className="hidden md:block">
-          <div className="mx-auto max-w-[1200px] px-4 py-10">
-            <div className="grid grid-cols-[220px_minmax(0,1fr)_250px] items-start gap-10">
-              <div className="pt-2">
-                {config.theme.logoImage ? (
-                  <img
-                    src={config.theme.logoImage}
-                    alt={config.theme.brandName || 'Лого'}
-                    className="max-h-14 w-auto object-contain"
-                  />
-                ) : (
-                  <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-                )}
-              </div>
-
-              <div className={`grid ${aichatGroupCols} gap-10 pt-1 text-[15px] text-slate-800`}>
-                {fallbackGroups.map((g, idx) => (
-                  <div key={`${g.title}-${idx}`}>
-                    {g.title && g.title.trim() ? (
-                      <div className="mb-3 font-medium text-slate-900">{g.title}</div>
-                    ) : null}
-
-                    <div className="space-y-3">
-                      {g.links.map((l) => (
-                        <Link key={l.href} href={l.href} className="block hover:text-slate-950">
-                          {l.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="justify-self-end">
-                <div className="mb-3 text-[15px] text-slate-800">Мы в социальных сетях</div>
-                {socials.length ? <SocialIcons socials={socials} minimal /> : null}
-                {storeBadges.length ? <StoreButtons storeBadges={storeBadges} /> : null}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 py-12 text-center md:hidden">
-          {config.theme.logoImage ? (
-            <img
-              src={config.theme.logoImage}
-              alt={config.theme.brandName || 'Лого'}
-              className="mx-auto max-h-14 w-auto object-contain"
-            />
-          ) : (
-            <div className="text-[32px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-          )}
-
-          <div className="mt-6 text-[18px] text-slate-800">Мы в социальных сетях</div>
-          {socials.length ? <SocialIcons socials={socials} centered minimal /> : null}
-          {storeBadges.length ? <StoreButtons storeBadges={storeBadges} mobile /> : null}
-        </div>
-      </footer>
-    );
-  }
+  const flatLinks = groups.flatMap((g) => g.links ?? []);
+  const half = Math.ceil(flatLinks.length / 2);
+  const leftCol = flatLinks.slice(0, half);
+  const rightCol = flatLinks.slice(half);
+  const buildVersion = (config as any).version ?? '';
 
   return (
-    <footer className="mt-12 border-t border-black/5 bg-[#d9d9d9]">
-      <div className="aicar-container py-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:items-start">
-          <div className="md:col-span-3">
+    <footer className="bg-[#d9d9d9]">
+      <div className="hidden md:block">
+        <div className="mx-auto grid w-full max-w-[1320px] grid-cols-[220px_1fr_320px] gap-10 px-8 pb-8 pt-10">
+          <div className="self-end">
             {config.theme.logoImage ? (
               <img
                 src={config.theme.logoImage}
                 alt={config.theme.brandName || 'Лого'}
-                className="max-h-12 w-auto object-contain"
+                className="max-h-14 w-auto object-contain"
               />
             ) : (
-              <div className="text-2xl font-semibold">{config.theme.brandName || 'Лого'}</div>
+              <div className="text-[38px] font-semibold tracking-[-0.04em] text-slate-900">
+                {config.theme.brandName || 'AICar'}
+              </div>
             )}
-            <div className="mt-2 text-xs text-slate-600">{config.footer.note}</div>
-            <div className="mt-2 text-xs text-slate-500">{build}</div>
+
+            <div className="mt-3 max-w-[230px] text-[13px] leading-[1.25] text-slate-700">
+              Demo build • контент и медиа могут быть моковыми
+            </div>
+
+            {buildVersion ? (
+              <div className="mt-2 text-[12px] text-slate-600">v{buildVersion}</div>
+            ) : null}
           </div>
 
-          <div className="md:col-span-6">
-            <FooterGroups groups={fallbackGroups} />
+          <div className="grid grid-cols-2 gap-x-20 text-[15px] text-slate-900">
+            <div className="space-y-4">
+              {leftCol.map((l) => (
+                <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              {rightCol.map((l) => (
+                <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          <div className="md:col-span-3">
-            <div className="mb-3 text-sm text-slate-700">Мы в социальных сетях</div>
-            {socials.length ? <SocialIcons socials={socials} /> : null}
-            {storeBadges.length ? <StoreButtons storeBadges={storeBadges} /> : null}
+          <div className="justify-self-end">
+            <div className="mb-4 text-[16px] text-slate-900">Мы в социальных сетях</div>
+
+            <div className="mb-5 flex items-center gap-3">
+              {socials.slice(0, 4).map((s) => (
+                <Link
+                  key={s.label}
+                  href={s.href}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 text-xs text-slate-700 transition hover:bg-white"
+                >
+                  {s.label.slice(0, 2)}
+                </Link>
+              ))}
+            </div>
+
+            <div className="flex max-w-[240px] flex-col gap-3">
+              {storeBadges.slice(0, 2).map((b) => (
+                <Link
+                  key={b.label}
+                  href={b.href}
+                  className="rounded-[14px] bg-white/85 px-5 py-3 text-xs text-slate-700 transition hover:bg-white"
+                >
+                  {b.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="md:hidden">
+        <div className="mx-auto w-full max-w-[960px] px-4 pb-8 pt-8">
+          <div className="text-center">
+            {config.theme.logoImage ? (
+              <img
+                src={config.theme.logoImage}
+                alt={config.theme.brandName || 'Лого'}
+                className="mx-auto max-h-14 w-auto object-contain"
+              />
+            ) : (
+              <div className="text-[34px] font-semibold tracking-[-0.04em] text-slate-900">
+                {config.theme.brandName || 'AICar'}
+              </div>
+            )}
+
+            <div className="mt-3 text-[13px] leading-[1.25] text-slate-700">
+              Demo build • контент и медиа могут быть моковыми
+            </div>
+
+            {buildVersion ? (
+              <div className="mt-2 text-[12px] text-slate-600">v{buildVersion}</div>
+            ) : null}
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-3 text-[15px] text-slate-900">
+            {flatLinks.map((l) => (
+              <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                {l.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <div className="text-[16px] text-slate-900">Мы в социальных сетях</div>
+
+            <div className="mt-4 flex items-center justify-center gap-3">
+              {socials.slice(0, 4).map((s) => (
+                <Link
+                  key={s.label}
+                  href={s.href}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-[10px] text-slate-700"
+                >
+                  {s.label.slice(0, 2)}
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-5 flex flex-col items-center gap-3">
+              {storeBadges.slice(0, 2).map((b) => (
+                <Link
+                  key={b.label}
+                  href={b.href}
+                  className="rounded-[14px] bg-white/85 px-5 py-3 text-[10px] text-slate-700"
+                >
+                  {b.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>
