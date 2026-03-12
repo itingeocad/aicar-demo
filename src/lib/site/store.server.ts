@@ -169,6 +169,16 @@ function ensureDemoData(cfg: SiteConfig): boolean {
   return changed;
 }
 
+function ensureNewsNav(cfg: SiteConfig): boolean {
+  const items = cfg.nav.items as any[];
+  const hasNews = items.some((it) => (it.href === '/news') || (Array.isArray(it.children) && it.children.some((c: any) => c.href === '/news')));
+
+  if (hasNews) return false;
+
+  items.push({ label: 'Новости', href: '/news' });
+  return true;
+}
+
 function migrate016(cfg: SiteConfig): SiteConfig {
   const cur = parseVer(cfg.version);
   const target = parseVer('0.1.6');
@@ -275,6 +285,7 @@ function migrateAll(cfg: SiteConfig): SiteConfig {
   let out = cfg;
   out = migrate016(out);
   out = migrate017(out);
+  ensureNewsNav(out);
   out.version = APP_VERSION;
   return out;
 }

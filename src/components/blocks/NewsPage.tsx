@@ -1,17 +1,18 @@
 import Link from 'next/link';
-import { SiteConfig, DemoNews } from '@/lib/site/types';
+import { DemoNews, SiteConfig } from '@/lib/site/types';
 
 function getNewsItems(config: SiteConfig): DemoNews[] {
-  const base = config.demoData.news && config.demoData.news.length > 0
-    ? config.demoData.news
-    : [
-        {
-          id: 'news-fallback-1',
-          title: 'Описание новости',
-          excerpt: 'Актуальные материалы из мира автомобилей, аналитика рынка, тренды и полезные рекомендации.',
-          imageUrl: ''
-        }
-      ];
+  const base =
+    config.demoData.news && config.demoData.news.length > 0
+      ? config.demoData.news
+      : [
+          {
+            id: 'news-fallback-1',
+            title: 'Описание новости',
+            excerpt: '',
+            imageUrl: ''
+          }
+        ];
 
   return Array.from({ length: 5 }, (_, i) => {
     const item = base[i % base.length];
@@ -28,9 +29,11 @@ function NewsImage({ item, mobile = false }: { item: DemoNews; mobile?: boolean 
       <img
         src={item.imageUrl}
         alt={item.title}
-        className={mobile
-          ? 'h-[184px] w-[190px] rounded-[6px] object-cover'
-          : 'h-[230px] w-[230px] rounded-[6px] object-cover'}
+        className={
+          mobile
+            ? 'h-[150px] w-[124px] rounded-[6px] object-cover'
+            : 'h-[230px] w-[230px] rounded-[6px] object-cover'
+        }
       />
     );
   }
@@ -39,7 +42,7 @@ function NewsImage({ item, mobile = false }: { item: DemoNews; mobile?: boolean 
     <div
       className={
         mobile
-          ? 'flex h-[184px] w-[190px] items-center justify-center rounded-[6px] bg-[#d9d9d9] text-[18px] text-slate-900'
+          ? 'flex h-[150px] w-[124px] items-center justify-center rounded-[6px] bg-[#d9d9d9] text-[16px] text-slate-900'
           : 'flex h-[230px] w-[230px] items-center justify-center rounded-[6px] bg-[#d9d9d9] text-[18px] text-slate-900'
       }
     >
@@ -51,25 +54,21 @@ function NewsImage({ item, mobile = false }: { item: DemoNews; mobile?: boolean 
 function NewsCard({ item, mobile = false }: { item: DemoNews; mobile?: boolean }) {
   if (mobile) {
     return (
-      <article className="rounded-[24px] bg-[#f4f4f4] px-5 py-5 shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex gap-5">
+      <article className="rounded-[24px] bg-[#f4f4f4] px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
+        <div className="flex items-start gap-4">
           <div className="shrink-0">
             <NewsImage item={item} mobile />
           </div>
 
-          <div className="flex min-h-[184px] flex-1 flex-col">
-            <div className="text-[18px] leading-[1.2] text-slate-900">
+          <div className="flex min-h-[150px] flex-1 flex-col">
+            <div className="text-[17px] leading-[1.2] text-slate-900">
               {item.title || 'Описание новости'}
             </div>
 
-            <div className="mt-4 text-[15px] leading-[1.35] text-slate-700">
-              {item.excerpt || 'Описание новости'}
-            </div>
-
-            <div className="mt-auto pt-6">
+            <div className="mt-auto pt-5">
               <Link
                 href="/news"
-                className="inline-flex min-h-[58px] min-w-[190px] items-center justify-center rounded-[18px] bg-[#a9a9a9] px-8 text-[18px] font-medium text-slate-900"
+                className="inline-flex min-h-[54px] min-w-[190px] items-center justify-center rounded-[18px] bg-[#a9a9a9] px-8 text-[18px] font-medium text-slate-900"
               >
                 Подробнее
               </Link>
@@ -90,10 +89,6 @@ function NewsCard({ item, mobile = false }: { item: DemoNews; mobile?: boolean }
         <div className="flex min-h-[230px] flex-1 flex-col">
           <div className="text-[18px] leading-none text-slate-900">
             {item.title || 'Описание новости'}
-          </div>
-
-          <div className="mt-5 max-w-[640px] text-[16px] leading-[1.45] text-slate-700">
-            {item.excerpt || 'Описание новости'}
           </div>
 
           <div className="mt-auto pt-8">
@@ -175,7 +170,7 @@ export function NewsPage({ config }: { config: SiteConfig }) {
             Hot news
           </h2>
 
-          <div className="mt-7 space-y-5">
+          <div className="mt-7 space-y-4">
             {items.map((item) => (
               <NewsCard key={item.id} item={item} mobile />
             ))}
