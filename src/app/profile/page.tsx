@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { SiteFrame } from '@/components/SiteChrome';
+import { AccountMobileBottomBar } from '@/components/profile/AccountMobileBottomBar';
 import { getSession } from '@/lib/auth/session.server';
 import { getSiteConfig } from '@/lib/site/store.server';
 
@@ -42,6 +43,8 @@ export default async function ProfilePage() {
           </div>
         </div>
       </section>
+
+      <AccountMobileBottomBar />
     </SiteFrame>
   );
 }
