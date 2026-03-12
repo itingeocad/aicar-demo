@@ -258,7 +258,7 @@ export function Footer({
                   className="max-h-14 w-auto object-contain"
                 />
               ) : (
-                <div className="text-[34px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+                <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
               )}
             </div>
 
@@ -310,7 +310,7 @@ export function Footer({
           </div>
         </div>
 
-        <div className="h-[250px] px-4 py-6 text-center md:hidden">
+        <div className="h-[188px] px-4 py-4 text-center md:hidden">
           {config.theme.logoImage ? (
             <img
               src={config.theme.logoImage}
@@ -318,29 +318,29 @@ export function Footer({
               className="mx-auto max-h-14 w-auto object-contain"
             />
           ) : (
-            <div className="text-[34px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+            <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
           )}
 
-          <div className="mt-6 text-[18px] text-slate-900">Мы в социальных сетях</div>
+          <div className="mt-4 text-[16px] text-slate-900">Мы в социальных сетях</div>
 
-          <div className="mt-5 flex items-center justify-center gap-4">
+          <div className="mt-4 flex items-center justify-center gap-3">
             {socials.slice(0, 4).map((s) => (
               <Link
                 key={s.label}
                 href={s.href}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white/85 text-xs text-slate-700"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-[10px] text-slate-700"
               >
                 {s.label.slice(0, 2)}
               </Link>
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-4">
+          <div className="mt-4 flex items-center justify-center gap-3">
             {storeBadges.slice(0, 2).map((b) => (
               <Link
                 key={b.label}
                 href={b.href}
-                className="rounded-[16px] bg-white/85 px-5 py-4 text-xs text-slate-700"
+                className="rounded-[14px] bg-white/85 px-4 py-3 text-[10px] text-slate-700"
               >
                 {b.label}
               </Link>
