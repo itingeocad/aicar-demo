@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ChevronDown, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 
 function FaqRow({
   question,
@@ -17,34 +17,45 @@ function FaqRow({
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-slate-900 [&::-webkit-details-marker]:hidden">
         <span>{question}</span>
-        {defaultOpen ? <span className="text-slate-500">−</span> : <Plus className="h-4 w-4 text-slate-500" />}
+        {defaultOpen ? <span className="text-[20px] leading-none text-slate-500">−</span> : <Plus className="h-4 w-4 text-slate-500" />}
       </summary>
 
-      {children ? <div className="pt-4 text-[14px] leading-6 text-slate-700">{children}</div> : null}
+      {children ? <div className="pt-4 text-[14px] leading-7 text-slate-700">{children}</div> : null}
     </details>
   );
 }
 
-function PromptBox() {
+function PromptExample({ mobile = false }: { mobile?: boolean }) {
   return (
-    <div className="mx-auto mt-8 max-w-[760px]">
-      <div className="mb-5 flex justify-center">
-        <Link
-          href="/search"
-          className="inline-flex h-[44px] min-w-[180px] items-center justify-center rounded-[10px] bg-[#7f889c] px-6 text-[15px] font-medium text-white transition hover:bg-[#737c90]"
-        >
-          Начни чат
-        </Link>
-      </div>
-
-      <div className="rounded-[10px] bg-[#d9d9d9] p-3 md:p-4">
-        <div className="flex items-center gap-3 rounded-[8px] bg-white px-4 py-3 ring-1 ring-black/5">
-          <Search className="h-5 w-5 flex-none text-slate-500" />
-          <div className="truncate text-[13px] text-slate-600 md:text-[14px]">
-            Семейный автомобиль, внедорожник. От 2020 года и выше. Полная комплектация...
-          </div>
+    <div className={mobile ? 'rounded-[10px] bg-[#d9d9d9] p-3' : 'rounded-[10px] bg-[#d9d9d9] p-4'}>
+      <div className="flex items-center gap-3 rounded-[8px] bg-white px-4 py-3 ring-1 ring-black/5">
+        <Search className="h-5 w-5 flex-none text-slate-500" />
+        <div className={mobile ? 'truncate text-[12px] text-slate-600' : 'truncate text-[14px] text-slate-600'}>
+          {mobile
+            ? 'Семейный автомобиль, внедорожник. От 2020 ...'
+            : 'Семейный автомобиль, внедорожник. От 2020 года и выше. Полная комплектация...'}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FaqList({ mobile = false }: { mobile?: boolean }) {
+  return (
+    <div className={mobile ? 'mx-auto mt-8 max-w-[340px]' : 'mx-auto mt-10 max-w-[980px]'}>
+      <FaqRow question="Что умеет AIChat?" defaultOpen>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Подбор авто по бюджету и предпочтениям</li>
+          <li>Сравнение нескольких моделей</li>
+          <li>Рекомендации на основе ваших запросов</li>
+          <li>Анализ комплектации и характеристик</li>
+          <li>Подсказки по выгодности предложения</li>
+        </ul>
+      </FaqRow>
+
+      <FaqRow question="Что такое AI-чат по подбору автомобиля?" />
+      <FaqRow question="Нужно ли регистрироваться, чтобы воспользоваться AI-чатом?" />
+      <FaqRow question="Насколько точны рекомендации?" />
     </div>
   );
 }
@@ -53,7 +64,7 @@ export function AIChatPage() {
   return (
     <>
       <div className="hidden md:block">
-        <section className="aicar-container py-12">
+        <section className="aicar-container pt-12 pb-8">
           <h1 className="text-center text-[52px] font-semibold tracking-[-0.02em] text-slate-900">
             AIChat
           </h1>
@@ -68,34 +79,31 @@ export function AIChatPage() {
             </p>
           </div>
 
-          <PromptBox />
+          <div className="mx-auto mt-8 max-w-[760px]">
+            <div className="mb-5 flex justify-center">
+              <Link
+                href="/search"
+                className="inline-flex h-[44px] min-w-[184px] items-center justify-center rounded-[10px] bg-[#7f889c] px-6 text-[15px] font-medium text-white transition hover:bg-[#737c90]"
+              >
+                Начни чат
+              </Link>
+            </div>
+
+            <PromptExample />
+          </div>
         </section>
 
-        <section className="aicar-container pb-16">
+        <section className="aicar-container pb-16 pt-6">
           <h2 className="text-center text-[28px] font-semibold tracking-[-0.02em] text-slate-900">
             Частые вопросы
           </h2>
 
-          <div className="mx-auto mt-10 max-w-[980px]">
-            <FaqRow question="Что умеет AIChat?" defaultOpen>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Подбор авто по бюджету и предпочтениям</li>
-                <li>Сравнение нескольких моделей</li>
-                <li>Рекомендации на основе ваших запросов</li>
-                <li>Анализ комплектации и характеристик</li>
-                <li>Подсказки по выгодности предложения</li>
-              </ul>
-            </FaqRow>
-
-            <FaqRow question="Что такое AI-чат по подбору автомобиля?" />
-            <FaqRow question="Нужно ли регистрироваться, чтобы воспользоваться AI-чатом?" />
-            <FaqRow question="Насколько точны рекомендации?" />
-          </div>
+          <FaqList />
         </section>
       </div>
 
       <div className="md:hidden">
-        <section className="aicar-container py-8">
+        <section className="aicar-container pt-8 pb-6">
           <h1 className="text-center text-[24px] font-semibold tracking-[-0.02em] text-slate-900">
             AIChat
           </h1>
@@ -120,37 +128,16 @@ export function AIChatPage() {
               </Link>
             </div>
 
-            <div className="rounded-[10px] bg-[#d9d9d9] p-3">
-              <div className="flex items-center gap-3 rounded-[8px] bg-white px-3 py-3 ring-1 ring-black/5">
-                <Search className="h-4 w-4 flex-none text-slate-500" />
-                <div className="truncate text-[12px] text-slate-600">
-                  Семейный автомобиль, внедорожник. От 2020 ...
-                </div>
-              </div>
-            </div>
+            <PromptExample mobile />
           </div>
         </section>
 
-        <section className="aicar-container pb-12">
+        <section className="aicar-container pb-12 pt-4">
           <h2 className="text-center text-[22px] font-semibold tracking-[-0.02em] text-slate-900">
             Частые вопросы
           </h2>
 
-          <div className="mx-auto mt-8 max-w-[340px]">
-            <FaqRow question="Что умеет AIChat?" defaultOpen>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Подбор авто по бюджету и предпочтениям</li>
-                <li>Сравнение нескольких моделей</li>
-                <li>Рекомендации на основе ваших запросов</li>
-                <li>Анализ комплектации и характеристик</li>
-                <li>Подсказки по выгодности предложения</li>
-              </ul>
-            </FaqRow>
-
-            <FaqRow question="Что такое AI-чат по подбору автомобиля?" />
-            <FaqRow question="Нужно ли регистрироваться, чтобы воспользоваться AI-чатом?" />
-            <FaqRow question="Насколько точны рекомендации?" />
-          </div>
+          <FaqList mobile />
         </section>
       </div>
     </>
