@@ -9,20 +9,24 @@ function ReelSlide({
   reel,
   active,
   videoRef,
-  mobile = false
+  mobile = false,
+  showMeta = true
 }: {
   reel: DemoReel;
   active: boolean;
   videoRef: (node: HTMLVideoElement | null) => void;
   mobile?: boolean;
+  showMeta?: boolean;
 }) {
+  const hasMedia = Boolean(reel.videoUrl || reel.posterUrl);
+
   return (
-    <div className="relative h-full w-full snap-start overflow-hidden rounded-[18px] bg-black">
+    <div className={mobile ? 'relative h-full w-full bg-[#b3b3b3]' : 'relative h-full w-full overflow-hidden rounded-[18px] bg-black'}>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         ref={videoRef}
-        src={reel.videoUrl}
-        poster={reel.posterUrl}
+        src={reel.videoUrl || undefined}
+        poster={reel.posterUrl || undefined}
         muted
         loop
         playsInline
@@ -30,37 +34,46 @@ function ReelSlide({
         className="h-full w-full object-cover"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/10" />
+      {!hasMedia ? (
+        <div className="absolute inset-0 flex items-center justify-center text-[18px] text-black">
+          Video
+        </div>
+      ) : null}
 
-      <div className={mobile ? 'absolute bottom-5 left-4 right-4 text-white' : 'absolute bottom-7 left-6 right-6 text-white'}>
-        <div className={mobile ? 'text-[18px] font-medium leading-[1.2]' : 'text-[22px] font-medium leading-[1.15]'}>
-          {reel.title}
-        </div>
-        <div className={mobile ? 'mt-1 text-[14px] text-white/85' : 'mt-2 text-[15px] text-white/85'}>
-          @{reel.author}
-        </div>
-        {reel.badges && reel.badges.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {reel.badges.map((badge) => (
-              <span
-                key={badge}
-                className="rounded-full bg-white/18 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm"
-              >
-                {badge}
-              </span>
-            ))}
+      {showMeta ? <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-black/10" /> : null}
+
+      {showMeta ? (
+        <div className={mobile ? 'absolute bottom-5 left-4 right-4 text-white' : 'absolute bottom-7 left-6 right-6 text-white'}>
+          <div className={mobile ? 'text-[18px] font-medium leading-[1.2]' : 'text-[22px] font-medium leading-[1.15]'}>
+            {reel.title}
           </div>
-        ) : null}
-      </div>
+          <div className={mobile ? 'mt-1 text-[14px] text-white/85' : 'mt-2 text-[15px] text-white/85'}>
+            @{reel.author}
+          </div>
 
-      {!active ? <div className="absolute inset-0 bg-black/12" /> : null}
+          {reel.badges && reel.badges.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {reel.badges.map((badge) => (
+                <span
+                  key={badge}
+                  className="rounded-full bg-white/18 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!active ? <div className="absolute inset-0 bg-black/10" /> : null}
     </div>
   );
 }
 
 function SideActions({ mobile = false }: { mobile?: boolean }) {
   const iconClass = mobile ? 'h-8 w-8' : 'h-11 w-11';
-  const gapClass = mobile ? 'gap-5' : 'gap-7';
+  const gapClass = mobile ? 'gap-6' : 'gap-7';
 
   return (
     <div className={`flex flex-col items-center text-white ${gapClass}`}>
@@ -202,10 +215,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
               <div className="absolute left-[210px] bottom-[165px] h-[78px] w-[78px] rounded-full bg-white/95" />
 
               <div className="absolute left-1/2 top-3 -translate-x-1/2">
-                <div className="h-[1040px] w-[640px] rounded-[18px] bg-[#d5d5d5] p-[1px]">
+                <div className="h-[1040px] w-[640px] overflow-hidden rounded-[18px] bg-[#d5d5d5]">
                   <div
                     ref={desktopScrollerRef}
-                    className="h-full overflow-y-auto rounded-[18px] snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="h-full overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   >
                     {items.map((reel, idx) => (
                       <div
@@ -249,10 +262,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
       <div className="md:hidden">
         <section className="bg-[#a9a9a9]">
-          <div className="relative h-[calc(100vh-92px)] min-h-[760px]">
+          <div className="relative">
             <div
               ref={mobileScrollerRef}
-              className="h-full overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="h-[1120px] overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {items.map((reel, idx) => (
                 <div
@@ -260,37 +273,42 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   ref={(node) => {
                     mobileSlideRefs.current[idx] = node;
                   }}
-                  className="relative h-[calc(100vh-92px)] min-h-[760px] snap-start px-4 py-4"
+                  className="relative h-[1120px] snap-start"
                 >
-                  <div className="relative h-full overflow-hidden rounded-[18px] bg-[#d5d5d5]">
+                  <div className="h-full w-full overflow-hidden bg-[#b3b3b3]">
                     <ReelSlide
                       reel={reel}
                       active={idx === activeIndex}
                       mobile
+                      showMeta={false}
                       videoRef={(node) => {
                         mobileVideoRefs.current[idx] = node;
                       }}
                     />
-
-                    <div className="pointer-events-none absolute bottom-[110px] right-4">
-                      <div className="pointer-events-auto">
-                        <SideActions mobile />
-                      </div>
-                    </div>
-
-                    {idx === activeIndex && items.length > 1 ? (
-                      <button
-                        type="button"
-                        aria-label="Next reel"
-                        onClick={goNext}
-                        className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white"
-                      >
-                        <ChevronDown className="h-11 w-11" strokeWidth={1.8} />
-                      </button>
-                    ) : null}
                   </div>
+
+                  <div className="absolute bottom-[210px] right-[28px]">
+                    <SideActions mobile />
+                  </div>
+
+                  <div className="absolute bottom-[52px] left-[22px] h-[112px] w-[112px] rounded-full bg-white/92" />
                 </div>
               ))}
+            </div>
+
+            <div className="flex h-[160px] items-center justify-center bg-[#9f9f9f]">
+              {items.length > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next reel"
+                  onClick={goNext}
+                  className="text-white transition hover:scale-105"
+                >
+                  <ChevronDown className="h-[88px] w-[88px]" strokeWidth={1.7} />
+                </button>
+              ) : (
+                <ChevronDown className="h-[88px] w-[88px] text-white" strokeWidth={1.7} />
+              )}
             </div>
           </div>
         </section>
