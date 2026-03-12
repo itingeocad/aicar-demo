@@ -3,6 +3,7 @@ import { Bell, ChevronDown, Heart, Menu, MessageCircle, X } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
 import { getSession } from '@/lib/auth/session.server';
+import { MobileTopNavClient } from '@/components/MobileTopNavClient';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
   return (
@@ -156,33 +157,11 @@ export async function TopNav({ config }: { config: SiteConfig }) {
     <header className="border-b border-black/5 bg-[#d9d9d9]">
       <div className="aicar-header-container">
         {/* Mobile */}
-        <div className="flex h-14 items-center justify-between md:hidden">
-          <details className="relative">
-            <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-slate-800 hover:bg-black/5 [&::-webkit-details-marker]:hidden">
-              <Menu className="h-6 w-6" />
-            </summary>
-            <MobileMenuPanel config={config} session={session} />
-          </details>
-
-          <Link href="/" className="flex items-center justify-center">
-            {config.theme.logoImage ? (
-              <img
-                src={config.theme.logoImage}
-                alt={config.theme.brandName || 'Лого'}
-                className="max-h-8 w-auto object-contain"
-              />
-            ) : (
-              <span className="text-[18px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</span>
-            )}
-          </Link>
-
-          <div className="flex items-center gap-1">
-            <IconButton label="notifications">
-              <Bell className="h-5 w-5" />
-            </IconButton>
-            <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
-          </div>
-        </div>
+        <MobileTopNavClient
+          config={config}
+          loggedIn={Boolean(session)}
+          canAdmin={canAdmin}
+        />
 
         {/* Desktop */}
         <div className="hidden h-[90px] grid-cols-[1fr_auto_1fr] items-center md:grid">
