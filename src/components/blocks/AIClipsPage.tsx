@@ -240,7 +240,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       <div className="h-full md:hidden">
         <section className="h-full overflow-hidden bg-[#a9a9a9] px-3 py-2">
           <div className="flex h-full items-center justify-center">
-            <div className="relative h-full max-h-[calc(100%-8px)] w-full max-w-[302px] aspect-[9/16]">
+            <div
+              className="relative aspect-[9/16] w-full"
+              style={{
+                maxWidth: 'min(302px, calc(100vw - 24px))',
+                height: 'min(calc(100% - 8px), 520px)'
+              }}
+            >
               <div
                 ref={mobileScrollerRef}
                 className="h-full w-full overflow-y-auto overscroll-contain snap-y snap-mandatory rounded-[16px] bg-[#d3d3d3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -275,12 +281,12 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   type="button"
                   aria-label="Next reel"
                   onClick={goNext}
-                  className="absolute bottom-[12px] left-1/2 -translate-x-1/2 text-white transition hover:scale-105"
+                  className="absolute bottom-[12px] left-1/2 z-20 -translate-x-1/2 text-white transition hover:scale-105"
                 >
                   <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
                 </button>
               ) : (
-                <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 text-white">
+                <div className="absolute bottom-[12px] left-1/2 z-20 -translate-x-1/2 text-white">
                   <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
                 </div>
               )}
