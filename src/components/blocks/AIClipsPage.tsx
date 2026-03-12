@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import { Bookmark, ChevronDown, Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
 import type { DemoReel } from '@/lib/site/types';
 
+const PROTO_W = 543;
+const PROTO_H = 961;
+
 function scrollToIndex(container: HTMLDivElement | null, index: number, smooth = true) {
   if (!container) return;
 
@@ -189,7 +192,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       <div className="hidden h-full md:block">
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
           <div className="mx-auto flex h-full max-w-[1700px] items-center justify-center px-6 py-2">
-            <div className="relative h-full max-h-[calc(100%-8px)] max-w-[392px] aspect-[9/16]">
+            <div
+              className="relative"
+              style={{
+                aspectRatio: `${PROTO_W} / ${PROTO_H}`,
+                height: 'min(calc(100% - 8px), 820px)'
+              }}
+            >
               <div
                 ref={desktopScrollerRef}
                 className="h-full w-full overflow-y-auto overscroll-contain snap-y snap-mandatory rounded-[18px] bg-[#d3d3d3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -213,8 +222,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 ))}
               </div>
 
-              <div className="absolute -left-[118px] bottom-[22px] h-[68px] w-[68px] rounded-full bg-white/95" />
-              <div className="absolute -right-[112px] top-1/2 -translate-y-1/2">
+              <div className="absolute -left-[122px] bottom-[24px] h-[68px] w-[68px] rounded-full bg-white/95" />
+              <div className="absolute -right-[116px] top-1/2 -translate-y-1/2">
                 <ActionStack />
               </div>
 
@@ -241,10 +250,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         <section className="h-full overflow-hidden bg-[#a9a9a9] px-2 py-2">
           <div className="flex h-full items-center justify-center">
             <div
-              className="relative aspect-[9/16] w-full"
+              className="relative w-full"
               style={{
-                width: 'min(100%, 310px)',
-                height: 'min(calc(100% - 4px), calc((100vw - 16px) * 1.62), 540px)'
+                aspectRatio: `${PROTO_W} / ${PROTO_H}`,
+                width: 'min(calc(100vw - 16px), 320px)',
+                height: 'min(calc(100% - 4px), calc((100vw - 16px) * 961 / 543), 560px)'
               }}
             >
               <div
@@ -267,11 +277,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       }}
                     />
 
-                    <div className="absolute bottom-[74px] right-[10px] z-10">
+                    <div className="absolute bottom-[70px] right-[10px] z-10">
                       <ActionStack mobile />
                     </div>
 
-                    <div className="absolute bottom-[8px] left-[8px] h-[46px] w-[46px] rounded-full bg-white/92 z-10" />
+                    <div className="absolute bottom-[8px] left-[8px] h-[44px] w-[44px] rounded-full bg-white/92 z-10" />
                   </div>
                 ))}
               </div>
@@ -281,13 +291,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   type="button"
                   aria-label="Next reel"
                   onClick={goNext}
-                  className="absolute bottom-[10px] left-1/2 z-20 -translate-x-1/2 text-white"
+                  className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white"
                 >
-                  <ChevronDown className="h-[42px] w-[42px]" strokeWidth={1.7} />
+                  <ChevronDown className="h-[40px] w-[40px]" strokeWidth={1.7} />
                 </button>
               ) : (
-                <div className="absolute bottom-[10px] left-1/2 z-20 -translate-x-1/2 text-white">
-                  <ChevronDown className="h-[42px] w-[42px]" strokeWidth={1.7} />
+                <div className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white">
+                  <ChevronDown className="h-[40px] w-[40px]" strokeWidth={1.7} />
                 </div>
               )}
             </div>
