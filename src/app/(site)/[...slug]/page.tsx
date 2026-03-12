@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { SiteFrame } from '@/components/SiteChrome';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { SearchPageModes } from '@/components/blocks/SearchPageModes';
+import { AIChatPage } from '@/components/blocks/AIChatPage';
 import { getPageBySlug, getSiteConfig } from '@/lib/site/store.server';
 
 type Props = {
@@ -22,6 +23,14 @@ export default async function CatchAllSitePage({ params, searchParams }: Props) 
     return (
       <SiteFrame config={config}>
         <SearchPageModes config={config} search={searchParams ?? {}} />
+      </SiteFrame>
+    );
+  }
+
+  if (path === 'aichat') {
+    return (
+      <SiteFrame config={config}>
+        <AIChatPage />
       </SiteFrame>
     );
   }
