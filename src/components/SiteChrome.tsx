@@ -476,16 +476,4 @@ export function SiteFrame({
       <Footer config={config} variant={variant} />
     </div>
   );
-}: {
-  config: SiteConfig;
-  children: React.ReactNode;
-  variant?: 'default' | 'aichat' | 'aiclips';
-}) {
-  return (
-    <div className="min-h-screen bg-[#eeeeee] text-slate-900">
-      <TopNav config={config} variant={variant} />
-      <main>{children}</main>
-      <Footer config={config} variant={variant} />
-    </div>
-  );
 }
