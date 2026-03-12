@@ -3,6 +3,7 @@ import { SiteFrame } from '@/components/SiteChrome';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { SearchPageModes } from '@/components/blocks/SearchPageModes';
 import { AIChatPage } from '@/components/blocks/AIChatPage';
+import { NewsPage } from '@/components/blocks/NewsPage';
 import { getPageBySlug, getSiteConfig } from '@/lib/site/store.server';
 
 type Props = {
@@ -31,6 +32,14 @@ export default async function CatchAllSitePage({ params, searchParams }: Props) 
     return (
       <SiteFrame config={config} variant="aichat">
         <AIChatPage />
+      </SiteFrame>
+    );
+  }
+
+  if (path === 'news') {
+    return (
+      <SiteFrame config={config} variant="aichat">
+        <NewsPage config={config} />
       </SiteFrame>
     );
   }
