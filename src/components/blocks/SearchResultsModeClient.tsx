@@ -44,7 +44,7 @@ function ResultCard({ car }: { car: Car }) {
       className="block rounded-[18px] bg-[#f4f4f4] p-4 shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
     >
       <div className="flex gap-4">
-        <div className="h-[160px] w-[190px] flex-none overflow-hidden rounded-[6px] bg-white md:h-[190px] md:w-[190px]">
+        <div className="h-[190px] w-[190px] flex-none overflow-hidden rounded-[6px] bg-white">
           <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
         </div>
 
@@ -52,12 +52,11 @@ function ResultCard({ car }: { car: Car }) {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="truncate text-[18px] font-semibold">{car.title}</div>
-
-              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-600">
-                <span>иконка фильтра</span>
-                <span>иконка фильтра</span>
-                <span>иконка фильтра</span>
-                <span>иконка фильтра</span>
+              <div className="mt-2 text-[13px] text-slate-600">
+                {car.city} • {car.year} • {car.mileageKm.toLocaleString()} km
+              </div>
+              <div className="mt-3 text-[14px] text-slate-700">
+                Топливо: {car.fuel} • КПП: {car.gearbox} • Тип: {car.vehicleType ?? 'car'}
               </div>
             </div>
 
@@ -80,19 +79,22 @@ function MobileResultCard({ car }: { car: Car }) {
       className="block rounded-[14px] bg-[#d7d7d7] p-4"
     >
       <div className="flex gap-3">
-        <div className="h-[95px] w-[95px] flex-none overflow-hidden bg-white">
+        <div className="h-[95px] w-[95px] flex-none overflow-hidden rounded-[8px] bg-white">
           <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold">{car.title}</div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-700">
-            <span>иконка фильтра</span>
-            <span>иконка фильтра</span>
-            <span>иконка фильтра</span>
-            <span>иконка фильтра</span>
+          <div className="flex items-start justify-between gap-2">
+            <div className="truncate text-[15px] font-semibold">{car.title}</div>
+            <div className="whitespace-nowrap text-[15px] font-bold">{car.price.toLocaleString()} {car.currency}</div>
           </div>
-          <div className="mt-3 text-[13px] text-slate-800">Описание</div>
+          <div className="mt-1 text-[11px] text-slate-700">
+            {car.city} • {car.year} • {car.mileageKm.toLocaleString()} km
+          </div>
+          <div className="mt-2 text-[12px] text-slate-700">
+            Топливо: {car.fuel} • КПП: {car.gearbox} • Тип: {car.vehicleType ?? 'car'}
+          </div>
+          <div className="mt-2 text-[13px] text-slate-800">Описание</div>
         </div>
       </div>
     </Link>
@@ -126,11 +128,7 @@ function CompactFilterForm({
 
       <button
         type="submit"
-        className={
-          mobile
-            ? 'w-full rounded-[10px] bg-[#7f889c] px-4 py-3 text-white'
-            : 'w-full rounded-[10px] bg-[#7f889c] px-4 py-3 text-white'
-        }
+        className={mobile ? 'w-full rounded-[10px] bg-[#7f889c] px-4 py-3 text-white' : 'w-full rounded-[10px] bg-[#7f889c] px-4 py-3 text-white'}
       >
         Найти авто
       </button>
@@ -144,7 +142,7 @@ function HotOfferCard({ car }: { car: Car }) {
       href={`/cars/${car.id}`}
       className="block overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]"
     >
-      <div className="aspect-[260/260] bg-white">
+      <div className="aspect-square bg-white">
         <img src={car.imageUrl} alt={car.title} className="h-full w-full object-cover" />
       </div>
       <div className="flex h-[78px] items-center justify-center px-3 text-center text-[12px] text-white">Описание</div>
