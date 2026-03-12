@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bell, Menu, X } from 'lucide-react';
+import { Bell, Heart, Menu, X } from 'lucide-react';
 import { SiteConfig } from '@/lib/site/types';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
@@ -10,7 +10,7 @@ function IconButton({ children, label }: { children: React.ReactNode; label: str
     <button
       type="button"
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5"
+      className="flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5"
     >
       {children}
     </button>
@@ -20,49 +20,100 @@ function IconButton({ children, label }: { children: React.ReactNode; label: str
 export function MobileTopNavClient({
   config,
   loggedIn,
-  canAdmin
+  canAdmin,
+  variant = 'default'
 }: {
   config: SiteConfig;
   loggedIn: boolean;
   canAdmin: boolean;
+  variant?: 'default' | 'aichat';
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
+  const panelTopClass = variant === 'aichat' ? 'top-[93px]' : 'top-[57px]';
 
   return (
     <div className="md:hidden">
-      <div className="flex h-14 items-center justify-between">
-        <button
-          type="button"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-slate-800 hover:bg-black/5"
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+      {variant === 'aichat' ? (
+        <div className="flex h-[92px] items-center justify-between">
+          <button
+            type="button"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((v) => !v)}
+            className="flex h-12 w-12 items-center justify-center rounded-full text-slate-800 hover:bg-black/5"
+          >
+            {open ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+          </button>
 
-        <Link href="/" className="flex items-center justify-center" onClick={() => setOpen(false)}>
-          {config.theme.logoImage ? (
-            <img
-              src={config.theme.logoImage}
-              alt={config.theme.brandName || 'Лого'}
-              className="max-h-8 w-auto object-contain"
-            />
-          ) : (
-            <span className="text-[18px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</span>
-          )}
-        </Link>
+          <div className="flex items-center gap-2">
+            <IconButton label="notifications">
+              <Bell className="h-6 w-6" />
+            </IconButton>
+            <IconButton label="favorites">
+              <Heart className="h-6 w-6" />
+            </IconButton>
 
-        <div className="flex items-center gap-1">
-          <IconButton label="notifications">
-            <Bell className="h-5 w-5" />
-          </IconButton>
-          <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
+            {!loggedIn ? (
+              <Link
+                href="/login"
+                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                onClick={() => setOpen(false)}
+              >
+                Войти
+              </Link>
+            ) : canAdmin ? (
+              <Link
+                href="/admin"
+                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                onClick={() => setOpen(false)}
+              >
+                Админка
+              </Link>
+            ) : (
+              <Link
+                href="/logout?next=/"
+                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                onClick={() => setOpen(false)}
+              >
+                Выйти
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex h-14 items-center justify-between">
+          <button
+            type="button"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((v) => !v)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-800 hover:bg-black/5"
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+
+          <Link href="/" className="flex items-center justify-center" onClick={() => setOpen(false)}>
+            {config.theme.logoImage ? (
+              <img
+                src={config.theme.logoImage}
+                alt={config.theme.brandName || 'Лого'}
+                className="max-h-8 w-auto object-contain"
+              />
+            ) : (
+              <span className="text-[18px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</span>
+            )}
+          </Link>
+
+          <div className="flex items-center gap-1">
+            <IconButton label="notifications">
+              <Bell className="h-5 w-5" />
+            </IconButton>
+            <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
+          </div>
+        </div>
+      )}
 
       {open ? (
-        <div className="fixed inset-x-0 top-[57px] z-50">
+        <div className={`fixed inset-x-0 ${panelTopClass} z-50`}>
           <div
             className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]"
             onClick={() => setOpen(false)}
@@ -175,7 +226,9 @@ export function MobileTopNavClient({
                       </>
                     )}
 
-                    <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
+                    {variant === 'default' ? (
+                      <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
+                    ) : null}
                   </div>
                 </div>
               </div>

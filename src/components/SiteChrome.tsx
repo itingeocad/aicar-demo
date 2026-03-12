@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell, ChevronDown, Heart, Menu, MessageCircle, X } from 'lucide-react';
+import { Bell, ChevronDown, Heart, MessageCircle } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
 import { getSession } from '@/lib/auth/session.server';
@@ -52,118 +52,26 @@ function DesktopNavItem({ item }: { item: SiteNavItem }) {
   );
 }
 
-function MobileMenuPanel({
+export async function TopNav({
   config,
-  session
+  variant = 'default'
 }: {
   config: SiteConfig;
-  session: Awaited<ReturnType<typeof getSession>>;
+  variant?: 'default' | 'aichat';
 }) {
-  const footerGroups = config.footer.groups ?? [];
-  const canAdmin = Boolean(session);
-
-  return (
-    <div className="fixed inset-x-0 top-[57px] z-50 md:hidden">
-      <div className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]">
-        <div className="aicar-header-container">
-          <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl">
-            <div className="border-b border-black/5 px-4 py-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
-              Меню
-            </div>
-
-            <div className="space-y-1 p-3">
-              {config.nav.items.map((item) => {
-                const href = item.href || item.children?.[0]?.href || '#';
-
-                return (
-                  <div key={(item.href || item.label) + ':' + item.label} className="rounded-xl border border-black/5">
-                    <Link href={href} className="block px-4 py-3 text-[15px] font-medium text-slate-900">
-                      {item.label}
-                    </Link>
-
-                    {item.children && item.children.length > 0 ? (
-                      <div className="border-t border-black/5 bg-slate-50/70 px-2 py-2">
-                        {item.children.map((c) => (
-                          <Link
-                            key={c.href}
-                            href={c.href}
-                            className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-white"
-                          >
-                            {c.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-
-            {footerGroups.length ? (
-              <div className="border-t border-black/5 px-4 py-4">
-                <div className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
-                  Дополнительно
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {footerGroups.map((g) => (
-                    <div key={g.title}>
-                      <div className="mb-1 text-sm font-semibold text-slate-800">{g.title}</div>
-                      <div className="space-y-1">
-                        {g.links.map((l) => (
-                          <Link key={l.href} href={l.href} className="block text-sm text-slate-600 hover:text-slate-900">
-                            {l.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="border-t border-black/5 p-3">
-              <div className="flex flex-wrap gap-2">
-                {!session ? (
-                  <Link href="/login" className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">
-                    Войти
-                  </Link>
-                ) : (
-                  <>
-                    {canAdmin ? (
-                      <Link href="/admin" className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">
-                        Админка
-                      </Link>
-                    ) : null}
-                    <Link href="/logout?next=/" className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">
-                      Выйти
-                    </Link>
-                  </>
-                )}
-                <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export async function TopNav({ config }: { config: SiteConfig }) {
   const session = await getSession();
   const canAdmin = Boolean(session);
 
   return (
     <header className="border-b border-black/5 bg-[#d9d9d9]">
       <div className="aicar-header-container">
-        {/* Mobile */}
         <MobileTopNavClient
           config={config}
           loggedIn={Boolean(session)}
           canAdmin={canAdmin}
+          variant={variant}
         />
 
-        {/* Desktop */}
         <div className="hidden h-[90px] grid-cols-[1fr_auto_1fr] items-center md:grid">
           <nav className="flex items-center gap-8">
             {config.nav.items.map((it) => (
@@ -224,23 +132,57 @@ export async function TopNav({ config }: { config: SiteConfig }) {
   );
 }
 
-function SocialIcons({ socials }: { socials: SocialLink[] }) {
+function SocialIcons({
+  socials,
+  centered = false,
+  minimal = false
+}: {
+  socials: SocialLink[];
+  centered?: boolean;
+  minimal?: boolean;
+}) {
   return (
-    <div className="mb-4 flex items-center gap-3">
+    <div className={centered ? 'mb-5 flex items-center justify-center gap-4' : 'mb-4 flex items-center gap-3'}>
       {socials.map((s) => (
         <Link
           key={s.label}
           href={s.href}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/75 text-xs text-slate-700 transition hover:bg-white"
+          className={
+            centered
+              ? 'flex h-14 w-14 items-center justify-center rounded-full bg-white/80 text-xs text-slate-700 transition hover:bg-white'
+              : 'flex h-10 w-10 items-center justify-center rounded-full bg-white/75 text-xs text-slate-700 transition hover:bg-white'
+          }
         >
-          {s.label.slice(0, 2)}
+          {minimal ? null : s.label.slice(0, 2)}
         </Link>
       ))}
     </div>
   );
 }
 
-function StoreButtons({ storeBadges }: { storeBadges: StoreBadge[] }) {
+function StoreButtons({
+  storeBadges,
+  mobile = false
+}: {
+  storeBadges: StoreBadge[];
+  mobile?: boolean;
+}) {
+  if (mobile) {
+    return (
+      <div className="flex flex-wrap justify-center gap-3">
+        {storeBadges.map((b) => (
+          <Link
+            key={b.label}
+            href={b.href}
+            className="rounded-2xl bg-white/80 px-5 py-3 text-xs text-slate-700 transition hover:bg-white"
+          >
+            {b.label}
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex max-w-[210px] flex-col gap-3">
       {storeBadges.map((b) => (
@@ -278,7 +220,13 @@ function FooterGroups({ groups }: { groups: FooterGroup[] }) {
   );
 }
 
-export function Footer({ config }: { config: SiteConfig }) {
+export function Footer({
+  config,
+  variant = 'default'
+}: {
+  config: SiteConfig;
+  variant?: 'default' | 'aichat';
+}) {
   const build = formatBuildLabel();
 
   const groups = config.footer.groups && config.footer.groups.length > 0 ? config.footer.groups : [];
@@ -292,6 +240,70 @@ export function Footer({ config }: { config: SiteConfig }) {
 
   const socials = config.footer.socials ?? [];
   const storeBadges = config.footer.storeBadges ?? [];
+
+  if (variant === 'aichat') {
+    const compactGroups = fallbackGroups.slice(0, 2);
+
+    return (
+      <footer className="bg-[#d9d9d9]">
+        <div className="hidden md:block">
+          <div className="mx-auto max-w-[1200px] px-4 py-10">
+            <div className="grid grid-cols-12 gap-8">
+              <div className="col-span-3 pt-2">
+                {config.theme.logoImage ? (
+                  <img
+                    src={config.theme.logoImage}
+                    alt={config.theme.brandName || 'Лого'}
+                    className="max-h-14 w-auto object-contain"
+                  />
+                ) : (
+                  <div className="text-[28px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+                )}
+              </div>
+
+              <div className="col-span-5">
+                <div className="grid grid-cols-2 gap-10 text-[15px] text-slate-800">
+                  {compactGroups.map((g) => (
+                    <div key={g.title}>
+                      <div className="space-y-3">
+                        {g.links.map((l) => (
+                          <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                            {l.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="col-span-4 justify-self-end">
+                <div className="mb-3 text-[15px] text-slate-800">Мы в социальных сетях</div>
+                {socials.length ? <SocialIcons socials={socials} minimal /> : null}
+                {storeBadges.length ? <StoreButtons storeBadges={storeBadges} /> : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 py-12 text-center md:hidden">
+          {config.theme.logoImage ? (
+            <img
+              src={config.theme.logoImage}
+              alt={config.theme.brandName || 'Лого'}
+              className="mx-auto max-h-14 w-auto object-contain"
+            />
+          ) : (
+            <div className="text-[32px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+          )}
+
+          <div className="mt-6 text-[18px] text-slate-800">Мы в социальных сетях</div>
+          {socials.length ? <SocialIcons socials={socials} centered minimal /> : null}
+          {storeBadges.length ? <StoreButtons storeBadges={storeBadges} mobile /> : null}
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="mt-12 border-t border-black/5 bg-[#d9d9d9]">
@@ -326,12 +338,20 @@ export function Footer({ config }: { config: SiteConfig }) {
   );
 }
 
-export function SiteFrame({ config, children }: { config: SiteConfig; children: React.ReactNode }) {
+export function SiteFrame({
+  config,
+  children,
+  variant = 'default'
+}: {
+  config: SiteConfig;
+  children: React.ReactNode;
+  variant?: 'default' | 'aichat';
+}) {
   return (
     <div className="min-h-screen bg-[#eeeeee] text-slate-900">
-      <TopNav config={config} />
+      <TopNav config={config} variant={variant} />
       <main>{children}</main>
-      <Footer config={config} />
+      <Footer config={config} variant={variant} />
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default async function CatchAllSitePage({ params, searchParams }: Props) 
 
   if (path === 'aichat') {
     return (
-      <SiteFrame config={config}>
+      <SiteFrame config={config} variant="aichat">
         <AIChatPage />
       </SiteFrame>
     );
