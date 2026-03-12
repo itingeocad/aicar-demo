@@ -58,7 +58,7 @@ export async function TopNav({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
   const session = await getSession();
   const canAdmin = hasPermission(session, PERM_ADMIN_ACCESS);
@@ -239,7 +239,7 @@ export function Footer({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
   if (variant === 'aiclips') {
     return null;
@@ -400,7 +400,7 @@ export function SiteFrame({
 }: {
   config: SiteConfig;
   children: React.ReactNode;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
   if (variant === 'aiclips') {
     return (

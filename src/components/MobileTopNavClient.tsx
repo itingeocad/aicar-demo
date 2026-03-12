@@ -28,11 +28,12 @@ export function MobileTopNavClient({
   loggedIn: boolean;
   canAdmin: boolean;
   displayName?: string;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
-  const specialVariant = variant === 'aichat' || variant === 'aiclips';
+  const specialVariant = variant === 'aichat' || variant === 'aiclips' || variant === 'account';
+  const accountVariant = variant === 'account';
   const panelTopClass = 'top-[57px]';
   const primaryHref = canAdmin ? '/admin' : '/profile';
   const primaryLabel = canAdmin ? 'Админка' : 'Профиль';
@@ -66,6 +67,14 @@ export function MobileTopNavClient({
                 onClick={() => setOpen(false)}
               >
                 Войти
+              </Link>
+            ) : accountVariant ? (
+              <Link
+                href={primaryHref}
+                className="flex h-[50px] min-w-[50px] items-center justify-center rounded-full bg-white/90 px-4 text-[12px] text-slate-900"
+                onClick={() => setOpen(false)}
+              >
+                профиль
               </Link>
             ) : (
               <>
