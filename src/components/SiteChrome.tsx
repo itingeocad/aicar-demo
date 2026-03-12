@@ -310,7 +310,15 @@ export function Footer({
           </div>
         </div>
 
-        <div className="h-[188px] px-4 py-4 text-center md:hidden">
+        <div
+  className="overflow-hidden text-center transition-all duration-300 md:hidden"
+  style={{
+    height: 'var(--aiclips-mobile-footer-height, 188px)',
+    opacity: 'var(--aiclips-mobile-footer-opacity, 1)',
+    paddingTop: 'var(--aiclips-mobile-footer-padding-top, 16px)',
+    paddingBottom: 'var(--aiclips-mobile-footer-padding-bottom, 16px)'
+  }}
+>
           {config.theme.logoImage ? (
             <img
               src={config.theme.logoImage}
