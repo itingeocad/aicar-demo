@@ -10,7 +10,6 @@ const PROTO_H = 961;
 
 function scrollToIndex(container: HTMLDivElement | null, index: number, smooth = true) {
   if (!container) return;
-
   const pageHeight = container.clientHeight;
   container.scrollTo({
     top: index * pageHeight,
@@ -111,15 +110,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
         if (!visible) return;
         const idx = desktopNodes.indexOf(visible.target as HTMLDivElement);
         if (idx >= 0) setActiveIndex(idx);
       },
-      {
-        root: desktopScrollerRef.current,
-        threshold: [0.55, 0.7, 0.85]
-      }
+      { root: desktopScrollerRef.current, threshold: [0.55, 0.7, 0.85] }
     );
 
     const mobileObserver = new IntersectionObserver(
@@ -127,15 +122,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
         if (!visible) return;
         const idx = mobileNodes.indexOf(visible.target as HTMLDivElement);
         if (idx >= 0) setActiveIndex(idx);
       },
-      {
-        root: mobileScrollerRef.current,
-        threshold: [0.55, 0.7, 0.85]
-      }
+      { root: mobileScrollerRef.current, threshold: [0.55, 0.7, 0.85] }
     );
 
     desktopNodes.forEach((n) => desktopObserver.observe(n));
@@ -172,7 +163,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   const goNext = () => {
     if (items.length <= 1) return;
-
     const next = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
     scrollToIndex(desktopScrollerRef.current, next, true);
     scrollToIndex(mobileScrollerRef.current, next, true);
@@ -193,10 +183,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
           <div className="mx-auto flex h-full max-w-[1700px] items-center justify-center px-6 py-2">
             <div
-              className="relative"
+              className="relative shrink-0"
               style={{
                 aspectRatio: `${PROTO_W} / ${PROTO_H}`,
-                height: 'min(calc(100% - 8px), 820px)'
+                height: 'min(calc(100dvh - 90px - 12px), 820px)'
               }}
             >
               <div
@@ -250,11 +240,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         <section className="h-full overflow-hidden bg-[#a9a9a9] px-2 py-2">
           <div className="flex h-full items-center justify-center">
             <div
-              className="relative w-full"
+              className="relative shrink-0"
               style={{
                 aspectRatio: `${PROTO_W} / ${PROTO_H}`,
-                width: 'min(calc(100vw - 16px), 320px)',
-                height: 'min(calc(100% - 4px), calc((100vw - 16px) * 961 / 543), 560px)'
+                width: 'min(calc(100vw - 16px), calc((100dvh - 72px) * 543 / 961))',
+                height: 'min(calc(100dvh - 72px), calc((100vw - 16px) * 961 / 543))'
               }}
             >
               <div
@@ -277,11 +267,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       }}
                     />
 
-                    <div className="absolute bottom-[70px] right-[10px] z-10">
+                    <div className="absolute bottom-[66px] right-[10px] z-10">
                       <ActionStack mobile />
                     </div>
 
-                    <div className="absolute bottom-[8px] left-[8px] h-[44px] w-[44px] rounded-full bg-white/92 z-10" />
+                    <div className="absolute bottom-[8px] left-[8px] h-[42px] w-[42px] rounded-full bg-white/92 z-10" />
                   </div>
                 ))}
               </div>
@@ -293,11 +283,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   onClick={goNext}
                   className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white"
                 >
-                  <ChevronDown className="h-[40px] w-[40px]" strokeWidth={1.7} />
+                  <ChevronDown className="h-[38px] w-[38px]" strokeWidth={1.7} />
                 </button>
               ) : (
                 <div className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white">
-                  <ChevronDown className="h-[40px] w-[40px]" strokeWidth={1.7} />
+                  <ChevronDown className="h-[38px] w-[38px]" strokeWidth={1.7} />
                 </div>
               )}
             </div>
