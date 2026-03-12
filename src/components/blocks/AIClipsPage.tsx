@@ -5,6 +5,17 @@ import { useSearchParams } from 'next/navigation';
 import { Bookmark, ChevronDown, Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
 import type { DemoReel } from '@/lib/site/types';
 
+const DESKTOP_SLIDE_HEIGHT = 560;
+const MOBILE_SLIDE_HEIGHT = 430;
+
+function scrollToIndex(container: HTMLDivElement | null, index: number, slideHeight: number, smooth = true) {
+  if (!container) return;
+  container.scrollTo({
+    top: index * slideHeight,
+    behavior: smooth ? 'smooth' : 'auto'
+  });
+}
+
 function ReelMedia({
   reel,
   active,
@@ -82,8 +93,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     setActiveIndex(startIndex);
 
     const id = window.requestAnimationFrame(() => {
-      desktopSlideRefs.current[startIndex]?.scrollIntoView({ block: 'start' });
-      mobileSlideRefs.current[startIndex]?.scrollIntoView({ block: 'start' });
+      scrollToIndex(desktopScrollerRef.current, startIndex, DESKTOP_SLIDE_HEIGHT, false);
+      scrollToIndex(mobileScrollerRef.current, startIndex, MOBILE_SLIDE_HEIGHT, false);
     });
 
     return () => window.cancelAnimationFrame(id);
@@ -159,25 +170,17 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   const goNext = () => {
     if (items.length <= 1) return;
-
     const next = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
 
-    desktopSlideRefs.current[next]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-
-    mobileSlideRefs.current[next]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
+    scrollToIndex(desktopScrollerRef.current, next, DESKTOP_SLIDE_HEIGHT, true);
+    scrollToIndex(mobileScrollerRef.current, next, MOBILE_SLIDE_HEIGHT, true);
 
     setActiveIndex(next);
   };
 
   if (items.length === 0) {
     return (
-      <section className="flex h-full items-center justify-center bg-[#a9a9a9] px-4">
+      <section className="flex items-center justify-center bg-[#a9a9a9] px-4 py-20">
         <div className="text-center text-[20px] text-white">
           Пока нет роликов AIClips
         </div>
@@ -187,11 +190,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   return (
     <>
-      <div className="hidden h-full md:block">
-        <section className="h-full overflow-hidden bg-[#a9a9a9]">
-          <div className="mx-auto flex h-full max-w-[1440px] items-center justify-center px-4 py-3">
+      <div className="hidden md:block">
+        <section className="overflow-hidden bg-[#a9a9a9] py-3">
+          <div className="mx-auto flex h-[620px] max-w-[1380px] items-center justify-center px-4">
             <div className="relative flex h-full w-full items-center justify-center">
-              <div className="relative h-[min(100%,720px)] w-[min(560px,42vw)]">
+              <div className="relative h-[560px] w-[400px]">
                 <div className="h-full w-full overflow-hidden rounded-[16px] bg-[#d3d3d3]">
                   <div
                     ref={desktopScrollerRef}
@@ -203,7 +206,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                         ref={(node) => {
                           desktopSlideRefs.current[idx] = node;
                         }}
-                        className="h-full snap-start"
+                        className="h-[560px] snap-start"
                       >
                         <ReelMedia
                           reel={reel}
@@ -217,50 +220,15 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   </div>
                 </div>
 
-                <div className="absolute -left-[118px] bottom-[54px] h-[72px] w-[72px] rounded-full bg-white/92" />
-                <div className="absolute -right-[108px] top-1/2 -translate-y-1/2">
+                <div className="absolute -left-[92px] bottom-[44px] h-[64px] w-[64px] rounded-full bg-white/92" />
+                <div className="absolute -right-[92px] top-1/2 -translate-y-1/2">
                   <ActionStack />
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      </div>
 
-      <div className="h-full md:hidden">
-        <section className="grid h-full grid-rows-[minmax(0,1fr)_78px] overflow-hidden bg-[#a9a9a9]">
-          <div className="min-h-0 overflow-hidden">
-            <div
-              ref={mobileScrollerRef}
-              className="h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {items.map((reel, idx) => (
-                <div
-                  key={reel.id}
-                  ref={(node) => {
-                    mobileSlideRefs.current[idx] = node;
-                  }}
-                  className="relative h-full snap-start"
-                >
-                  <ReelMedia
-                    reel={reel}
-                    active={idx === activeIndex}
-                    videoRef={(node) => {
-                      mobileVideoRefs.current[idx] = node;
-                    }}
-                  />
-
-                  <div className="absolute bottom-[116px] right-[18px]">
-                    <ActionStack mobile />
-                  </div>
-
-                  <div className="absolute bottom-[16px] left-[14px] h-[74px] w-[74px] rounded-full bg-white/92" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center bg-[#9f9f9f]">
+          <div className="flex h-[64px] items-center justify-center bg-[#9f9f9f]">
             {items.length > 1 ? (
               <button
                 type="button"
@@ -268,11 +236,65 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 onClick={goNext}
                 className="text-white transition hover:scale-105"
               >
-                <ChevronDown className="h-[54px] w-[54px]" strokeWidth={1.7} />
+                <ChevronDown className="h-[44px] w-[44px]" strokeWidth={1.7} />
               </button>
             ) : (
-              <ChevronDown className="h-[54px] w-[54px] text-white" strokeWidth={1.7} />
+              <ChevronDown className="h-[44px] w-[44px] text-white" strokeWidth={1.7} />
             )}
+          </div>
+        </section>
+      </div>
+
+      <div className="md:hidden">
+        <section className="overflow-hidden bg-[#a9a9a9] py-3">
+          <div className="mx-auto w-full max-w-[420px] px-3">
+            <div className="relative">
+              <div className="overflow-hidden rounded-[16px] bg-[#d3d3d3]">
+                <div
+                  ref={mobileScrollerRef}
+                  className="h-[430px] overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {items.map((reel, idx) => (
+                    <div
+                      key={reel.id}
+                      ref={(node) => {
+                        mobileSlideRefs.current[idx] = node;
+                      }}
+                      className="relative h-[430px] snap-start"
+                    >
+                      <ReelMedia
+                        reel={reel}
+                        active={idx === activeIndex}
+                        videoRef={(node) => {
+                          mobileVideoRefs.current[idx] = node;
+                        }}
+                      />
+
+                      <div className="absolute bottom-[96px] right-[14px]">
+                        <ActionStack mobile />
+                      </div>
+
+                      <div className="absolute bottom-[12px] left-[12px] h-[62px] w-[62px] rounded-full bg-white/92" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-2 flex h-[58px] items-center justify-center rounded-[12px] bg-[#9f9f9f]">
+                {items.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next reel"
+                    onClick={goNext}
+                    className="text-white transition hover:scale-105"
+                  >
+                    <ChevronDown className="h-[40px] w-[40px]" strokeWidth={1.7} />
+                  </button>
+                ) : (
+                  <ChevronDown className="h-[40px] w-[40px] text-white" strokeWidth={1.7} />
+                )}
+              </div>
+            </div>
           </div>
         </section>
       </div>

@@ -26,16 +26,15 @@ export function MobileTopNavClient({
   config: SiteConfig;
   loggedIn: boolean;
   canAdmin: boolean;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat';
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
-  const specialVariant = variant === 'aichat' || variant === 'aiclips';
-  const panelTopClass = specialVariant ? 'top-[93px]' : 'top-[57px]';
+  const panelTopClass = variant === 'aichat' ? 'top-[93px]' : 'top-[57px]';
 
   return (
     <div className="md:hidden">
-      {specialVariant ? (
+      {variant === 'aichat' ? (
         <div className="flex h-[92px] items-center justify-between">
           <button
             type="button"

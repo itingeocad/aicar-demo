@@ -57,7 +57,7 @@ export async function TopNav({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat';
 }) {
   const session = await getSession();
   const canAdmin = Boolean(session);
@@ -225,7 +225,7 @@ export function Footer({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat';
 }) {
   const build = formatBuildLabel();
 
@@ -240,76 +240,6 @@ export function Footer({
 
   const socials = config.footer.socials ?? [];
   const storeBadges = config.footer.storeBadges ?? [];
-
-  if (variant === 'aiclips') {
-    const compactLinks = fallbackGroups.flatMap((g) => g.links).slice(0, 6);
-
-    return (
-      <footer className="bg-[#d9d9d9]">
-        <div className="hidden h-[110px] items-center md:flex">
-          <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between px-4">
-            <div className="flex items-center">
-              {config.theme.logoImage ? (
-                <img
-                  src={config.theme.logoImage}
-                  alt={config.theme.brandName || 'Лого'}
-                  className="max-h-10 w-auto object-contain"
-                />
-              ) : (
-                <div className="text-[26px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-7 text-[14px] text-slate-800">
-              {compactLinks.map((l) => (
-                <Link key={l.href} href={l.href} className="hover:text-slate-950">
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3">
-              {(socials ?? []).slice(0, 4).map((s) => (
-                <Link
-                  key={s.label}
-                  href={s.href}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[11px] text-slate-700 transition hover:bg-white"
-                >
-                  {s.label.slice(0, 2)}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex h-[76px] items-center justify-between px-4 md:hidden">
-          <div className="flex items-center">
-            {config.theme.logoImage ? (
-              <img
-                src={config.theme.logoImage}
-                alt={config.theme.brandName || 'Лого'}
-                className="max-h-8 w-auto object-contain"
-              />
-            ) : (
-              <div className="text-[24px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {(socials ?? []).slice(0, 3).map((s) => (
-              <Link
-                key={s.label}
-                href={s.href}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[10px] text-slate-700"
-              >
-                {s.label.slice(0, 2)}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </footer>
-    );
-  }
 
   if (variant === 'aichat') {
     const aichatGroupCols =
@@ -418,7 +348,7 @@ export function SiteFrame({
 }: {
   config: SiteConfig;
   children: React.ReactNode;
-  variant?: 'default' | 'aichat' | 'aiclips';
+  variant?: 'default' | 'aichat';
 }) {
   return (
     <div className="min-h-screen bg-[#eeeeee] text-slate-900">
