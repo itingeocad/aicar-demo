@@ -6,6 +6,12 @@ import { useMemo, useState } from 'react';
 
 type Mode = 'login' | 'register';
 
+async function fetchJson(url: string, init?: RequestInit) {
+  const res = await fetch(url, init);
+  const data = await res.json().catch(() => ({}));
+  return { res, data };
+}
+
 export default function AuthPanelClient({ mode }: { mode: Mode }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -22,6 +28,29 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
   const isLogin = mode === 'login';
   const passwordsMatch = isLogin || (password.length > 0 && password === confirmPassword);
 
+  async function completeLogin() {
+    const { res, data } = await fetchJson('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password, next })
+    });
+
+    if (!res.ok) {
+      setStatus(data?.error ? String(data.error) : 'Ошибка входа');
+      return;
+    }
+
+    const me = await fetchJson('/api/auth/me', { cache: 'no-store' });
+    const redirectTo =
+      typeof me.data?.redirect === 'string' && me.data.redirect
+        ? me.data.redirect
+        : '/profile';
+
+    setStatus('Готово ✅');
+    router.push(redirectTo);
+    router.refresh();
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -30,30 +59,32 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
       return;
     }
 
-    setStatus(isLogin ? 'Входим…' : 'Регистрируем аккаунт…');
-
     try {
-      const res = await fetch(isLogin ? '/api/auth/login' : '/api/auth/register', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(
-          isLogin
-            ? { email, password, next }
-            : { displayName: displayName.trim(), email, password }
-        )
-      });
-
-      const j = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setStatus(j?.error ? String(j.error) : 'Ошибка');
+      if (isLogin) {
+        setStatus('Входим…');
+        await completeLogin();
         return;
       }
 
-      const redirectTo = typeof j?.redirect === 'string' && j.redirect ? j.redirect : '/';
-      setStatus('Готово ✅');
-      router.push(redirectTo);
-      router.refresh();
+      setStatus('Регистрируем аккаунт…');
+
+      const created = await fetchJson('/api/auth/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          email,
+          password
+        })
+      });
+
+      if (!created.res.ok) {
+        setStatus(created.data?.error ? String(created.data.error) : 'Ошибка регистрации');
+        return;
+      }
+
+      setStatus('Аккаунт создан, выполняем вход…');
+      await completeLogin();
     } catch (err) {
       setStatus(String(err));
     }

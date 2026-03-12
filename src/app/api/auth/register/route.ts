@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getRoles, getUsers, saveRoles, saveUsers, findUserByEmail, rolePermissions, normalizeEmail } from '@/lib/auth/store.server';
+import { getUsers, saveUsers, findUserByEmail, normalizeEmail } from '@/lib/auth/store.server';
 import { hashPassword } from '@/lib/auth/crypto.server';
-import { signSession } from '@/lib/auth/token';
-import { sessionCookieOptions } from '@/lib/auth/cookies';
 import { ROLE_USER } from '@/lib/auth/constants';
 import type { UserDoc } from '@/lib/auth/types';
 
@@ -28,9 +26,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'user exists' }, { status: 409 });
   }
 
-  const roles = await getRoles();
-  await saveRoles(roles);
-
   const users = await getUsers();
   const now = new Date().toISOString();
 
@@ -47,35 +42,8 @@ export async function POST(req: Request) {
 
   await saveUsers([...users, user]);
 
-  const permissions = await rolePermissions(user.roleIds);
-  const { token } = await signSession(
-    {
-      uid: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      roleIds: user.roleIds,
-      permissions
-    },
-    60 * 60 * 24 * 7
-  );
-
-  const res = NextResponse.json({
+  return NextResponse.json({
     ok: true,
-    redirect: '/profile',
-    isAdmin: false,
-    user: {
-      email: user.email,
-      displayName: user.displayName,
-      roleIds: user.roleIds,
-      permissions
-    }
+    created: true
   });
-
-  res.cookies.set({
-    ...sessionCookieOptions(),
-    value: token,
-    maxAge: 60 * 60 * 24 * 7
-  });
-
-  return res;
 }

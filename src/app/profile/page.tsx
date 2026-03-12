@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ProfilePage() {
   const session = await getSession();
+
   if (!session) {
     redirect('/login');
   }
@@ -20,7 +21,9 @@ export default async function ProfilePage() {
       <section className="py-20">
         <div className="aicar-container">
           <div className="mx-auto max-w-[960px] rounded-[18px] bg-white/70 p-8 shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
-            <h1 className="text-[36px] font-semibold tracking-[-0.03em] text-slate-900">Профиль</h1>
+            <h1 className="text-[36px] font-semibold tracking-[-0.03em] text-slate-900">
+              Профиль
+            </h1>
 
             <div className="mt-6 grid gap-4 text-[16px] text-slate-800">
               <div><span className="font-medium">Имя:</span> {session.displayName}</div>
