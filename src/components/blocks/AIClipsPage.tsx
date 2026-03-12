@@ -68,8 +68,8 @@ function ReelMedia({
 }
 
 function ActionStack({ mobile = false }: { mobile?: boolean }) {
-  const iconSize = mobile ? 'h-8 w-8' : 'h-11 w-11';
-  const gap = mobile ? 'gap-6' : 'gap-7';
+  const iconSize = mobile ? 'h-7 w-7' : 'h-11 w-11';
+  const gap = mobile ? 'gap-5' : 'gap-7';
 
   return (
     <div className={`flex flex-col items-center text-white ${gap}`}>
@@ -217,8 +217,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
             <div
               className="relative aspect-[9/16]"
               style={{
-                height: 'min(calc(100dvh - 90px - 220px - 8px), 760px)',
-                width: 'min(calc((100dvh - 90px - 220px - 8px) * 0.5625), 427px)'
+                height: 'min(calc(100% - 14px), 680px)',
+                maxWidth: '392px'
               }}
             >
               <div
@@ -244,8 +244,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 ))}
               </div>
 
-              <div className="absolute -left-[126px] bottom-[26px] h-[74px] w-[74px] rounded-full bg-white/95" />
-              <div className="absolute -right-[122px] top-1/2 -translate-y-1/2">
+              <div className="absolute -left-[118px] bottom-[22px] h-[68px] w-[68px] rounded-full bg-white/95" />
+              <div className="absolute -right-[112px] top-1/2 -translate-y-1/2">
                 <ActionStack />
               </div>
             </div>
@@ -259,57 +259,62 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 onClick={goNextDesktop}
                 className="text-white transition hover:scale-105"
               >
-                <ChevronDown className="h-[74px] w-[74px]" strokeWidth={1.7} />
+                <ChevronDown className="h-[70px] w-[70px]" strokeWidth={1.7} />
               </button>
             ) : (
-              <ChevronDown className="h-[74px] w-[74px] text-white" strokeWidth={1.7} />
+              <ChevronDown className="h-[70px] w-[70px] text-white" strokeWidth={1.7} />
             )}
           </div>
         </section>
       </div>
 
       <div className="h-full md:hidden">
-        <section className="grid h-full grid-rows-[minmax(0,1fr)_74px] overflow-hidden bg-[#a9a9a9]">
-          <div className="relative min-h-0 overflow-hidden">
+        <section className="grid h-full grid-rows-[minmax(0,1fr)_64px] overflow-hidden bg-[#a9a9a9] px-3 py-2">
+          <div className="min-h-0 flex items-center justify-center overflow-hidden">
             <div
-              ref={mobileScrollerRef}
-              className="h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="relative w-full max-w-[302px] overflow-hidden rounded-[16px] bg-[#d3d3d3]"
+              style={{ height: 'min(calc(100% - 6px), 500px)' }}
             >
-              {items.map((reel, idx) => (
-                <div
-                  key={reel.id}
-                  ref={(node) => {
-                    mobileSlideRefs.current[idx] = node;
-                  }}
-                  className="relative h-full snap-start"
-                >
-                  <ReelMedia
-                    reel={reel}
-                    active={idx === activeIndex}
-                    videoRef={(node) => {
-                      mobileVideoRefs.current[idx] = node;
+              <div
+                ref={mobileScrollerRef}
+                className="h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {items.map((reel, idx) => (
+                  <div
+                    key={reel.id}
+                    ref={(node) => {
+                      mobileSlideRefs.current[idx] = node;
                     }}
-                  />
+                    className="relative h-full snap-start"
+                  >
+                    <ReelMedia
+                      reel={reel}
+                      active={idx === activeIndex}
+                      videoRef={(node) => {
+                        mobileVideoRefs.current[idx] = node;
+                      }}
+                    />
 
-                  <div className="absolute bottom-[114px] right-[16px]">
-                    <ActionStack mobile />
+                    <div className="absolute bottom-[84px] right-[12px] z-10">
+                      <ActionStack mobile />
+                    </div>
+
+                    <div className="absolute bottom-[10px] left-[10px] h-[54px] w-[54px] rounded-full bg-white/92 z-10" />
                   </div>
-
-                  <div className="absolute bottom-[22px] left-[12px] h-[58px] w-[58px] rounded-full bg-white/92" />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-black/5 bg-[#9f9f9f]">
+          <div className="flex items-center justify-center rounded-[12px] bg-[#9f9f9f]">
             <button
               type="button"
               aria-label={mobileFooterVisible ? 'Hide footer' : 'Show footer'}
               onClick={toggleMobileFooter}
-              className="flex h-full w-full items-center justify-center text-white transition hover:scale-[1.01]"
+              className="flex h-full w-full items-center justify-center text-white"
             >
               <ChevronDown
-                className={`h-[66px] w-[66px] transition-transform duration-300 ${
+                className={`h-[48px] w-[48px] transition-transform duration-300 ${
                   mobileFooterVisible ? '' : 'rotate-180'
                 }`}
                 strokeWidth={1.7}
