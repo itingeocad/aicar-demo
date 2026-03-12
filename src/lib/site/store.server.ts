@@ -179,6 +179,48 @@ function ensureNewsNav(cfg: SiteConfig): boolean {
   return true;
 }
 
+function repairBrokenServerText(cfg: SiteConfig): boolean {
+  const replacements: Record<string, string> = {
+    ' асширенный поиск': 'Расширенный поиск',
+    'асширенный поиск': 'Расширенный поиск',
+    ' азделы': 'Разделы',
+    'азделы': 'Разделы'
+  };
+
+  let changed = false;
+
+  const walk = (value: any): any => {
+    if (typeof value === 'string') {
+      const normalized = value.replace(/\u00A0/g, ' ');
+      const repaired = replacements[normalized];
+      if (typeof repaired === 'string' && repaired !== value) {
+        changed = true;
+        return repaired;
+      }
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i += 1) {
+        value[i] = walk(value[i]);
+      }
+      return value;
+    }
+
+    if (value && typeof value === 'object') {
+      for (const key of Object.keys(value)) {
+        value[key] = walk(value[key]);
+      }
+      return value;
+    }
+
+    return value;
+  };
+
+  walk(cfg);
+  return changed;
+}
+
 function migrate016(cfg: SiteConfig): SiteConfig {
   const cur = parseVer(cfg.version);
   const target = parseVer('0.1.6');
@@ -286,6 +328,7 @@ function migrateAll(cfg: SiteConfig): SiteConfig {
   out = migrate016(out);
   out = migrate017(out);
   ensureNewsNav(out);
+  repairBrokenServerText(out);
   out.version = APP_VERSION;
   return out;
 }

@@ -54,7 +54,7 @@ function FaqRow({
 function PromptBox({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
-      <div className="mx-auto mt-10 max-w-[640px] px-4">
+      <div className="mx-auto mt-10 max-w-[960px]">
         <div className="rounded-[22px] bg-[#d3d3d3] px-5 pb-6 pt-5">
           <div className="pb-5 text-center text-[24px] font-medium leading-none text-slate-900">
             Начни чат
@@ -72,7 +72,7 @@ function PromptBox({ mobile = false }: { mobile?: boolean }) {
   }
 
   return (
-    <div className="mx-auto mt-14 max-w-[1080px]">
+    <div className="mx-auto mt-14 max-w-[960px]">
       <div className="rounded-[14px] bg-[#d3d3d3] px-7 pb-7 pt-6">
         <div className="pb-5 text-center text-[24px] font-medium leading-none text-slate-900">
           Начни чат
@@ -92,7 +92,7 @@ function PromptBox({ mobile = false }: { mobile?: boolean }) {
 function FaqList({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
-      <div className="mx-auto mt-10 max-w-[720px] px-5">
+      <div className="mx-auto mt-10 max-w-[960px]">
         <FaqRow question="Что умеет AIChat?" defaultOpen mobile>
           <ul className="list-disc space-y-1 pl-6">
             <li>Подбор авто по бюджету и предпочтениям</li>
@@ -111,7 +111,7 @@ function FaqList({ mobile = false }: { mobile?: boolean }) {
   }
 
   return (
-    <div className="mx-auto mt-14 max-w-[1220px]">
+    <div className="mx-auto mt-14 max-w-[960px]">
       <FaqRow question="Что умеет AIChat?" defaultOpen>
         <ul className="list-disc space-y-1 pl-8">
           <li>Подбор авто по бюджету и предпочтениям</li>
@@ -133,58 +133,66 @@ export function AIChatPage() {
   return (
     <>
       <div className="hidden md:block">
-        <section className="px-4 pb-[150px] pt-[110px]">
-          <h1 className="text-center text-[72px] font-semibold tracking-[-0.04em] text-slate-900">
-            AIChat
-          </h1>
+        <section className="py-[110px] pb-[150px]">
+          <div className="aicar-container">
+            <h1 className="text-center text-[72px] font-semibold tracking-[-0.04em] text-slate-900">
+              AIChat
+            </h1>
 
-          <div className="mx-auto mt-9 max-w-[1080px] text-center text-[20px] leading-[1.28] text-slate-900">
-            <p>
-              Наш интеллектуальный помощник поможет вам подобрать автомобиль быстро, точно и без лишних шагов.
-            </p>
-            <p>
-              Просто укажите желаемый бюджет, марку, тип кузова, год выпуска или другие параметры — и AI
-              мгновенно проанализирует предложения, сравнит характеристики и предложит оптимальные варианты.
-            </p>
+            <div className="mx-auto mt-9 max-w-[960px] text-center text-[20px] leading-[1.28] text-slate-900">
+              <p>
+                Наш интеллектуальный помощник поможет вам подобрать автомобиль быстро, точно и без лишних шагов.
+              </p>
+              <p>
+                Просто укажите желаемый бюджет, марку, тип кузова, год выпуска или другие параметры — и AI
+                мгновенно проанализирует предложения, сравнит характеристики и предложит оптимальные варианты.
+              </p>
+            </div>
+
+            <PromptBox />
           </div>
-
-          <PromptBox />
         </section>
 
-        <section className="px-4 pb-[160px]">
-          <h2 className="text-center text-[42px] font-medium tracking-[-0.03em] text-slate-900">
-            Частые вопросы
-          </h2>
+        <section className="pb-[160px]">
+          <div className="aicar-container">
+            <h2 className="text-center text-[42px] font-medium tracking-[-0.03em] text-slate-900">
+              Частые вопросы
+            </h2>
 
-          <FaqList />
+            <FaqList />
+          </div>
         </section>
       </div>
 
       <div className="md:hidden">
         <section className="pb-[110px] pt-[92px]">
-          <h1 className="text-center text-[44px] font-semibold tracking-[-0.04em] text-slate-900">
-            AIChat
-          </h1>
+          <div className="aicar-container">
+            <h1 className="text-center text-[44px] font-semibold tracking-[-0.04em] text-slate-900">
+              AIChat
+            </h1>
 
-          <div className="mx-auto mt-8 max-w-[760px] px-5 text-center text-[18px] leading-[1.22] text-slate-900">
-            <p>
-              Наш интеллектуальный помощник поможет вам подобрать автомобиль быстро, точно и без лишних шагов.
-            </p>
-            <p className="mt-1">
-              Просто укажите желаемый бюджет, марку, тип кузова, год выпуска или другие параметры — и AI мгновенно
-              проанализирует предложения, сравнит характеристики и предложит оптимальные варианты.
-            </p>
+            <div className="mx-auto mt-8 max-w-[960px] text-center text-[18px] leading-[1.22] text-slate-900">
+              <p>
+                Наш интеллектуальный помощник поможет вам подобрать автомобиль быстро, точно и без лишних шагов.
+              </p>
+              <p className="mt-1">
+                Просто укажите желаемый бюджет, марку, тип кузова, год выпуска или другие параметры — и AI мгновенно
+                проанализирует предложения, сравнит характеристики и предложит оптимальные варианты.
+              </p>
+            </div>
+
+            <PromptBox mobile />
           </div>
-
-          <PromptBox mobile />
         </section>
 
         <section className="pb-[110px]">
-          <h2 className="text-center text-[28px] font-medium tracking-[-0.03em] text-slate-900">
-            Частые вопросы
-          </h2>
+          <div className="aicar-container">
+            <h2 className="text-center text-[28px] font-medium tracking-[-0.03em] text-slate-900">
+              Частые вопросы
+            </h2>
 
-          <FaqList mobile />
+            <FaqList mobile />
+          </div>
         </section>
       </div>
     </>

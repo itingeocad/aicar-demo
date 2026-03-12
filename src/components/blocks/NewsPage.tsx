@@ -112,68 +112,68 @@ export function NewsPage({ config }: { config: SiteConfig }) {
     <>
       <div className="hidden md:block">
         <section>
-          <div className="flex h-[380px] items-center justify-center bg-[#e6e6e6] px-4">
+          <div className="aicar-container pb-8 pt-12 text-center">
             <h1 className="text-center text-[64px] font-semibold tracking-[-0.04em] text-slate-900">
               Новости AICar
             </h1>
-          </div>
 
-          <div className="mx-auto max-w-[1180px] px-4 pb-8 pt-12 text-center">
-            <p className="mx-auto max-w-[1100px] text-[18px] leading-[1.35] text-slate-900">
+            <p className="mx-auto mt-8 max-w-[960px] text-[18px] leading-[1.35] text-slate-900">
               В разделе «Новости AiCar» публикуются актуальные материалы из мира автомобилей и технологий.
               Обзоры новых моделей, аналитика рынка, тренды электромобилей, полезные рекомендации по выбору и
               покупке авто, а также обновления платформы.
             </p>
 
-            <p className="mx-auto mt-7 max-w-[980px] text-[18px] font-medium leading-[1.35] text-slate-900">
+            <p className="mx-auto mt-7 max-w-[960px] text-[18px] font-medium leading-[1.35] text-slate-900">
               AiCar — это не только поиск автомобиля, но и источник экспертной информации для взвешенного решения.
             </p>
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1240px] px-4 pb-[120px] pt-3">
-          <h2 className="text-center text-[36px] font-medium tracking-[-0.03em] text-slate-900">
-            Hot news
-          </h2>
+        <section className="pb-[120px] pt-3">
+          <div className="aicar-container">
+            <h2 className="text-center text-[36px] font-medium tracking-[-0.03em] text-slate-900">
+              Hot news
+            </h2>
 
-          <div className="mt-8 space-y-5">
-            {items.map((item) => (
-              <NewsCard key={item.id} item={item} />
-            ))}
+            <div className="mt-8 space-y-5">
+              {items.map((item) => (
+                <NewsCard key={item.id} item={item} />
+              ))}
+            </div>
           </div>
         </section>
       </div>
 
       <div className="md:hidden">
         <section>
-          <div className="flex h-[500px] items-center justify-center bg-[#e6e6e6] px-5">
+          <div className="aicar-container pb-8 pt-10 text-center">
             <h1 className="text-center text-[44px] font-semibold tracking-[-0.04em] text-slate-900">
               Новости AICar
             </h1>
-          </div>
 
-          <div className="mx-auto max-w-[760px] px-5 pb-8 pt-10 text-center">
-            <p className="text-[18px] leading-[1.25] text-slate-900">
+            <p className="mx-auto mt-7 max-w-[960px] text-[18px] leading-[1.25] text-slate-900">
               В разделе «Новости AiCar» публикуются актуальные материалы из мира автомобилей и технологий.
               Обзоры новых моделей, аналитика рынка, тренды электромобилей, полезные рекомендации по выбору и
               покупке авто, а также обновления платформы.
             </p>
 
-            <p className="mt-7 text-[18px] font-medium leading-[1.25] text-slate-900">
+            <p className="mx-auto mt-7 max-w-[960px] text-[18px] font-medium leading-[1.25] text-slate-900">
               AiCar — это не только поиск автомобиля, но и источник экспертной информации для взвешенного решения.
             </p>
           </div>
         </section>
 
-        <section className="mx-auto max-w-[760px] px-5 pb-[96px] pt-4">
-          <h2 className="text-center text-[28px] font-medium tracking-[-0.03em] text-slate-900">
-            Hot news
-          </h2>
+        <section className="pb-[96px] pt-4">
+          <div className="aicar-container">
+            <h2 className="text-center text-[28px] font-medium tracking-[-0.03em] text-slate-900">
+              Hot news
+            </h2>
 
-          <div className="mt-7 space-y-4">
-            {items.map((item) => (
-              <NewsCard key={item.id} item={item} mobile />
-            ))}
+            <div className="mt-7 space-y-4">
+              {items.map((item) => (
+                <NewsCard key={item.id} item={item} mobile />
+              ))}
+            </div>
           </div>
         </section>
       </div>
