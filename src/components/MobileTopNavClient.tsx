@@ -21,17 +21,22 @@ export function MobileTopNavClient({
   config,
   loggedIn,
   canAdmin,
+  displayName = '',
   variant = 'default'
 }: {
   config: SiteConfig;
   loggedIn: boolean;
   canAdmin: boolean;
+  displayName?: string;
   variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
   const specialVariant = variant === 'aichat' || variant === 'aiclips';
-  const panelTopClass = specialVariant ? 'top-[57px]' : 'top-[57px]';
+  const panelTopClass = 'top-[57px]';
+  const primaryHref = canAdmin ? '/admin' : '/profile';
+  const primaryLabel = canAdmin ? 'Админка' : 'Профиль';
+  const safeName = displayName || 'Пользователь';
 
   return (
     <div className="md:hidden">
@@ -62,22 +67,19 @@ export function MobileTopNavClient({
               >
                 Войти
               </Link>
-            ) : canAdmin ? (
-              <Link
-                href="/admin"
-                className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
-                onClick={() => setOpen(false)}
-              >
-                Админка
-              </Link>
             ) : (
-              <Link
-                href="/logout?next=/"
-                className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
-                onClick={() => setOpen(false)}
-              >
-                Выйти
-              </Link>
+              <>
+                <div className="max-w-[88px] truncate rounded-xl bg-white/35 px-3 py-2 text-[12px] text-slate-900">
+                  {safeName}
+                </div>
+                <Link
+                  href={primaryHref}
+                  className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
+                  onClick={() => setOpen(false)}
+                >
+                  {primaryLabel}
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -108,7 +110,18 @@ export function MobileTopNavClient({
             <IconButton label="notifications">
               <Bell className="h-5 w-5" />
             </IconButton>
-            <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
+
+            {!loggedIn ? (
+              <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
+            ) : (
+              <Link
+                href={primaryHref}
+                className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900"
+                onClick={() => setOpen(false)}
+              >
+                {primaryLabel}
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -132,6 +145,15 @@ export function MobileTopNavClient({
                     <X className="h-5 w-5" />
                   </button>
                 </div>
+
+                {loggedIn ? (
+                  <div className="border-b border-black/5 px-4 py-4">
+                    <div className="rounded-xl bg-slate-100 px-4 py-3">
+                      <div className="text-sm font-medium text-slate-900">{safeName}</div>
+                      <div className="mt-1 text-xs text-slate-500">{canAdmin ? 'Администратор' : 'Пользователь'}</div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="space-y-1 p-3">
                   {config.nav.items.map((item) => {
@@ -196,24 +218,31 @@ export function MobileTopNavClient({
                 <div className="border-t border-black/5 p-3">
                   <div className="flex flex-wrap gap-2">
                     {!loggedIn ? (
-                      <Link
-                        href="/login"
-                        className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
-                        onClick={() => setOpen(false)}
-                      >
-                        Войти
-                      </Link>
+                      <>
+                        <Link
+                          href="/login"
+                          className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
+                          onClick={() => setOpen(false)}
+                        >
+                          Войти
+                        </Link>
+                        <Link
+                          href="/register"
+                          className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
+                          onClick={() => setOpen(false)}
+                        >
+                          Регистрация
+                        </Link>
+                      </>
                     ) : (
                       <>
-                        {canAdmin ? (
-                          <Link
-                            href="/admin"
-                            className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
-                            onClick={() => setOpen(false)}
-                          >
-                            Админка
-                          </Link>
-                        ) : null}
+                        <Link
+                          href={primaryHref}
+                          className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
+                          onClick={() => setOpen(false)}
+                        >
+                          {primaryLabel}
+                        </Link>
                         <Link
                           href="/logout?next=/"
                           className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900"
@@ -224,7 +253,7 @@ export function MobileTopNavClient({
                       </>
                     )}
 
-                    {!specialVariant ? (
+                    {!specialVariant && !loggedIn ? (
                       <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
                     ) : null}
                   </div>

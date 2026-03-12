@@ -7,7 +7,7 @@ import { getSiteConfig } from '@/lib/site/store.server';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LoginPage() {
+export default async function RegisterPage() {
   const session = await getSession();
   if (session) {
     redirect(hasPermission(session, PERM_ADMIN_ACCESS) ? '/admin' : '/profile');
@@ -17,7 +17,7 @@ export default async function LoginPage() {
 
   return (
     <SiteFrame config={config} variant="aichat">
-      <AuthPanelClient mode="login" />
+      <AuthPanelClient mode="register" />
     </SiteFrame>
   );
 }

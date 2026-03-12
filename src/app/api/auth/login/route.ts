@@ -16,10 +16,24 @@ function enrichPermissions(roleIds: string[], permissions: string[]) {
   return Array.from(perms);
 }
 
+function safeNext(next: string, isAdmin: boolean) {
+  const value = (next || '').trim();
+  if (!value.startsWith('/')) return isAdmin ? '/admin' : '/profile';
+  if (value.startsWith('//')) return isAdmin ? '/admin' : '/profile';
+  if (!isAdmin && value.startsWith('/admin')) return '/profile';
+  return value || (isAdmin ? '/admin' : '/profile');
+}
+
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as { email?: string; password?: string } | null;
+  const body = (await req.json().catch(() => null)) as {
+    email?: string;
+    password?: string;
+    next?: string;
+  } | null;
+
   const email = (body?.email || '').trim().toLowerCase();
   const password = body?.password || '';
+  const next = body?.next || '';
 
   if (!email || !password) {
     return NextResponse.json({ error: 'email/password required' }, { status: 400 });
@@ -36,6 +50,8 @@ export async function POST(req: Request) {
   }
 
   const permissions = enrichPermissions(user.roleIds, await rolePermissions(user.roleIds));
+  const isAdmin = permissions.includes(PERM_ALL) || permissions.includes(PERM_ADMIN_ACCESS);
+  const redirect = safeNext(next, isAdmin);
 
   const payloadBase = {
     uid: user.id,
@@ -49,9 +65,12 @@ export async function POST(req: Request) {
 
   const res = NextResponse.json({
     ok: true,
+    redirect,
+    isAdmin,
     user: {
       email: payload.email,
       displayName: payload.displayName,
+      roleIds: payload.roleIds,
       permissions: payload.permissions
     }
   });

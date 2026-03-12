@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Bell, ChevronDown, Heart, MessageCircle } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
-import { getSession } from '@/lib/auth/session.server';
+import { getSession, hasPermission } from '@/lib/auth/session.server';
+import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 import { MobileTopNavClient } from '@/components/MobileTopNavClient';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
@@ -60,7 +61,7 @@ export async function TopNav({
   variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   const session = await getSession();
-  const canAdmin = Boolean(session);
+  const canAdmin = hasPermission(session, PERM_ADMIN_ACCESS);
 
   return (
     <header className="border-b border-black/5 bg-[#d9d9d9]">
@@ -69,6 +70,7 @@ export async function TopNav({
           config={config}
           loggedIn={Boolean(session)}
           canAdmin={canAdmin}
+          displayName={session?.displayName || ''}
           variant={variant}
         />
 
@@ -105,19 +107,31 @@ export async function TopNav({
             </IconButton>
 
             {!session ? (
-              <Link
-                href="/login"
-                className="ml-2 rounded-xl bg-[#c7c7c7] px-5 py-2 text-[14px] text-slate-900 transition hover:bg-[#bdbdbd]"
-              >
-                Войти
-              </Link>
+              <div className="ml-2 flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="rounded-xl bg-[#c7c7c7] px-5 py-2 text-[14px] text-slate-900 transition hover:bg-[#bdbdbd]"
+                >
+                  Войти
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-xl bg-[#c7c7c7] px-5 py-2 text-[14px] text-slate-900 transition hover:bg-[#bdbdbd]"
+                >
+                  Регистрация
+                </Link>
+              </div>
             ) : (
               <div className="ml-2 flex items-center gap-2">
-                {canAdmin ? (
-                  <Link href="/admin" className="rounded-xl bg-[#c7c7c7] px-4 py-2 text-[14px] text-slate-900">
-                    Админка
-                  </Link>
-                ) : null}
+                <div className="max-w-[180px] truncate rounded-xl bg-white/35 px-4 py-2 text-[14px] text-slate-900">
+                  {session.displayName || session.email}
+                </div>
+                <Link
+                  href={canAdmin ? '/admin' : '/profile'}
+                  className="rounded-xl bg-[#c7c7c7] px-4 py-2 text-[14px] text-slate-900"
+                >
+                  {canAdmin ? 'Админка' : 'Профиль'}
+                </Link>
                 <Link href="/logout?next=/" className="rounded-xl bg-[#c7c7c7] px-4 py-2 text-[14px] text-slate-900">
                   Выйти
                 </Link>
