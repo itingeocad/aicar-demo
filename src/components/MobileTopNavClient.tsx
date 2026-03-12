@@ -26,16 +26,17 @@ export function MobileTopNavClient({
   config: SiteConfig;
   loggedIn: boolean;
   canAdmin: boolean;
-  variant?: 'default' | 'aichat';
+  variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
-  const panelTopClass = variant === 'aichat' ? 'top-[93px]' : 'top-[57px]';
+  const specialVariant = variant === 'aichat' || variant === 'aiclips';
+  const panelTopClass = specialVariant ? 'top-[81px]' : 'top-[57px]';
 
   return (
     <div className="md:hidden">
-      {variant === 'aichat' ? (
-        <div className="flex h-[92px] items-center justify-between">
+      {specialVariant ? (
+        <div className="flex h-[80px] items-center justify-between">
           <button
             type="button"
             aria-label={open ? 'Close menu' : 'Open menu'}
@@ -114,10 +115,7 @@ export function MobileTopNavClient({
 
       {open ? (
         <div className={`fixed inset-x-0 ${panelTopClass} z-50`}>
-          <div
-            className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]"
-            onClick={() => setOpen(false)}
-          >
+          <div className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]" onClick={() => setOpen(false)}>
             <div className="aicar-header-container">
               <div
                 className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl"
@@ -226,7 +224,7 @@ export function MobileTopNavClient({
                       </>
                     )}
 
-                    {variant === 'default' ? (
+                    {!specialVariant ? (
                       <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
                     ) : null}
                   </div>

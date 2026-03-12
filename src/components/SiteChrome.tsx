@@ -57,7 +57,7 @@ export async function TopNav({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat';
+  variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   const session = await getSession();
   const canAdmin = Boolean(session);
@@ -225,7 +225,7 @@ export function Footer({
   variant = 'default'
 }: {
   config: SiteConfig;
-  variant?: 'default' | 'aichat';
+  variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   const build = formatBuildLabel();
 
@@ -241,6 +241,115 @@ export function Footer({
   const socials = config.footer.socials ?? [];
   const storeBadges = config.footer.storeBadges ?? [];
 
+  if (variant === 'aiclips') {
+    const flatLinks = fallbackGroups.flatMap((g) => g.links);
+    const leftCol = flatLinks.slice(0, 5);
+    const rightCol = flatLinks.slice(5, 10);
+
+    return (
+      <footer className="bg-[#d9d9d9]">
+        <div className="hidden h-[220px] md:block">
+          <div className="mx-auto grid h-full max-w-[1320px] grid-cols-[220px_1fr_320px] items-end gap-10 px-8 pb-8 pt-6">
+            <div className="self-end">
+              {config.theme.logoImage ? (
+                <img
+                  src={config.theme.logoImage}
+                  alt={config.theme.brandName || 'Лого'}
+                  className="max-h-14 w-auto object-contain"
+                />
+              ) : (
+                <div className="text-[34px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-20 text-[15px] text-slate-900">
+              <div className="space-y-4">
+                {leftCol.map((l) => (
+                  <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                {rightCol.map((l) => (
+                  <Link key={l.href} href={l.href} className="block hover:text-slate-950">
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="justify-self-end">
+              <div className="mb-4 text-[16px] text-slate-900">Мы в социальных сетях</div>
+
+              <div className="mb-5 flex items-center gap-3">
+                {socials.slice(0, 4).map((s) => (
+                  <Link
+                    key={s.label}
+                    href={s.href}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 text-xs text-slate-700 transition hover:bg-white"
+                  >
+                    {s.label.slice(0, 2)}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="flex max-w-[240px] flex-col gap-3">
+                {storeBadges.slice(0, 2).map((b) => (
+                  <Link
+                    key={b.label}
+                    href={b.href}
+                    className="rounded-[14px] bg-white/85 px-5 py-3 text-xs text-slate-700 transition hover:bg-white"
+                  >
+                    {b.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-[250px] px-4 py-6 text-center md:hidden">
+          {config.theme.logoImage ? (
+            <img
+              src={config.theme.logoImage}
+              alt={config.theme.brandName || 'Лого'}
+              className="mx-auto max-h-14 w-auto object-contain"
+            />
+          ) : (
+            <div className="text-[34px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</div>
+          )}
+
+          <div className="mt-6 text-[18px] text-slate-900">Мы в социальных сетях</div>
+
+          <div className="mt-5 flex items-center justify-center gap-4">
+            {socials.slice(0, 4).map((s) => (
+              <Link
+                key={s.label}
+                href={s.href}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-white/85 text-xs text-slate-700"
+              >
+                {s.label.slice(0, 2)}
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-4">
+            {storeBadges.slice(0, 2).map((b) => (
+              <Link
+                key={b.label}
+                href={b.href}
+                className="rounded-[16px] bg-white/85 px-5 py-4 text-xs text-slate-700"
+              >
+                {b.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </footer>
+    );
+  }
   if (variant === 'aichat') {
     const aichatGroupCols =
       fallbackGroups.length >= 3 ? 'grid-cols-3' : fallbackGroups.length === 2 ? 'grid-cols-2' : 'grid-cols-1';
@@ -348,7 +457,29 @@ export function SiteFrame({
 }: {
   config: SiteConfig;
   children: React.ReactNode;
-  variant?: 'default' | 'aichat';
+  variant?: 'default' | 'aichat' | 'aiclips';
+}) {
+  if (variant === 'aiclips') {
+    return (
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#eeeeee] text-slate-900">
+        <TopNav config={config} variant={variant} />
+        <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+        <Footer config={config} variant={variant} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#eeeeee] text-slate-900">
+      <TopNav config={config} variant={variant} />
+      <main>{children}</main>
+      <Footer config={config} variant={variant} />
+    </div>
+  );
+}: {
+  config: SiteConfig;
+  children: React.ReactNode;
+  variant?: 'default' | 'aichat' | 'aiclips';
 }) {
   return (
     <div className="min-h-screen bg-[#eeeeee] text-slate-900">
