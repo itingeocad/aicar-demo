@@ -37,6 +37,14 @@ export default async function CatchAllSitePage({ params, searchParams }: Props) 
     );
   }
 
+  if (path === 'aiclips') {
+    return (
+      <SiteFrame config={config} variant="aichat">
+        <AIClipsPage reels={config.demoData.reels} />
+      </SiteFrame>
+    );
+  }
+
   if (path === 'news') {
     return (
       <SiteFrame config={config} variant="aichat">
