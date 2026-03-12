@@ -5,22 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { Bookmark, ChevronDown, Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
 import type { DemoReel } from '@/lib/site/types';
 
-function setMobileFooterState(visible: boolean) {
-  const root = document.documentElement;
-  root.style.setProperty('--aiclips-mobile-footer-height', visible ? '188px' : '0px');
-  root.style.setProperty('--aiclips-mobile-footer-opacity', visible ? '1' : '0');
-  root.style.setProperty('--aiclips-mobile-footer-padding-top', visible ? '16px' : '0px');
-  root.style.setProperty('--aiclips-mobile-footer-padding-bottom', visible ? '16px' : '0px');
-}
-
-function clearMobileFooterState() {
-  const root = document.documentElement;
-  root.style.removeProperty('--aiclips-mobile-footer-height');
-  root.style.removeProperty('--aiclips-mobile-footer-opacity');
-  root.style.removeProperty('--aiclips-mobile-footer-padding-top');
-  root.style.removeProperty('--aiclips-mobile-footer-padding-bottom');
-}
-
 function scrollToIndex(container: HTMLDivElement | null, index: number, smooth = true) {
   if (!container) return;
 
@@ -97,18 +81,12 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   const mobileVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [mobileFooterVisible, setMobileFooterVisible] = useState(true);
 
   const startIndex = useMemo(() => {
     if (!requestedReel) return 0;
     const idx = items.findIndex((r) => r.id === requestedReel);
     return idx >= 0 ? idx : 0;
   }, [requestedReel, items]);
-
-  useEffect(() => {
-    setMobileFooterState(mobileFooterVisible);
-    return () => clearMobileFooterState();
-  }, [mobileFooterVisible]);
 
   useEffect(() => {
     setActiveIndex(startIndex);
@@ -189,16 +167,13 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     syncVideos(mobileVideoRefs.current);
   }, [activeIndex]);
 
-  const goNextDesktop = () => {
+  const goNext = () => {
     if (items.length <= 1) return;
 
     const next = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
     scrollToIndex(desktopScrollerRef.current, next, true);
+    scrollToIndex(mobileScrollerRef.current, next, true);
     setActiveIndex(next);
-  };
-
-  const toggleMobileFooter = () => {
-    setMobileFooterVisible((v) => !v);
   };
 
   if (items.length === 0) {
@@ -213,14 +188,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     <>
       <div className="hidden h-full md:block">
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
-          <div className="mx-auto flex h-full max-w-[1600px] items-center justify-center px-4 py-2">
-            <div
-              className="relative aspect-[9/16]"
-              style={{
-                height: 'min(calc(100% - 14px), 680px)',
-                maxWidth: '392px'
-              }}
-            >
+          <div className="mx-auto flex h-full max-w-[1700px] items-center justify-center px-6 py-2">
+            <div className="relative h-full max-h-[calc(100%-8px)] max-w-[392px] aspect-[9/16]">
               <div
                 ref={desktopScrollerRef}
                 className="h-full w-full overflow-y-auto overscroll-contain snap-y snap-mandatory rounded-[18px] bg-[#d3d3d3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -248,36 +217,33 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
               <div className="absolute -right-[112px] top-1/2 -translate-y-1/2">
                 <ActionStack />
               </div>
-            </div>
-          </div>
 
-          <div className="absolute bottom-[8px] left-1/2 -translate-x-1/2">
-            {items.length > 1 ? (
-              <button
-                type="button"
-                aria-label="Next reel"
-                onClick={goNextDesktop}
-                className="text-white transition hover:scale-105"
-              >
-                <ChevronDown className="h-[70px] w-[70px]" strokeWidth={1.7} />
-              </button>
-            ) : (
-              <ChevronDown className="h-[70px] w-[70px] text-white" strokeWidth={1.7} />
-            )}
+              {items.length > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next reel"
+                  onClick={goNext}
+                  className="absolute bottom-[18px] left-1/2 -translate-x-1/2 text-white transition hover:scale-105"
+                >
+                  <ChevronDown className="h-[70px] w-[70px]" strokeWidth={1.7} />
+                </button>
+              ) : (
+                <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 text-white">
+                  <ChevronDown className="h-[70px] w-[70px]" strokeWidth={1.7} />
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
 
       <div className="h-full md:hidden">
-        <section className="grid h-full grid-rows-[minmax(0,1fr)_64px] overflow-hidden bg-[#a9a9a9] px-3 py-2">
-          <div className="min-h-0 flex items-center justify-center overflow-hidden">
-            <div
-              className="relative w-full max-w-[302px] overflow-hidden rounded-[16px] bg-[#d3d3d3]"
-              style={{ height: 'min(calc(100% - 6px), 500px)' }}
-            >
+        <section className="h-full overflow-hidden bg-[#a9a9a9] px-3 py-2">
+          <div className="flex h-full items-center justify-center">
+            <div className="relative h-full max-h-[calc(100%-8px)] w-full max-w-[302px] aspect-[9/16]">
               <div
                 ref={mobileScrollerRef}
-                className="h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="h-full w-full overflow-y-auto overscroll-contain snap-y snap-mandatory rounded-[16px] bg-[#d3d3d3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {items.map((reel, idx) => (
                   <div
@@ -303,23 +269,22 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-center rounded-[12px] bg-[#9f9f9f]">
-            <button
-              type="button"
-              aria-label={mobileFooterVisible ? 'Hide footer' : 'Show footer'}
-              onClick={toggleMobileFooter}
-              className="flex h-full w-full items-center justify-center text-white"
-            >
-              <ChevronDown
-                className={`h-[48px] w-[48px] transition-transform duration-300 ${
-                  mobileFooterVisible ? '' : 'rotate-180'
-                }`}
-                strokeWidth={1.7}
-              />
-            </button>
+              {items.length > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next reel"
+                  onClick={goNext}
+                  className="absolute bottom-[12px] left-1/2 -translate-x-1/2 text-white transition hover:scale-105"
+                >
+                  <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
+                </button>
+              ) : (
+                <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 text-white">
+                  <ChevronDown className="h-[52px] w-[52px]" strokeWidth={1.7} />
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>

@@ -472,7 +472,6 @@ export function SiteFrame({
       <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#eeeeee] text-slate-900">
         <TopNav config={config} variant={variant} />
         <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
-        <Footer config={config} variant={variant} />
       </div>
     );
   }
