@@ -52,8 +52,8 @@ function ReelMedia({
 }
 
 function ActionStack({ mobile = false }: { mobile?: boolean }) {
-  const iconSize = mobile ? 'h-8 w-8' : 'h-12 w-12';
-  const gap = mobile ? 'gap-6' : 'gap-7';
+  const iconSize = mobile ? 'h-7 w-7' : 'h-12 w-12';
+  const gap = mobile ? 'gap-5' : 'gap-7';
 
   return (
     <div className={`flex flex-col items-center text-white ${gap}`}>
@@ -169,8 +169,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   const goNext = () => {
     if (items.length <= 1) return;
-
     const next = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
+
     scrollToIndex(desktopScrollerRef.current, next, true);
     scrollToIndex(mobileScrollerRef.current, next, true);
     setActiveIndex(next);
@@ -188,8 +188,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     <>
       <div className="hidden h-full md:block">
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
-          <div className="mx-auto flex h-full max-w-[1500px] items-center justify-center px-4">
-            <div className="relative h-[calc(100%-18px)] max-h-[760px] aspect-[9/16]">
+          <div className="mx-auto flex h-full max-w-[1600px] items-center justify-center px-4">
+            <div className="relative h-[calc(100%-6px)] aspect-[9/16]">
               <div
                 ref={desktopScrollerRef}
                 className="h-full w-full overflow-y-auto overscroll-contain snap-y snap-mandatory rounded-[18px] bg-[#d3d3d3] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -213,14 +213,14 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 ))}
               </div>
 
-              <div className="absolute -left-[132px] bottom-[26px] h-[74px] w-[74px] rounded-full bg-white/95" />
+              <div className="absolute -left-[132px] bottom-[22px] h-[74px] w-[74px] rounded-full bg-white/95" />
               <div className="absolute -right-[126px] top-1/2 -translate-y-1/2">
                 <ActionStack />
               </div>
             </div>
           </div>
 
-          <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2">
+          <div className="absolute bottom-[8px] left-1/2 -translate-x-1/2">
             {items.length > 1 ? (
               <button
                 type="button"
@@ -238,7 +238,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       </div>
 
       <div className="h-full md:hidden">
-        <section className="grid h-full grid-rows-[minmax(0,1fr)_76px] overflow-hidden bg-[#a9a9a9]">
+        <section className="grid h-full grid-rows-[minmax(0,1fr)_64px] overflow-hidden bg-[#a9a9a9]">
           <div className="min-h-0 overflow-hidden">
             <div
               ref={mobileScrollerRef}
@@ -260,11 +260,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     }}
                   />
 
-                  <div className="absolute bottom-[102px] right-[16px]">
+                  <div className="absolute bottom-[92px] right-[14px]">
                     <ActionStack mobile />
                   </div>
 
-                  <div className="absolute bottom-[16px] left-[14px] h-[64px] w-[64px] rounded-full bg-white/92" />
+                  <div className="absolute bottom-[14px] left-[12px] h-[56px] w-[56px] rounded-full bg-white/92" />
                 </div>
               ))}
             </div>
@@ -278,10 +278,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 onClick={goNext}
                 className="text-white transition hover:scale-105"
               >
-                <ChevronDown className="h-[62px] w-[62px]" strokeWidth={1.7} />
+                <ChevronDown className="h-[54px] w-[54px]" strokeWidth={1.7} />
               </button>
             ) : (
-              <ChevronDown className="h-[62px] w-[62px] text-white" strokeWidth={1.7} />
+              <ChevronDown className="h-[54px] w-[54px] text-white" strokeWidth={1.7} />
             )}
           </div>
         </section>

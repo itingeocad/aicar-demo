@@ -10,7 +10,7 @@ function IconButton({ children, label }: { children: React.ReactNode; label: str
     <button
       type="button"
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5"
+      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5"
     >
       {children}
     </button>
@@ -31,33 +31,33 @@ export function MobileTopNavClient({
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
   const specialVariant = variant === 'aichat' || variant === 'aiclips';
-  const panelTopClass = specialVariant ? 'top-[81px]' : 'top-[57px]';
+  const panelTopClass = specialVariant ? 'top-[57px]' : 'top-[57px]';
 
   return (
     <div className="md:hidden">
       {specialVariant ? (
-        <div className="flex h-[80px] items-center justify-between">
+        <div className="flex h-14 items-center justify-between">
           <button
             type="button"
             aria-label={open ? 'Close menu' : 'Open menu'}
             onClick={() => setOpen((v) => !v)}
-            className="flex h-12 w-12 items-center justify-center rounded-full text-slate-800 hover:bg-black/5"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-800 hover:bg-black/5"
           >
-            {open ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <IconButton label="notifications">
-              <Bell className="h-6 w-6" />
+              <Bell className="h-5 w-5" />
             </IconButton>
             <IconButton label="favorites">
-              <Heart className="h-6 w-6" />
+              <Heart className="h-5 w-5" />
             </IconButton>
 
             {!loggedIn ? (
               <Link
                 href="/login"
-                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
                 onClick={() => setOpen(false)}
               >
                 Войти
@@ -65,7 +65,7 @@ export function MobileTopNavClient({
             ) : canAdmin ? (
               <Link
                 href="/admin"
-                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
                 onClick={() => setOpen(false)}
               >
                 Админка
@@ -73,7 +73,7 @@ export function MobileTopNavClient({
             ) : (
               <Link
                 href="/logout?next=/"
-                className="rounded-[18px] bg-[#bdbdbd] px-5 py-3 text-[14px] font-medium text-slate-900"
+                className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
                 onClick={() => setOpen(false)}
               >
                 Выйти
