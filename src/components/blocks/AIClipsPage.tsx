@@ -1,12 +1,64 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Bookmark, ChevronDown, Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
+import {
+  Bookmark,
+  ChevronDown,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Send,
+  X
+} from 'lucide-react';
+import type { AIClipCommentDoc, AIClipView } from '@/lib/aiclips/types';
 import type { DemoReel } from '@/lib/site/types';
 
 const PROTO_W = 543;
 const PROTO_H = 961;
+
+type ReelItem = {
+  id: string;
+  title: string;
+  description?: string;
+  videoUrl?: string;
+  posterUrl?: string;
+  ownerDisplayName: string;
+  ownerAvatarUrl?: string;
+  likeCount: number;
+  commentCount: number;
+  favoriteCount: number;
+  isLiked: boolean;
+  isFavorited: boolean;
+  source: 'live' | 'demo';
+};
+
+function authToken() {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem('aicar_session_token') || '';
+}
+
+async function fetchAuthJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = authToken();
+  const headers = new Headers(init?.headers || {});
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const res = await fetch(url, {
+    cache: 'no-store',
+    credentials: 'include',
+    ...init,
+    headers
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as any)?.error || `HTTP ${res.status}`);
+  }
+  return data as T;
+}
 
 function scrollToIndex(container: HTMLDivElement | null, index: number, smooth = true) {
   if (!container) return;
@@ -17,12 +69,48 @@ function scrollToIndex(container: HTMLDivElement | null, index: number, smooth =
   });
 }
 
+function mapLiveClip(clip: AIClipView): ReelItem {
+  return {
+    id: clip.id,
+    title: clip.title,
+    description: clip.description,
+    videoUrl: clip.videoUrl,
+    posterUrl: clip.posterUrl,
+    ownerDisplayName: clip.ownerProfile?.displayName || clip.ownerDisplayName,
+    ownerAvatarUrl: clip.ownerProfile?.avatarUrl,
+    likeCount: clip.likeCount,
+    commentCount: clip.commentCount,
+    favoriteCount: clip.favoriteCount,
+    isLiked: clip.isLiked,
+    isFavorited: clip.isFavorited,
+    source: 'live'
+  };
+}
+
+function mapDemoReel(reel: DemoReel): ReelItem {
+  return {
+    id: reel.id,
+    title: reel.title,
+    description: reel.description || '',
+    videoUrl: reel.videoUrl,
+    posterUrl: reel.posterUrl || reel.thumbUrl,
+    ownerDisplayName: 'AICar',
+    ownerAvatarUrl: '',
+    likeCount: 0,
+    commentCount: 0,
+    favoriteCount: 0,
+    isLiked: false,
+    isFavorited: false,
+    source: 'demo'
+  };
+}
+
 function ReelMedia({
   reel,
   active,
   videoRef
 }: {
-  reel: DemoReel;
+  reel: ReelItem;
   active: boolean;
   videoRef: (node: HTMLVideoElement | null) => void;
 }) {
@@ -30,7 +118,6 @@ function ReelMedia({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#b3b3b3]">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         ref={videoRef}
         src={reel.videoUrl || undefined}
@@ -48,28 +135,94 @@ function ReelMedia({
         </div>
       ) : null}
 
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-gradient-to-t from-black/70 to-transparent" />
       {!active ? <div className="absolute inset-0 bg-black/8" /> : null}
+
+      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-6 text-white md:px-5 md:pb-7">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
+            {reel.ownerAvatarUrl ? (
+              <img src={reel.ownerAvatarUrl} alt={reel.ownerDisplayName} className="h-full w-full object-cover" />
+            ) : (
+              <span>{reel.ownerDisplayName.slice(0, 1).toUpperCase()}</span>
+            )}
+          </div>
+
+          <div>
+            <div className="text-[14px] font-medium md:text-[15px]">{reel.ownerDisplayName}</div>
+            <div className="text-[12px] text-white/80">{reel.source === 'live' ? 'AIClip' : 'demo'}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 max-w-[72%]">
+          <div className="text-[18px] font-semibold leading-[1.1] md:text-[22px]">{reel.title}</div>
+          {reel.description ? (
+            <div className="mt-2 line-clamp-3 text-[13px] leading-[1.4] text-white/92 md:text-[14px]">
+              {reel.description}
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
 
-function ActionStack({ mobile = false }: { mobile?: boolean }) {
+function ActionStack({
+  reel,
+  mobile = false,
+  busyLike,
+  busyFavorite,
+  onLike,
+  onComment,
+  onShare,
+  onFavorite
+}: {
+  reel: ReelItem;
+  mobile?: boolean;
+  busyLike: boolean;
+  busyFavorite: boolean;
+  onLike: () => void;
+  onComment: () => void;
+  onShare: () => void;
+  onFavorite: () => void;
+}) {
   const iconSize = mobile ? 'h-6 w-6' : 'h-11 w-11';
+  const labelClass = mobile ? 'text-[10px]' : 'text-[12px]';
   const gap = mobile ? 'gap-4' : 'gap-7';
+
+  const btn = (active: boolean) =>
+    `flex flex-col items-center ${labelClass} text-white ${active ? 'opacity-100' : 'opacity-95'} transition`;
 
   return (
     <div className={`flex flex-col items-center text-white ${gap}`}>
-      <Heart className={iconSize} strokeWidth={1.8} />
-      <MessageCircle className={iconSize} strokeWidth={1.8} />
-      <Send className={iconSize} strokeWidth={1.8} />
-      <Bookmark className={iconSize} strokeWidth={1.8} />
-      <MoreHorizontal className={iconSize} strokeWidth={1.8} />
+      <button type="button" onClick={onLike} disabled={busyLike} className={btn(reel.isLiked)}>
+        <Heart className={iconSize} strokeWidth={1.8} fill={reel.isLiked ? 'currentColor' : 'none'} />
+        <span className="mt-1">{reel.likeCount}</span>
+      </button>
+
+      <button type="button" onClick={onComment} className={btn(false)}>
+        <MessageCircle className={iconSize} strokeWidth={1.8} />
+        <span className="mt-1">{reel.commentCount}</span>
+      </button>
+
+      <button type="button" onClick={onShare} className={btn(false)}>
+        <Send className={iconSize} strokeWidth={1.8} />
+        <span className="mt-1">share</span>
+      </button>
+
+      <button type="button" onClick={onFavorite} disabled={busyFavorite} className={btn(reel.isFavorited)}>
+        <Bookmark className={iconSize} strokeWidth={1.8} fill={reel.isFavorited ? 'currentColor' : 'none'} />
+        <span className="mt-1">{reel.favoriteCount}</span>
+      </button>
+
+      <div className={btn(false)}>
+        <MoreHorizontal className={iconSize} strokeWidth={1.8} />
+      </div>
     </div>
   );
 }
 
 export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
-  const items = reels && reels.length > 0 ? reels : [];
   const searchParams = useSearchParams();
   const requestedReel = searchParams.get('reel');
 
@@ -82,13 +235,53 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   const desktopVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const mobileVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
+  const [items, setItems] = useState<ReelItem[]>(reels.map(mapDemoReel));
   const [activeIndex, setActiveIndex] = useState(0);
+  const [status, setStatus] = useState('');
+  const [busyLike, setBusyLike] = useState(false);
+  const [busyFavorite, setBusyFavorite] = useState(false);
+
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [comments, setComments] = useState<AIClipCommentDoc[]>([]);
+  const [commentText, setCommentText] = useState('');
 
   const startIndex = useMemo(() => {
     if (!requestedReel) return 0;
     const idx = items.findIndex((r) => r.id === requestedReel);
     return idx >= 0 ? idx : 0;
   }, [requestedReel, items]);
+
+  const activeReel = items[activeIndex] || null;
+
+  function patchReel(next: ReelItem) {
+    setItems((prev) => prev.map((item) => (item.id === next.id ? next : item)));
+  }
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const data = await fetchAuthJSON<{ ok: true; clips: AIClipView[] }>('/api/aiclips/feed');
+
+        if (!alive) return;
+
+        if (Array.isArray(data.clips) && data.clips.length > 0) {
+          setItems(data.clips.map(mapLiveClip));
+        } else {
+          setItems(reels.map(mapDemoReel));
+        }
+      } catch {
+        if (!alive) return;
+        setItems(reels.map(mapDemoReel));
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [reels]);
 
   useEffect(() => {
     setActiveIndex(startIndex);
@@ -161,6 +354,141 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     syncVideos(mobileVideoRefs.current);
   }, [activeIndex]);
 
+  async function openComments() {
+    if (!activeReel) return;
+
+    try {
+      setCommentsOpen(true);
+      setCommentsLoading(true);
+
+      if (activeReel.source === 'demo') {
+        setComments([]);
+        setStatus('Для demo-клипов комментарии не сохраняются.');
+        return;
+      }
+
+      const data = await fetchAuthJSON<{ ok: true; comments: AIClipCommentDoc[] }>(
+        `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments`
+      );
+
+      setComments(data.comments || []);
+      setStatus('');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка загрузки комментариев'));
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
+  async function toggleLike() {
+    if (!activeReel || activeReel.source === 'demo') {
+      setStatus('Лайки работают только для опубликованных AIClips.');
+      return;
+    }
+
+    try {
+      setBusyLike(true);
+
+      const method = activeReel.isLiked ? 'DELETE' : 'POST';
+      const data = await fetchAuthJSON<{ ok: true; clip: AIClipView }>(
+        `/api/aiclips/${encodeURIComponent(activeReel.id)}/like`,
+        { method }
+      );
+
+      patchReel(mapLiveClip(data.clip));
+      setStatus('');
+    } catch (e) {
+      const message = String((e as any)?.message || e || 'Ошибка');
+      if (/401|unauthorized/i.test(message)) {
+        window.location.assign('/login?next=/aiclips');
+        return;
+      }
+      setStatus(message);
+    } finally {
+      setBusyLike(false);
+    }
+  }
+
+  async function toggleFavorite() {
+    if (!activeReel || activeReel.source === 'demo') {
+      setStatus('Избранное работает только для опубликованных AIClips.');
+      return;
+    }
+
+    try {
+      setBusyFavorite(true);
+
+      const method = activeReel.isFavorited ? 'DELETE' : 'POST';
+      const data = await fetchAuthJSON<{ ok: true; clip: AIClipView }>(
+        `/api/aiclips/${encodeURIComponent(activeReel.id)}/favorite`,
+        { method }
+      );
+
+      patchReel(mapLiveClip(data.clip));
+      setStatus('');
+    } catch (e) {
+      const message = String((e as any)?.message || e || 'Ошибка');
+      if (/401|unauthorized/i.test(message)) {
+        window.location.assign('/login?next=/aiclips');
+        return;
+      }
+      setStatus(message);
+    } finally {
+      setBusyFavorite(false);
+    }
+  }
+
+  async function submitComment() {
+    if (!activeReel || !commentText.trim()) return;
+
+    if (activeReel.source === 'demo') {
+      setStatus('Комментарии работают только для опубликованных AIClips.');
+      return;
+    }
+
+    try {
+      const data = await fetchAuthJSON<{ ok: true; comment: AIClipCommentDoc }>(
+        `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ text: commentText.trim() })
+        }
+      );
+
+      setComments((prev) => [...prev, data.comment]);
+      setCommentText('');
+      patchReel({
+        ...activeReel,
+        commentCount: activeReel.commentCount + 1
+      });
+      setStatus('');
+    } catch (e) {
+      const message = String((e as any)?.message || e || 'Ошибка');
+      if (/401|unauthorized/i.test(message)) {
+        window.location.assign('/login?next=/aiclips');
+        return;
+      }
+      setStatus(message);
+    }
+  }
+
+  async function shareClip() {
+    if (!activeReel) return;
+
+    const url =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/aiclips?reel=${encodeURIComponent(activeReel.id)}`
+        : `/aiclips?reel=${encodeURIComponent(activeReel.id)}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setStatus('Ссылка на AIClip скопирована ✅');
+    } catch {
+      setStatus(url);
+    }
+  }
+
   const goNext = () => {
     if (items.length <= 1) return;
     const next = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
@@ -179,6 +507,23 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   return (
     <>
+      <div className="pointer-events-none fixed inset-x-0 top-[88px] z-30 hidden md:block">
+        <div className="mx-auto flex max-w-[1700px] justify-end px-8">
+          <Link
+            href="/profile"
+            className="pointer-events-auto rounded-full bg-black/80 px-4 py-2 text-[13px] text-white backdrop-blur"
+          >
+            Опубликовать AIClip
+          </Link>
+        </div>
+      </div>
+
+      {status ? (
+        <div className="fixed left-1/2 top-[92px] z-40 -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[13px] text-white">
+          {status}
+        </div>
+      ) : null}
+
       <div className="hidden h-full md:block">
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
           <div className="mx-auto flex h-full max-w-[1700px] items-center justify-center px-6 py-2">
@@ -212,10 +557,25 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 ))}
               </div>
 
-              <div className="absolute -left-[122px] bottom-[24px] h-[68px] w-[68px] rounded-full bg-white/95" />
-              <div className="absolute -right-[116px] top-1/2 -translate-y-1/2">
-                <ActionStack />
+              <div className="absolute -left-[122px] bottom-[24px] flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-full bg-white/95">
+                {activeReel?.ownerAvatarUrl ? (
+                  <img src={activeReel.ownerAvatarUrl} alt={activeReel.ownerDisplayName} className="h-full w-full object-cover" />
+                ) : null}
               </div>
+
+              {activeReel ? (
+                <div className="absolute -right-[116px] top-1/2 -translate-y-1/2">
+                  <ActionStack
+                    reel={activeReel}
+                    busyLike={busyLike}
+                    busyFavorite={busyFavorite}
+                    onLike={toggleLike}
+                    onComment={openComments}
+                    onShare={shareClip}
+                    onFavorite={toggleFavorite}
+                  />
+                </div>
+              ) : null}
 
               {items.length > 1 ? (
                 <button
@@ -238,7 +598,16 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
       <div className="h-full md:hidden">
         <section className="h-full overflow-hidden bg-[#a9a9a9] px-2 py-2">
-          <div className="flex h-full items-center justify-center">
+          <div className="mb-2 flex justify-end">
+            <Link
+              href="/profile"
+              className="rounded-full bg-black/80 px-4 py-2 text-[12px] text-white backdrop-blur"
+            >
+              Опубликовать
+            </Link>
+          </div>
+
+          <div className="flex h-[calc(100%-42px)] items-center justify-center">
             <div
               className="relative shrink-0"
               style={{
@@ -267,11 +636,26 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       }}
                     />
 
-                    <div className="absolute bottom-[66px] right-[10px] z-10">
-                      <ActionStack mobile />
-                    </div>
+                    {activeReel && idx === activeIndex ? (
+                      <div className="absolute bottom-[66px] right-[10px] z-10">
+                        <ActionStack
+                          reel={activeReel}
+                          mobile
+                          busyLike={busyLike}
+                          busyFavorite={busyFavorite}
+                          onLike={toggleLike}
+                          onComment={openComments}
+                          onShare={shareClip}
+                          onFavorite={toggleFavorite}
+                        />
+                      </div>
+                    ) : null}
 
-                    <div className="absolute bottom-[8px] left-[8px] h-[42px] w-[42px] rounded-full bg-white/92 z-10" />
+                    <div className="absolute bottom-[8px] left-[8px] z-10 flex h-[42px] w-[42px] items-center justify-center overflow-hidden rounded-full bg-white/92">
+                      {reel.ownerAvatarUrl ? (
+                        <img src={reel.ownerAvatarUrl} alt={reel.ownerDisplayName} className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -294,6 +678,73 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
           </div>
         </section>
       </div>
+
+      {commentsOpen ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setCommentsOpen(false)}
+            className="fixed inset-0 z-40 bg-black/45"
+            aria-label="Close comments"
+          />
+
+          <div className="fixed bottom-0 right-0 z-50 flex h-[78dvh] w-full flex-col rounded-t-[24px] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.22)] md:top-0 md:h-full md:w-[420px] md:rounded-none">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <div>
+                <div className="text-[17px] font-semibold text-slate-900">Комментарии</div>
+                <div className="text-[12px] text-slate-500">{activeReel?.title || 'AIClip'}</div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCommentsOpen(false)}
+                className="rounded-full p-2 text-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {commentsLoading ? (
+                <div className="text-[14px] text-slate-700">Загрузка комментариев…</div>
+              ) : comments.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <article key={comment.id} className="rounded-[16px] bg-[#f5f5f5] px-4 py-3">
+                      <div className="text-[13px] font-medium text-slate-900">{comment.authorDisplayName}</div>
+                      <div className="mt-1 text-[14px] leading-[1.4] text-slate-800">{comment.text}</div>
+                      <div className="mt-2 text-[12px] text-slate-500">
+                        {new Date(comment.createdAt).toLocaleString('ru-RU')}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[14px] text-slate-700">Комментариев пока нет.</div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-200 p-4">
+              <div className="flex items-end gap-3">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={3}
+                  placeholder="Напишите комментарий…"
+                  className="min-h-[72px] flex-1 rounded-[16px] border border-slate-300 px-4 py-3 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={submitComment}
+                  className="rounded-full bg-black px-4 py-3 text-[13px] text-white"
+                >
+                  Отправить
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </>
   );
 }
