@@ -630,16 +630,50 @@ export default function AdminClient() {
   const [me, setMe] = useState<MeUser | null>(null);
 
   useEffect(() => {
-    fetchJSON<{ user: MeUser | null }>('/api/auth/me')
-      .then((r) => setMe(r.user))
-      .catch(() => setMe(null));
+    let alive = true;
 
-    fetchConfig()
-      .then((c) => {
+    (async () => {
+      try {
+        setStatus('Проверка доступа…');
+
+        const meRes = await fetch('/api/auth/me', {
+          cache: 'no-store',
+          credentials: 'include'
+        });
+
+        const meData = await meRes.json().catch(() => ({}));
+
+        if (!alive) return;
+
+        if (!meData?.authenticated) {
+          window.location.assign('/login?next=/admin');
+          return;
+        }
+
+        if (!meData?.isAdmin) {
+          window.location.assign('/profile');
+          return;
+        }
+
+        setMe((meData.user || null) as MeUser | null);
+
+        setStatus('Загрузка конфигурации…');
+        const c = await fetchConfig();
+
+        if (!alive) return;
+
         setConfig(c);
         setActivePageId(c.pages[0]?.id ?? '');
-      })
-      .catch((e) => setStatus(String(e)));
+        setStatus('');
+      } catch (e) {
+        if (!alive) return;
+        setStatus(String(e));
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const activePage: PageDoc | null = useMemo(() => {

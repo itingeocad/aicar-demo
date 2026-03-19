@@ -5,6 +5,7 @@ import {
   ROLE_SUPER_ADMIN,
   SESSION_COOKIE
 } from './constants';
+import { rolePermissions } from './store.server';
 import { verifySession } from './token';
 import type { SessionPayload } from './types';
 
@@ -30,13 +31,13 @@ function parseCookieValue(rawCookieHeader: string, name: string): string | null 
 
 async function readSessionCookie(): Promise<string | null> {
   try {
-    const cookieStore = await Promise.resolve(cookies() as any);
+    const cookieStore = cookies() as any;
     const direct = cookieStore?.get?.(SESSION_COOKIE)?.value;
     if (direct) return direct;
   } catch {}
 
   try {
-    const headerStore = await Promise.resolve(headers() as any);
+    const headerStore = headers() as any;
     const rawCookieHeader = String(headerStore?.get?.('cookie') || '');
     const fromHeader = parseCookieValue(rawCookieHeader, SESSION_COOKIE);
     if (fromHeader) return fromHeader;
@@ -45,16 +46,27 @@ async function readSessionCookie(): Promise<string | null> {
   return null;
 }
 
-function effectivePermissions(session: SessionPayload | null): Set<string> {
-  const perms = new Set<string>(Array.isArray(session?.permissions) ? session!.permissions : []);
-  const roleIds = Array.isArray(session?.roleIds) ? session!.roleIds : [];
+async function hydratePermissions(session: SessionPayload): Promise<SessionPayload> {
+  const roleIds = Array.isArray(session.roleIds) ? session.roleIds.map(String) : [];
+  const tokenPerms = Array.isArray(session.permissions) ? session.permissions.map(String) : [];
+
+  const perms = new Set<string>(tokenPerms);
+
+  try {
+    const fromRoles = await rolePermissions(roleIds);
+    for (const p of fromRoles) perms.add(String(p));
+  } catch {}
 
   if (roleIds.includes(ROLE_SUPER_ADMIN)) {
     perms.add(PERM_ALL);
     perms.add(PERM_ADMIN_ACCESS);
   }
 
-  return perms;
+  return {
+    ...session,
+    roleIds,
+    permissions: Array.from(perms)
+  };
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -64,7 +76,7 @@ export async function getSession(): Promise<SessionUser | null> {
   const session = await verifySession(raw);
   if (!session?.uid) return null;
 
-  return session;
+  return await hydratePermissions(session);
 }
 
 export function isAuthenticated(session: SessionUser | null | undefined): boolean {
@@ -79,10 +91,8 @@ export function hasRole(session: SessionUser | null | undefined, roleId: string)
 export function hasPermission(session: SessionUser | null | undefined, permission: string): boolean {
   if (!session) return false;
 
-  const perms = effectivePermissions(session);
-  if (perms.has(PERM_ALL)) return true;
-
-  return perms.has(permission);
+  const perms = Array.isArray(session.permissions) ? session.permissions : [];
+  return perms.includes(PERM_ALL) || perms.includes(permission);
 }
 
 export function hasAnyPermission(
