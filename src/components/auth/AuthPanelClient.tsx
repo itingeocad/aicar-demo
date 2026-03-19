@@ -13,7 +13,6 @@ async function fetchJson(url: string, init?: RequestInit) {
 }
 
 export default function AuthPanelClient({ mode }: { mode: Mode }) {
-  const router = useRouter();
   const sp = useSearchParams();
 
   const next = sp.get('next') || '';
@@ -30,6 +29,7 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
 
   async function completeLogin() {
     const { res, data } = await fetchJson('/api/auth/login', {
+      credentials: 'same-origin',
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, password, next })
@@ -40,15 +40,14 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
       return;
     }
 
-    const me = await fetchJson('/api/auth/me', { cache: 'no-store' });
+    const me = await fetchJson('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
     const redirectTo =
       typeof me.data?.redirect === 'string' && me.data.redirect
         ? me.data.redirect
         : '/profile';
 
     setStatus('Готово ✅');
-    router.push(redirectTo);
-    router.refresh();
+    window.location.assign(redirectTo);
   }
 
   async function onSubmit(e: React.FormEvent) {
