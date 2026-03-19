@@ -91,7 +91,7 @@ function mapDemoReel(reel: DemoReel): ReelItem {
   return {
     id: reel.id,
     title: reel.title,
-    description: reel.description || '',
+    description: ((reel as DemoReel & { description?: string }).description || ''),
     videoUrl: reel.videoUrl,
     posterUrl: reel.posterUrl || reel.thumbUrl,
     ownerDisplayName: 'AICar',
