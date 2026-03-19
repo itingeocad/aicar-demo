@@ -124,11 +124,11 @@ export function MobileTopNavClient({
       )}
 
       {open ? (
-        <div className={`fixed inset-x-0 ${panelTopClass} z-50`}>
-          <div className="bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]" onClick={() => setOpen(false)}>
+        <div className={`fixed inset-x-0 bottom-0 ${panelTopClass} z-50 overflow-y-auto`}>
+          <div className="min-h-full bg-black/20 px-4 pb-4 pt-2 backdrop-blur-[1px]" onClick={() => setOpen(false)}>
             <div className="aicar-header-container">
               <div
-                className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl"
+                className="max-h-[calc(100dvh-78px)] overflow-y-auto overscroll-contain rounded-2xl border border-black/10 bg-white shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">

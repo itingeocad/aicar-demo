@@ -412,9 +412,9 @@ export function SiteFrame({
   }
 
   return (
-    <div className="min-h-screen bg-[#eeeeee] text-slate-900">
+    <div className="flex min-h-[100dvh] flex-col bg-[#eeeeee] text-slate-900">
       <TopNav config={config} variant={variant} />
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer config={config} variant={variant} />
     </div>
   );
