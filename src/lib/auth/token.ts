@@ -23,7 +23,7 @@ export async function signSession(
     exp: now + ttlSeconds
   };
 
-  const token = await new SignJWT(full as Record<string, unknown>)
+  const token = await new SignJWT(full as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
     .setExpirationTime(full.exp)
