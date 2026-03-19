@@ -15,11 +15,11 @@ function safe(cmd, fallback = '') {
 }
 
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-const version = pkg.version || '0.0.0';
-const name = pkg.name || 'AICar';
 
-const gitSha = safe('git rev-parse --short HEAD', '');
-const gitMessage = safe('git log -1 --pretty=%s', '');
+const name = 'AICar';
+const version = pkg.version || '0.0.0';
+const gitSha = String(process.env.VERCEL_GIT_COMMIT_SHA || safe('git rev-parse --short HEAD', '')).trim().slice(0, 7);
+const gitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || safe('git log -1 --pretty=%s', '')).trim();
 const buildTime = new Date().toISOString();
 
 const file = `export const APP_VERSION_INFO = {

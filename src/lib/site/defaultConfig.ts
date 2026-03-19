@@ -6,7 +6,7 @@ const img = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(s
 const reelPoster = (seed: string) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/900/1600`;
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
-  version: '0.1.192',
+  version: '0.1.193',
   theme: {
     brandName: 'AICar',
     accent: 'slate',
@@ -15,11 +15,11 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   nav: {
     items: [
       {
-        label: 'РђРІС‚Рѕ',
+        label: 'Р С’Р Р†РЎвЂљР С•',
 children: [
-          { label: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', href: '/search' },
-          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' },
-          { label: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ', href: '/sell' }
+          { label: 'Р В Р В°РЎРѓРЎв‚¬Р С‘РЎР‚Р ВµР Р…Р Р…РЎвЂ№Р в„– Р С—Р С•Р С‘РЎРѓР С”', href: '/search' },
+          { label: 'Р С›Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘РЎРЏ', href: '/cars' },
+          { label: 'Р СџР С•Р Т‘Р В°РЎвЂљРЎРЉ Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ', href: '/sell' }
         ]
       },
       { label: 'AIClips', href: '/aiclips' },
@@ -27,28 +27,28 @@ children: [
     ]
   },
   footer: {
-    note: 'Demo build вЂў РєРѕРЅС‚РµРЅС‚ Рё РјРµРґРёР° РјРѕРіСѓС‚ Р±С‹С‚СЊ РјРѕРєРѕРІС‹РјРё',
+    note: 'Demo build РІР‚Сћ Р С”Р С•Р Р…РЎвЂљР ВµР Р…РЎвЂљ Р С‘ Р СР ВµР Т‘Р С‘Р В° Р СР С•Р С–РЎС“РЎвЂљ Р В±РЎвЂ№РЎвЂљРЎРЉ Р СР С•Р С”Р С•Р Р†РЎвЂ№Р СР С‘',
     groups: [
       {
-        title: 'Рћ РїСЂРѕРµРєС‚Рµ',
+        title: 'Р С› Р С—РЎР‚Р С•Р ВµР С”РЎвЂљР Вµ',
         links: [
-          { label: 'Рћ РїСЂРѕРµРєС‚Рµ', href: '/about' },
-          { label: 'РљРѕРЅС‚Р°РєС‚С‹', href: '/contacts' }
+          { label: 'Р С› Р С—РЎР‚Р С•Р ВµР С”РЎвЂљР Вµ', href: '/about' },
+          { label: 'Р С™Р С•Р Р…РЎвЂљР В°Р С”РЎвЂљРЎвЂ№', href: '/contacts' }
         ]
       },
       {
-        title: 'Р”РѕРєСѓРјРµРЅС‚С‹',
+        title: 'Р вЂќР С•Р С”РЎС“Р СР ВµР Р…РЎвЂљРЎвЂ№',
         links: [
-          { label: 'РџРѕР»РёС‚РёРєР°', href: '/privacy' },
-          { label: 'РЈСЃР»РѕРІРёСЏ', href: '/terms' }
+          { label: 'Р СџР С•Р В»Р С‘РЎвЂљР С‘Р С”Р В°', href: '/privacy' },
+          { label: 'Р Р€РЎРѓР В»Р С•Р Р†Р С‘РЎРЏ', href: '/terms' }
         ]
       },
       {
-        title: 'Р Р°Р·РґРµР»С‹',
+        title: 'Р В Р В°Р В·Р Т‘Р ВµР В»РЎвЂ№',
         links: [
           { label: 'AIClips', href: '/aiclips' },
           { label: 'AIChat', href: '/aichat' },
-          { label: 'РћР±СЉСЏРІР»РµРЅРёСЏ', href: '/cars' }
+          { label: 'Р С›Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘РЎРЏ', href: '/cars' }
         ]
       }
     ],
@@ -72,8 +72,8 @@ children: [
         currency: '$',
         year: 2019,
         mileageKm: 78000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'BenzinДѓ',
+        city: 'ChiРв„ўinР”С“u',
+        fuel: 'BenzinР”С“',
         gearbox: 'AT',
         imageUrl: img('corolla'),
         vehicleType: 'car'
@@ -85,7 +85,7 @@ children: [
         currency: '$',
         year: 2018,
         mileageKm: 98000,
-        city: 'BДѓlИ›i',
+        city: 'BР”С“lРвЂєi',
         fuel: 'Diesel',
         gearbox: 'AT',
         imageUrl: img('bmw3'),
@@ -98,7 +98,7 @@ children: [
         currency: '$',
         year: 2017,
         mileageKm: 146000,
-        city: 'ChiИ™inДѓu',
+        city: 'ChiРв„ўinР”С“u',
         fuel: 'Diesel',
         gearbox: 'MT',
         imageUrl: img('passat'),
@@ -112,7 +112,7 @@ children: [
         year: 2020,
         mileageKm: 54000,
         city: 'Cahul',
-        fuel: 'BenzinДѓ',
+        fuel: 'BenzinР”С“',
         gearbox: 'AT',
         imageUrl: img('crv'),
         vehicleType: 'car'
@@ -125,7 +125,7 @@ children: [
         year: 2018,
         mileageKm: 112000,
         city: 'Orhei',
-        fuel: 'BenzinДѓ',
+        fuel: 'BenzinР”С“',
         gearbox: 'MT',
         imageUrl: img('octavia'),
         vehicleType: 'car'
@@ -137,7 +137,7 @@ children: [
         currency: '$',
         year: 2019,
         mileageKm: 86000,
-        city: 'ChiИ™inДѓu',
+        city: 'ChiРв„ўinР”С“u',
         fuel: 'Diesel',
         gearbox: 'AT',
         imageUrl: img('cclass'),
@@ -151,7 +151,7 @@ children: [
         year: 2017,
         mileageKm: 121000,
         city: 'Soroca',
-        fuel: 'BenzinДѓ',
+        fuel: 'BenzinР”С“',
         gearbox: 'AT',
         imageUrl: img('mazda6'),
         vehicleType: 'car'
@@ -164,7 +164,7 @@ children: [
         year: 2020,
         mileageKm: 69000,
         city: 'Ungheni',
-        fuel: 'BenzinДѓ',
+        fuel: 'BenzinР”С“',
         gearbox: 'AT',
         imageUrl: img('qashqai'),
         vehicleType: 'car'
@@ -176,8 +176,8 @@ children: [
         currency: '$',
         year: 2021,
         mileageKm: 42000,
-        city: 'ChiИ™inДѓu',
-        fuel: 'BenzinДѓ',
+        city: 'ChiРв„ўinР”С“u',
+        fuel: 'BenzinР”С“',
         gearbox: 'AT',
         imageUrl: img('tucson'),
         vehicleType: 'car'
@@ -186,7 +186,7 @@ children: [
     reels: [
       {
         id: 'r1',
-        title: 'Corolla: РїР»СЋСЃС‹/РјРёРЅСѓСЃС‹',
+        title: 'Corolla: Р С—Р В»РЎР‹РЎРѓРЎвЂ№/Р СР С‘Р Р…РЎС“РЎРѓРЎвЂ№',
         author: 'AICar',
         videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=1',
         previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p1',
@@ -199,7 +199,7 @@ children: [
       },
       {
         id: 'r2',
-        title: 'Passat: С‡С‚Рѕ РїСЂРѕРІРµСЂРёС‚СЊ',
+        title: 'Passat: РЎвЂЎРЎвЂљР С• Р С—РЎР‚Р С•Р Р†Р ВµРЎР‚Р С‘РЎвЂљРЎРЉ',
         author: 'AICar',
         videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=2',
         previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p2',
@@ -212,7 +212,7 @@ children: [
       },
       {
         id: 'r3',
-        title: 'CRвЂ‘V РґР»СЏ СЃРµРјСЊРё',
+        title: 'CRРІР‚вЂV Р Т‘Р В»РЎРЏ РЎРѓР ВµР СРЎРЉР С‘',
         author: 'AICar',
         videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=3',
         previewUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4?seed=p3',
@@ -227,32 +227,32 @@ children: [
     faq: [
       {
               id: 'faq1',
-              q: 'Р­С‚Рѕ СЂРµР°Р»СЊРЅС‹Р№ РјР°СЂРєРµС‚РїР»РµР№СЃ?',
-              a: 'РќРµС‚, СЌС‚Рѕ РґРµРјРѕ: РґР°РЅРЅС‹Рµ Рё РјРµРґРёР° Р·Р°РјРѕРєР°РЅС‹. Р’ РїСЂРѕРґРµ Р±СѓРґРµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р‘Р”, РѕРїР»Р°С‚Р°Рј Рё РјРѕРґРµСЂР°С†РёРё.'
+              q: 'Р В­РЎвЂљР С• РЎР‚Р ВµР В°Р В»РЎРЉР Р…РЎвЂ№Р в„– Р СР В°РЎР‚Р С”Р ВµРЎвЂљР С—Р В»Р ВµР в„–РЎРѓ?',
+              a: 'Р СњР ВµРЎвЂљ, РЎРЊРЎвЂљР С• Р Т‘Р ВµР СР С•: Р Т‘Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р С‘ Р СР ВµР Т‘Р С‘Р В° Р В·Р В°Р СР С•Р С”Р В°Р Р…РЎвЂ№. Р вЂ™ Р С—РЎР‚Р С•Р Т‘Р Вµ Р В±РЎС“Р Т‘Р ВµРЎвЂљ Р С—Р С•Р Т‘Р С”Р В»РЎР‹РЎвЂЎР ВµР Р…Р С‘Р Вµ Р С” Р вЂР вЂќ, Р С•Р С—Р В»Р В°РЎвЂљР В°Р С Р С‘ Р СР С•Р Т‘Р ВµРЎР‚Р В°РЎвЂ Р С‘Р С‘.'
             },
-      { id: 'faq2', q: 'РњРѕР¶РЅРѕ Р»Рё РїСЂРѕРґР°РІР°С‚СЊ Р°РІС‚Рѕ?', a: 'Р’ РґРµРјРѕ вЂ” С‚РѕР»СЊРєРѕ РІРёР·СѓР°Р»СЊРЅРѕ. Р’ РїСЂРѕРґРµ РїРѕСЏРІСЏС‚СЃСЏ СЂРѕР»Рё, СЃС‚Р°С‚СѓСЃС‹ Рё РїСѓР±Р»РёРєР°С†РёСЏ.' },
+      { id: 'faq2', q: 'Р СљР С•Р В¶Р Р…Р С• Р В»Р С‘ Р С—РЎР‚Р С•Р Т‘Р В°Р Р†Р В°РЎвЂљРЎРЉ Р В°Р Р†РЎвЂљР С•?', a: 'Р вЂ™ Р Т‘Р ВµР СР С• РІР‚вЂќ РЎвЂљР С•Р В»РЎРЉР С”Р С• Р Р†Р С‘Р В·РЎС“Р В°Р В»РЎРЉР Р…Р С•. Р вЂ™ Р С—РЎР‚Р С•Р Т‘Р Вµ Р С—Р С•РЎРЏР Р†РЎРЏРЎвЂљРЎРѓРЎРЏ РЎР‚Р С•Р В»Р С‘, РЎРѓРЎвЂљР В°РЎвЂљРЎС“РЎРѓРЎвЂ№ Р С‘ Р С—РЎС“Р В±Р В»Р С‘Р С”Р В°РЎвЂ Р С‘РЎРЏ.' },
       {
               id: 'faq3',
-              q: 'Р§С‚Рѕ С‚Р°РєРѕРµ AIChat?',
-              a: 'РљРѕРЅСЃСѓР»СЊС‚Р°РЅС‚, РєРѕС‚РѕСЂС‹Р№ РїРѕРјРѕРіР°РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ Р°РІС‚Рѕ РїРѕ Р±СЋРґР¶РµС‚Сѓ Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏРј, Р° С‚Р°РєР¶Рµ РѕР±СЉСЏСЃРЅСЏРµС‚ РЅСЋР°РЅСЃС‹ РІС‹Р±РѕСЂР°.'
+              q: 'Р В§РЎвЂљР С• РЎвЂљР В°Р С”Р С•Р Вµ AIChat?',
+              a: 'Р С™Р С•Р Р…РЎРѓРЎС“Р В»РЎРЉРЎвЂљР В°Р Р…РЎвЂљ, Р С”Р С•РЎвЂљР С•РЎР‚РЎвЂ№Р в„– Р С—Р С•Р СР С•Р С–Р В°Р ВµРЎвЂљ Р С—Р С•Р Т‘Р С•Р В±РЎР‚Р В°РЎвЂљРЎРЉ Р В°Р Р†РЎвЂљР С• Р С—Р С• Р В±РЎР‹Р Т‘Р В¶Р ВµРЎвЂљРЎС“ Р С‘ Р С—РЎР‚Р ВµР Т‘Р С—Р С•РЎвЂЎРЎвЂљР ВµР Р…Р С‘РЎРЏР С, Р В° РЎвЂљР В°Р С”Р В¶Р Вµ Р С•Р В±РЎР‰РЎРЏРЎРѓР Р…РЎРЏР ВµРЎвЂљ Р Р…РЎР‹Р В°Р Р…РЎРѓРЎвЂ№ Р Р†РЎвЂ№Р В±Р С•РЎР‚Р В°.'
             },
       {
               id: 'faq4',
-              q: 'AIClips вЂ” СЌС‚Рѕ РєР°Рє Reels?',
-              a: 'Р”Р°: РєРѕСЂРѕС‚РєРёРµ РІРёРґРµРѕ СЃ РїСЂРµРІСЊСЋ, Р»Р°Р№РєР°РјРё/РїСЂРѕСЃРјРѕС‚СЂР°РјРё Рё РїРµСЂРµС…РѕРґРѕРј РЅР° РѕР±СЉСЏРІР»РµРЅРёРµ.'
+              q: 'AIClips РІР‚вЂќ РЎРЊРЎвЂљР С• Р С”Р В°Р С” Reels?',
+              a: 'Р вЂќР В°: Р С”Р С•РЎР‚Р С•РЎвЂљР С”Р С‘Р Вµ Р Р†Р С‘Р Т‘Р ВµР С• РЎРѓ Р С—РЎР‚Р ВµР Р†РЎРЉРЎР‹, Р В»Р В°Р в„–Р С”Р В°Р СР С‘/Р С—РЎР‚Р С•РЎРѓР СР С•РЎвЂљРЎР‚Р В°Р СР С‘ Р С‘ Р С—Р ВµРЎР‚Р ВµРЎвЂ¦Р С•Р Т‘Р С•Р С Р Р…Р В° Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ.'
             },
-      { id: 'faq5', q: 'Р•СЃС‚СЊ Р»Рё Р°РґРјРёРЅРєР°?', a: 'Р”Р°, Tilda-like builder (РґРµРјРѕ) РґР»СЏ РїСЂР°РІРєРё СЃС‚СЂР°РЅРёС†, РјРµРЅСЋ Рё С„СѓС‚РµСЂР°.' },
+      { id: 'faq5', q: 'Р вЂўРЎРѓРЎвЂљРЎРЉ Р В»Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С”Р В°?', a: 'Р вЂќР В°, Tilda-like builder (Р Т‘Р ВµР СР С•) Р Т‘Р В»РЎРЏ Р С—РЎР‚Р В°Р Р†Р С”Р С‘ РЎРѓРЎвЂљРЎР‚Р В°Р Р…Р С‘РЎвЂ , Р СР ВµР Р…РЎР‹ Р С‘ РЎвЂћРЎС“РЎвЂљР ВµРЎР‚Р В°.' },
       {
               id: 'faq6',
-              q: 'РџРѕС‡РµРјСѓ С‡Р°СЃС‚СЊ С„СѓРЅРєС†РёР№ РЅРµРґРѕСЃС‚СѓРїРЅР°?',
-              a: 'Р”РµРјРѕ С„РѕРєСѓСЃРёСЂСѓРµС‚СЃСЏ РЅР° UX Рё СЃС†РµРЅР°СЂРёСЏС…. Р›РѕРіРёРєСѓ РѕРїР»Р°С‚С‹/РґРѕСЃС‚Р°РІРєРё/РјРµРґРёР° Р·Р°РіСЂСѓР·РєРё РґРѕР±Р°РІРёРј РЅР° СЌС‚Р°РїРµ РїСЂРѕРґ-Р°РґР°РїС‚Р°С†РёРё.'
+              q: 'Р СџР С•РЎвЂЎР ВµР СРЎС“ РЎвЂЎР В°РЎРѓРЎвЂљРЎРЉ РЎвЂћРЎС“Р Р…Р С”РЎвЂ Р С‘Р в„– Р Р…Р ВµР Т‘Р С•РЎРѓРЎвЂљРЎС“Р С—Р Р…Р В°?',
+              a: 'Р вЂќР ВµР СР С• РЎвЂћР С•Р С”РЎС“РЎРѓР С‘РЎР‚РЎС“Р ВµРЎвЂљРЎРѓРЎРЏ Р Р…Р В° UX Р С‘ РЎРѓРЎвЂ Р ВµР Р…Р В°РЎР‚Р С‘РЎРЏРЎвЂ¦. Р вЂєР С•Р С–Р С‘Р С”РЎС“ Р С•Р С—Р В»Р В°РЎвЂљРЎвЂ№/Р Т‘Р С•РЎРѓРЎвЂљР В°Р Р†Р С”Р С‘/Р СР ВµР Т‘Р С‘Р В° Р В·Р В°Р С–РЎР‚РЎС“Р В·Р С”Р С‘ Р Т‘Р С•Р В±Р В°Р Р†Р С‘Р С Р Р…Р В° РЎРЊРЎвЂљР В°Р С—Р Вµ Р С—РЎР‚Р С•Р Т‘-Р В°Р Т‘Р В°Р С—РЎвЂљР В°РЎвЂ Р С‘Р С‘.'
             }
     ],
     news: [
       {
         id: 'n1',
-        title: 'РћРїРёСЃР°РЅРёРµ РЅРѕРІРѕСЃС‚Рё',
-        excerpt: 'РљРѕСЂРѕС‚РєРёР№ С‡РµРєвЂ‘Р»РёСЃС‚ РґР»СЏ СЂР°Р·СѓРјРЅРѕР№ РїРѕРєСѓРїРєРё.',
+        title: 'Р С›Р С—Р С‘РЎРѓР В°Р Р…Р С‘Р Вµ Р Р…Р С•Р Р†Р С•РЎРѓРЎвЂљР С‘',
+        excerpt: 'Р С™Р С•РЎР‚Р С•РЎвЂљР С”Р С‘Р в„– РЎвЂЎР ВµР С”РІР‚вЂР В»Р С‘РЎРѓРЎвЂљ Р Т‘Р В»РЎРЏ РЎР‚Р В°Р В·РЎС“Р СР Р…Р С•Р в„– Р С—Р С•Р С”РЎС“Р С—Р С”Р С‘.',
         imageUrl: '',
 }
     ]
@@ -260,7 +260,7 @@ children: [
   pages: [
     {
       id: 'p_home',
-      title: 'Р“Р»Р°РІРЅР°СЏ',
+      title: 'Р вЂњР В»Р В°Р Р†Р Р…Р В°РЎРЏ',
       slug: '',
       isPublished: true,
       blocks: [
@@ -270,7 +270,7 @@ children: [
           props: {
             mode: 'banner',
             bannerHeight: 220,
-            headline: 'Р‘Р°РЅРЅРµСЂ + Р›РѕРіРѕ',
+            headline: 'Р вЂР В°Р Р…Р Р…Р ВµРЎР‚ + Р вЂєР С•Р С–Р С•',
             subline: '',
             bgImage: ''
           }
@@ -280,10 +280,10 @@ children: [
           type: 'ai_prompt',
           props: {
             title: 'AIChat',
-            subtitle: 'Р’РІРµРґРёС‚Рµ РІР°С€Рё РїСЂРµРґРїРѕС‡С‚РµРЅРёСЏ Рё РР РїРѕРјРѕР¶РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ РґР»СЏ Р’Р°СЃ РёРґРµР°Р»СЊРЅС‹Р№ РІР°СЂРёР°РЅС‚',
-            placeholder: 'РЎРµРјРµР№РЅС‹Р№ Р°РІС‚РѕРјРѕР±РёР»СЊ, РІРЅРµРґРѕСЂРѕР¶РЅРёРє. РћС‚ 2020 РіРѕРґР° Рё РІС‹С€Рµ. РџРѕР»РЅР°СЏ РєРѕРјРїР»РµРєС‚Р°С†РёСЏвЂ¦',
+            subtitle: 'Р вЂ™Р Р†Р ВµР Т‘Р С‘РЎвЂљР Вµ Р Р†Р В°РЎв‚¬Р С‘ Р С—РЎР‚Р ВµР Т‘Р С—Р С•РЎвЂЎРЎвЂљР ВµР Р…Р С‘РЎРЏ Р С‘ Р ВР В Р С—Р С•Р СР С•Р В¶Р ВµРЎвЂљ Р С—Р С•Р Т‘Р С•Р В±РЎР‚Р В°РЎвЂљРЎРЉ Р Т‘Р В»РЎРЏ Р вЂ™Р В°РЎРѓ Р С‘Р Т‘Р ВµР В°Р В»РЎРЉР Р…РЎвЂ№Р в„– Р Р†Р В°РЎР‚Р С‘Р В°Р Р…РЎвЂљ',
+            placeholder: 'Р РЋР ВµР СР ВµР в„–Р Р…РЎвЂ№Р в„– Р В°Р Р†РЎвЂљР С•Р СР С•Р В±Р С‘Р В»РЎРЉ, Р Р†Р Р…Р ВµР Т‘Р С•РЎР‚Р С•Р В¶Р Р…Р С‘Р С”. Р С›РЎвЂљ 2020 Р С–Р С•Р Т‘Р В° Р С‘ Р Р†РЎвЂ№РЎв‚¬Р Вµ. Р СџР С•Р В»Р Р…Р В°РЎРЏ Р С”Р С•Р СР С—Р В»Р ВµР С”РЎвЂљР В°РЎвЂ Р С‘РЎРЏРІР‚В¦',
             showButton: false,
-            cta: 'РЎРїСЂРѕСЃРёС‚СЊ'
+            cta: 'Р РЋР С—РЎР‚Р С•РЎРѓР С‘РЎвЂљРЎРЉ'
           }
         },
         {
@@ -291,16 +291,16 @@ children: [
           type: 'search_widget',
           props: {
             mode: 'prototype',
-            title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє',
-            cta: 'РќР°Р№С‚Рё Р°РІС‚Рѕ'
+            title: 'Р В Р В°РЎРѓРЎв‚¬Р С‘РЎР‚Р ВµР Р…Р Р…РЎвЂ№Р в„– Р С—Р С•Р С‘РЎРѓР С”',
+            cta: 'Р СњР В°Р в„–РЎвЂљР С‘ Р В°Р Р†РЎвЂљР С•'
           }
         },
         {
           id: 'b_strip',
           type: 'reels_strip',
           props: {
-            title: 'Р›СѓС‡С€РёРµ AIClips',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ',
+            title: 'Р вЂєРЎС“РЎвЂЎРЎв‚¬Р С‘Р Вµ AIClips',
+            moreLabel: 'Р вЂР С•Р В»РЎРЉРЎв‚¬Р Вµ',
             moreHref: '/aiclips',
             showArrows: true
           }
@@ -309,10 +309,10 @@ children: [
           id: 'b_offers',
           type: 'car_grid',
           props: {
-            title: 'РЎРїРµС†РёР°Р»СЊРЅС‹Рµ РїСЂРµРґР»РѕР¶РµРЅРёСЏ',
+            title: 'Р РЋР С—Р ВµРЎвЂ Р С‘Р В°Р В»РЎРЉР Р…РЎвЂ№Р Вµ Р С—РЎР‚Р ВµР Т‘Р В»Р С•Р В¶Р ВµР Р…Р С‘РЎРЏ',
             limit: 9,
             variant: 'offers',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ',
+            moreLabel: 'Р вЂР С•Р В»РЎРЉРЎв‚¬Р Вµ',
             moreHref: '/search'
           }
         },
@@ -320,7 +320,7 @@ children: [
           id: 'b_sell',
           type: 'cta_sell',
           props: {
-            title: 'РџРѕРґР°Р№ РѕР±СЉСЏРІР»РµРЅРёРµ',
+            title: 'Р СџР С•Р Т‘Р В°Р в„– Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ',
             text: '',
             cta: '+',
 variant: 'plus_tile'
@@ -330,10 +330,10 @@ variant: 'plus_tile'
           id: 'b_news',
           type: 'news_cards',
           props: {
-            title: 'РќРѕРІРѕСЃС‚Рё AICar',
+            title: 'Р СњР С•Р Р†Р С•РЎРѓРЎвЂљР С‘ AICar',
             limit: 1,
             variant: 'feature',
-            moreLabel: 'Р‘РѕР»СЊС€Рµ РЅРѕРІРѕСЃС‚РµР№',
+            moreLabel: 'Р вЂР С•Р В»РЎРЉРЎв‚¬Р Вµ Р Р…Р С•Р Р†Р С•РЎРѓРЎвЂљР ВµР в„–',
             moreHref: '/news'
           }
         }
@@ -341,13 +341,13 @@ variant: 'plus_tile'
     },
     {
       id: 'p_search',
-      title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє',
+      title: 'Р В Р В°РЎРѓРЎв‚¬Р С‘РЎР‚Р ВµР Р…Р Р…РЎвЂ№Р в„– Р С—Р С•Р С‘РЎРѓР С”',
       slug: 'search',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'Р Р°СЃС€РёСЂРµРЅРЅС‹Р№ РїРѕРёСЃРє', align: 'center' } },
-        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: '', cta: 'РќР°Р№С‚Рё Р°РІС‚Рѕ' } },
-        { id: 'b_list', type: 'car_list', props: { title: 'Р РµР·СѓР»СЊС‚Р°С‚С‹', limit: 12 } }
+        { id: 'b_title', type: 'section_title', props: { title: 'Р В Р В°РЎРѓРЎв‚¬Р С‘РЎР‚Р ВµР Р…Р Р…РЎвЂ№Р в„– Р С—Р С•Р С‘РЎРѓР С”', align: 'center' } },
+        { id: 'b_search', type: 'search_widget', props: { mode: 'prototype', title: '', cta: 'Р СњР В°Р в„–РЎвЂљР С‘ Р В°Р Р†РЎвЂљР С•' } },
+        { id: 'b_list', type: 'car_list', props: { title: 'Р В Р ВµР В·РЎС“Р В»РЎРЉРЎвЂљР В°РЎвЂљРЎвЂ№', limit: 12 } }
       ]
     },
     {
@@ -372,51 +372,51 @@ variant: 'plus_tile'
     },
     {
       id: 'p_sell',
-      title: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ',
+      title: 'Р СџР С•Р Т‘Р В°РЎвЂљРЎРЉ Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ',
       slug: 'sell',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'РџРѕРґР°С‚СЊ РѕР±СЉСЏРІР»РµРЅРёРµ', align: 'center' } },
-        { id: 'b_cta', type: 'cta_sell', props: { title: 'РџРѕРґР°Р№ РѕР±СЉСЏРІР»РµРЅРёРµ', cta: '+', href: '/sell', variant: 'plus_tile' } }
+        { id: 'b_title', type: 'section_title', props: { title: 'Р СџР С•Р Т‘Р В°РЎвЂљРЎРЉ Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ', align: 'center' } },
+        { id: 'b_cta', type: 'cta_sell', props: { title: 'Р СџР С•Р Т‘Р В°Р в„– Р С•Р В±РЎР‰РЎРЏР Р†Р В»Р ВµР Р…Р С‘Р Вµ', cta: '+', href: '/sell', variant: 'plus_tile' } }
       ]
     },
     {
       id: 'p_news',
-      title: 'РќРѕРІРѕСЃС‚Рё AICar',
+      title: 'Р СњР С•Р Р†Р С•РЎРѓРЎвЂљР С‘ AICar',
       slug: 'news',
       isPublished: true,
       blocks: [
-        { id: 'b_title', type: 'section_title', props: { title: 'РќРѕРІРѕСЃС‚Рё AICar', align: 'center' } },
+        { id: 'b_title', type: 'section_title', props: { title: 'Р СњР С•Р Р†Р С•РЎРѓРЎвЂљР С‘ AICar', align: 'center' } },
         { id: 'b_news', type: 'news_cards', props: { title: '', limit: 6, variant: 'cards' } }
       ]
     },
     {
       id: 'p_about',
-      title: 'Рћ РїСЂРѕРµРєС‚Рµ',
+      title: 'Р С› Р С—РЎР‚Р С•Р ВµР С”РЎвЂљР Вµ',
       slug: 'about',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Рћ РїСЂРѕРµРєС‚Рµ', align: 'center' } }]
+      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Р С› Р С—РЎР‚Р С•Р ВµР С”РЎвЂљР Вµ', align: 'center' } }]
     },
     {
       id: 'p_contacts',
-      title: 'РљРѕРЅС‚Р°РєС‚С‹',
+      title: 'Р С™Р С•Р Р…РЎвЂљР В°Р С”РЎвЂљРЎвЂ№',
       slug: 'contacts',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РљРѕРЅС‚Р°РєС‚С‹', align: 'center' } }]
+      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Р С™Р С•Р Р…РЎвЂљР В°Р С”РЎвЂљРЎвЂ№', align: 'center' } }]
     },
     {
       id: 'p_privacy',
-      title: 'РџРѕР»РёС‚РёРєР°',
+      title: 'Р СџР С•Р В»Р С‘РЎвЂљР С‘Р С”Р В°',
       slug: 'privacy',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РџРѕР»РёС‚РёРєР°', align: 'center' } }]
+      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Р СџР С•Р В»Р С‘РЎвЂљР С‘Р С”Р В°', align: 'center' } }]
     },
     {
       id: 'p_terms',
-      title: 'РЈСЃР»РѕРІРёСЏ',
+      title: 'Р Р€РЎРѓР В»Р С•Р Р†Р С‘РЎРЏ',
       slug: 'terms',
       isPublished: true,
-      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'РЈСЃР»РѕРІРёСЏ', align: 'center' } }]
+      blocks: [{ id: 'b_title', type: 'section_title', props: { title: 'Р Р€РЎРѓР В»Р С•Р Р†Р С‘РЎРЏ', align: 'center' } }]
     }
   ]
 };

@@ -1,12 +1,10 @@
-export const APP_NAME = 'AICar';
+import { APP_VERSION_INFO } from './version.generated';
 
-// Version is injected at build-time from package.json (see next.config.mjs)
-export const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
-
-// Short git SHA if available (Vercel provides VERCEL_GIT_COMMIT_SHA)
-export const GIT_SHA = (process.env.NEXT_PUBLIC_GIT_SHA ?? '').slice(0, 7);
-
-export const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME ?? '';
+export const APP_NAME = APP_VERSION_INFO.name || 'AICar';
+export const APP_VERSION = APP_VERSION_INFO.version || '0.0.0';
+export const GIT_SHA = (APP_VERSION_INFO.gitSha || '').slice(0, 7);
+export const BUILD_TIME = APP_VERSION_INFO.buildTime || '';
+export const GIT_MESSAGE = APP_VERSION_INFO.gitMessage || '';
 
 export function formatBuildLabel() {
   const v = APP_VERSION ? `v${APP_VERSION}` : 'v0.0.0';

@@ -278,14 +278,7 @@ export function Footer({
             </div>
 
             {buildVersion ? (
-              <div className="mt-2 text-[12px] text-slate-600">
-  v{buildVersion}{buildGitSha ? ` (${buildGitSha})` : ''}
-</div>
-{buildComment ? (
-  <div className="mt-1 text-[12px] leading-[1.25] text-slate-600">
-    {buildComment}
-  </div>
-) : null}
+              <div className="mt-2 text-[12px] text-slate-600">v{buildVersion}</div>
             ) : null}
           </div>
 
@@ -357,14 +350,7 @@ export function Footer({
             </div>
 
             {buildVersion ? (
-              <div className="mt-2 text-[12px] text-slate-600">
-  v{buildVersion}{buildGitSha ? ` (${buildGitSha})` : ''}
-</div>
-{buildComment ? (
-  <div className="mt-1 text-[12px] leading-[1.25] text-slate-600">
-    {buildComment}
-  </div>
-) : null}
+              <div className="mt-2 text-[12px] text-slate-600">v{buildVersion}</div>
             ) : null}
           </div>
 

@@ -1,13 +1,13 @@
 {
     "name":  "aicar-demo-builder",
     "private":  true,
-    "version":  "0.1.192",
+    "version":  "0.1.193",
     "type":  "module",
     "engines":  {
                     "node":  "20.x"
                 },
-    "scripts": {
-    "prebuild": "node scripts/write-version.mjs",
+    "scripts":  {
+                    "prebuild":  "node scripts/write-version.mjs",
                     "dev":  "next dev",
                     "build":  "next build",
                     "start":  "next start",
