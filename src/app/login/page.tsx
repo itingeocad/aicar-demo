@@ -16,7 +16,7 @@ export default async function LoginPage() {
   const config = await getSiteConfig();
 
   return (
-    <SiteFrame config={config} variant="aichat">
+    <SiteFrame config={config}>
       <AuthPanelClient mode="login" />
     </SiteFrame>
   );

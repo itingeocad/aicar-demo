@@ -32,7 +32,6 @@ export function MobileTopNavClient({
 }) {
   const [open, setOpen] = useState(false);
   const footerGroups = config.footer.groups ?? [];
-  const specialVariant = variant === 'aichat' || variant === 'aiclips' || variant === 'account';
   const accountVariant = variant === 'account';
   const panelTopClass = 'top-[57px]';
   const primaryHref = canAdmin ? '/admin' : '/profile';
@@ -41,7 +40,7 @@ export function MobileTopNavClient({
 
   return (
     <div className="md:hidden">
-      {specialVariant ? (
+      {accountVariant ? (
         <div className="flex h-14 items-center justify-between">
           <button
             type="button"
@@ -68,7 +67,7 @@ export function MobileTopNavClient({
               >
                 Войти
               </Link>
-            ) : accountVariant ? (
+            ) : (
               <Link
                 href={primaryHref}
                 className="flex h-[50px] min-w-[50px] items-center justify-center rounded-full bg-white/90 px-4 text-[12px] text-slate-900"
@@ -76,19 +75,6 @@ export function MobileTopNavClient({
               >
                 профиль
               </Link>
-            ) : (
-              <>
-                <div className="max-w-[88px] truncate rounded-xl bg-white/35 px-3 py-2 text-[12px] text-slate-900">
-                  {safeName}
-                </div>
-                <Link
-                  href={primaryHref}
-                  className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
-                  onClick={() => setOpen(false)}
-                >
-                  {primaryLabel}
-                </Link>
-              </>
             )}
           </div>
         </div>
@@ -111,7 +97,9 @@ export function MobileTopNavClient({
                 className="max-h-8 w-auto object-contain"
               />
             ) : (
-              <span className="text-[18px] font-semibold tracking-tight">{config.theme.brandName || 'Лого'}</span>
+              <span className="text-[18px] font-semibold tracking-tight">
+                {config.theme.brandName || 'Лого'}
+              </span>
             )}
           </Link>
 
@@ -159,7 +147,9 @@ export function MobileTopNavClient({
                   <div className="border-b border-black/5 px-4 py-4">
                     <div className="rounded-xl bg-slate-100 px-4 py-3">
                       <div className="text-sm font-medium text-slate-900">{safeName}</div>
-                      <div className="mt-1 text-xs text-slate-500">{canAdmin ? 'Администратор' : 'Пользователь'}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {canAdmin ? 'Администратор' : 'Пользователь'}
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -169,7 +159,10 @@ export function MobileTopNavClient({
                     const href = item.href || item.children?.[0]?.href || '#';
 
                     return (
-                      <div key={(item.href || item.label) + ':' + item.label} className="rounded-xl border border-black/5">
+                      <div
+                        key={(item.href || item.label) + ':' + item.label}
+                        className="rounded-xl border border-black/5"
+                      >
                         <Link
                           href={href}
                           className="block px-4 py-3 text-[15px] font-medium text-slate-900"
@@ -262,7 +255,7 @@ export function MobileTopNavClient({
                       </>
                     )}
 
-                    {!specialVariant && !loggedIn ? (
+                    {!loggedIn ? (
                       <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
                     ) : null}
                   </div>

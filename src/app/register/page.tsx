@@ -16,7 +16,7 @@ export default async function RegisterPage() {
   const config = await getSiteConfig();
 
   return (
-    <SiteFrame config={config} variant="aichat">
+    <SiteFrame config={config}>
       <AuthPanelClient mode="register" />
     </SiteFrame>
   );
