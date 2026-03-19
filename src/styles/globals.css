@@ -37,3 +37,10 @@ details > summary::-webkit-details-marker {
   @apply mx-auto w-full px-4;
   max-width: 1200px;
 }
+
+@media (min-width: 768px) {
+  html {
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+  }
+}
