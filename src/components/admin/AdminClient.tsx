@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { APP_VERSION_INFO } from '@/lib/version.generated';
 import Link from 'next/link';
 import { BLOCK_DEFINITIONS } from '@/components/blocks/BlockRegistry';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
@@ -761,7 +762,7 @@ export default function AdminClient() {
         <div className="aicar-container h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="font-bold">AICar Admin</div>
-            <div className="text-xs text-slate-500">Tilda-like builder (demo)</div>
+            <div className="text-xs text-slate-500">{APP_VERSION_INFO.gitMessage || 'Tilda-like builder (demo)'}</div>
             <div className="text-xs text-slate-400">{build}</div>
           </div>
           <div className="flex items-center gap-2">

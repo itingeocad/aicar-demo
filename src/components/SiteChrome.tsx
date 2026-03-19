@@ -3,6 +3,7 @@ import { Bell, ChevronDown, Heart, MessageCircle } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
 import { getSession, hasPermission } from '@/lib/auth/session.server';
+import { APP_VERSION_INFO } from '@/lib/version.generated';
 import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 import { MobileTopNavClient } from '@/components/MobileTopNavClient';
 
@@ -252,7 +253,9 @@ export function Footer({
   const half = Math.ceil(flatLinks.length / 2);
   const leftCol = flatLinks.slice(0, half);
   const rightCol = flatLinks.slice(half);
-  const buildVersion = (config as any).version ?? '';
+  const buildVersion = APP_VERSION_INFO.version || (config as any).version || '';
+  const buildGitSha = APP_VERSION_INFO.gitSha || '';
+  const buildComment = APP_VERSION_INFO.gitMessage || '';
 
   return (
     <footer className="bg-[#d9d9d9]">

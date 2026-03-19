@@ -6,7 +6,8 @@
     "engines":  {
                     "node":  "20.x"
                 },
-    "scripts":  {
+    "scripts": {
+    "prebuild": "node scripts/write-version.mjs",
                     "dev":  "next dev",
                     "build":  "next build",
                     "start":  "next start",
