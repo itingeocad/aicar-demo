@@ -1,26 +1,24 @@
 import type { NextRequest } from 'next/server';
-import { SESSION_COOKIE, PERM_ALL, PERM_ADMIN_ACCESS, ROLE_SUPER_ADMIN } from './constants';
+import { PERM_ALL, SESSION_COOKIE } from './constants';
 import { verifySession } from './token';
 import type { SessionPayload } from './types';
-
-function effectivePermissions(session: SessionPayload | null): Set<string> {
-  const perms = new Set<string>(session?.permissions || []);
-  if (session?.roleIds?.includes(ROLE_SUPER_ADMIN)) {
-    perms.add(PERM_ALL);
-    perms.add(PERM_ADMIN_ACCESS);
-  }
-  return perms;
-}
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return await verifySession(token);
+
+  const session = await verifySession(token);
+  if (!session) return null;
+
+  return {
+    ...session,
+    iat: typeof session.iat === 'number' ? session.iat : 0,
+    exp: typeof session.exp === 'number' ? session.exp : 0
+  };
 }
 
 export function hasPermissionEdge(session: SessionPayload | null, perm: string): boolean {
   if (!session) return false;
-  const perms = effectivePermissions(session);
-  if (perms.has(PERM_ALL)) return true;
-  return perms.has(perm);
+  const perms = Array.isArray(session.permissions) ? session.permissions : [];
+  return perms.includes(PERM_ALL) || perms.includes(perm);
 }
