@@ -93,6 +93,9 @@ function SecurityTab({ me }: { me: MeUser | null }) {
   const [activeRoleId, setActiveRoleId] = useState<string>('');
   const [activeUserId, setActiveUserId] = useState<string>('');
 
+  const [userSearch, setUserSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+
   const activeRole = roles.find((r) => r.id === activeRoleId) || null;
   const activeUser = users.find((u) => u.id === activeUserId) || null;
 
@@ -101,8 +104,20 @@ function SecurityTab({ me }: { me: MeUser | null }) {
   );
 
   const [userDraft, setUserDraft] = useState<{ email: string; displayName: string; password: string; roleIds: string[]; isActive: boolean }>(
-    { email: '', displayName: '', password: '', roleIds: [], isActive: true }
+    { email: '', displayName: '', password: '', roleIds: ['user'], isActive: true }
   );
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    return users.filter((u) => {
+      const matchesText = !q ||
+        u.email.toLowerCase().includes(q) ||
+        (u.displayName || '').toLowerCase().includes(q);
+
+      const matchesRole = !roleFilter || (u.roleIds || []).includes(roleFilter);
+      return matchesText && matchesRole;
+    });
+  }, [users, userSearch, roleFilter]);
 
   async function loadAll() {
     try {
@@ -115,6 +130,17 @@ function SecurityTab({ me }: { me: MeUser | null }) {
     } catch (e) {
       setStatus(`Ошибка: ${String(e)}`);
     }
+  }
+
+  function resetUserDraft() {
+    setActiveUserId('');
+    setUserDraft({
+      email: '',
+      displayName: '',
+      password: '',
+      roleIds: roles.some((r) => r.id === 'user') ? ['user'] : [],
+      isActive: true
+    });
   }
 
   useEffect(() => {
@@ -161,6 +187,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
           permissions: perms
         })
       });
+
       await loadAll();
       setStatus('Роль создана ✅');
       setTimeout(() => setStatus(''), 1500);
@@ -187,6 +214,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
           permissions: perms
         })
       });
+
       await loadAll();
       setStatus('Сохранено ✅');
       setTimeout(() => setStatus(''), 1500);
@@ -202,6 +230,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
       setStatus('Удаляю роль…');
       await fetchJSON(`/api/admin/roles/${encodeURIComponent(activeRole.id)}`, { method: 'DELETE' });
       setActiveRoleId('');
+      setRoleDraft({ id: '', name: '', description: '', permissions: '' });
       await loadAll();
       setStatus('Удалено ✅');
       setTimeout(() => setStatus(''), 1500);
@@ -225,6 +254,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
         })
       });
       await loadAll();
+      resetUserDraft();
       setStatus('Пользователь создан ✅');
       setTimeout(() => setStatus(''), 1500);
     } catch (e) {
@@ -248,6 +278,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
       });
       await loadAll();
       setStatus('Сохранено ✅');
+      setUserDraft({ ...userDraft, password: '' });
       setTimeout(() => setStatus(''), 1500);
     } catch (e) {
       setStatus(`Ошибка: ${String(e)}`);
@@ -260,9 +291,56 @@ function SecurityTab({ me }: { me: MeUser | null }) {
     try {
       setStatus('Удаляю пользователя…');
       await fetchJSON(`/api/admin/users/${encodeURIComponent(activeUser.id)}`, { method: 'DELETE' });
-      setActiveUserId('');
+      resetUserDraft();
       await loadAll();
       setStatus('Удалено ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function toggleUserActive(u: UserRow) {
+    try {
+      setStatus(u.isActive ? 'Отключаю пользователя…' : 'Включаю пользователя…');
+      await fetchJSON(`/api/admin/users/${encodeURIComponent(u.id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          displayName: u.displayName,
+          roleIds: u.roleIds,
+          isActive: !u.isActive
+        })
+      });
+      await loadAll();
+      if (activeUserId === u.id) {
+        setActiveUserId(u.id);
+      }
+      setStatus('Готово ✅');
+      setTimeout(() => setStatus(''), 1500);
+    } catch (e) {
+      setStatus(`Ошибка: ${String(e)}`);
+    }
+  }
+
+  async function resetPassword(u: UserRow) {
+    const pw = prompt(`Новый пароль для ${u.email}`, '');
+    if (!pw) return;
+
+    try {
+      setStatus('Обновляю пароль…');
+      await fetchJSON(`/api/admin/users/${encodeURIComponent(u.id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          displayName: u.displayName,
+          roleIds: u.roleIds,
+          isActive: u.isActive,
+          password: pw
+        })
+      });
+      await loadAll();
+      setStatus('Пароль обновлён ✅');
       setTimeout(() => setStatus(''), 1500);
     } catch (e) {
       setStatus(`Ошибка: ${String(e)}`);
@@ -273,8 +351,8 @@ function SecurityTab({ me }: { me: MeUser | null }) {
   const canUsers = can(me, 'users:manage');
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <div className="lg:col-span-4 rounded-2xl border bg-white p-3 shadow-sm">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-4">
         <div className="text-sm font-semibold">Права (roles)</div>
         {!canRoles ? (
           <div className="mt-2 text-sm text-slate-600">Недостаточно прав (roles:manage).</div>
@@ -286,14 +364,16 @@ function SecurityTab({ me }: { me: MeUser | null }) {
                   key={r.id}
                   onClick={() => setActiveRoleId(r.id)}
                   className={cls(
-                    'w-full text-left rounded-xl border px-3 py-2',
+                    'w-full rounded-xl border px-3 py-2 text-left',
                     r.id === activeRoleId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">{r.name}</div>
-                      <div className="text-xs text-slate-500">{r.id}{r.isSystem ? ' (system)' : ''}</div>
+                      <div className="text-xs text-slate-500">
+                        {r.id}{r.isSystem ? ' (system)' : ''}
+                      </div>
                     </div>
                     <div className="text-xs text-slate-500">{r.permissions?.length ?? 0}</div>
                   </div>
@@ -302,10 +382,15 @@ function SecurityTab({ me }: { me: MeUser | null }) {
             </div>
 
             <div className="mt-4 border-t pt-3">
-              <div className="text-sm font-semibold">Создать роль</div>
+              <div className="text-sm font-semibold">{activeRole ? 'Редактировать роль' : 'Создать роль'}</div>
               <div className="mt-2 space-y-2">
                 <Field label="ID (например: site_editor)">
-                  <input className="w-full rounded-xl border px-3 py-2" value={roleDraft.id} onChange={(e) => setRoleDraft({ ...roleDraft, id: e.target.value })} />
+                  <input
+                    className="w-full rounded-xl border px-3 py-2"
+                    value={roleDraft.id}
+                    disabled={Boolean(activeRole)}
+                    onChange={(e) => setRoleDraft({ ...roleDraft, id: e.target.value })}
+                  />
                 </Field>
                 <Field label="Название">
                   <input className="w-full rounded-xl border px-3 py-2" value={roleDraft.name} onChange={(e) => setRoleDraft({ ...roleDraft, name: e.target.value })} />
@@ -316,20 +401,32 @@ function SecurityTab({ me }: { me: MeUser | null }) {
                 <Field label="Permissions (через запятую)">
                   <textarea className="w-full rounded-xl border px-3 py-2" rows={3} value={roleDraft.permissions} onChange={(e) => setRoleDraft({ ...roleDraft, permissions: e.target.value })} />
                 </Field>
-                <div className="flex gap-2">
-                  <button onClick={createRole} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">
-                    Создать
-                  </button>
-                  {activeRole ? (
+                <div className="flex flex-wrap gap-2">
+                  {!activeRole ? (
+                    <button onClick={createRole} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
+                      Создать
+                    </button>
+                  ) : (
                     <>
-                      <button onClick={updateRole} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
-                        Обновить
+                      <button onClick={updateRole} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
+                        Сохранить
                       </button>
-                      <button onClick={deleteRole} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
-                        Удалить
-                      </button>
+                      {!activeRole.isSystem ? (
+                        <button onClick={deleteRole} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                          Удалить
+                        </button>
+                      ) : null}
                     </>
-                  ) : null}
+                  )}
+                  <button
+                    onClick={() => {
+                      setActiveRoleId('');
+                      setRoleDraft({ id: '', name: '', description: '', permissions: '' });
+                    }}
+                    className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
+                  >
+                    Сброс
+                  </button>
                 </div>
                 <div className="text-xs text-slate-500">
                   Для доступа к админке добавьте permission <span className="font-mono">admin:access</span>.
@@ -340,56 +437,120 @@ function SecurityTab({ me }: { me: MeUser | null }) {
         )}
       </div>
 
-      <div className="lg:col-span-8 rounded-2xl border bg-white p-3 shadow-sm">
-        <div className="text-sm font-semibold">Пользователи</div>
+      <div className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm font-semibold">Пользователи</div>
+
+          {canUsers ? (
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="rounded-xl border px-3 py-2 text-sm"
+                placeholder="Поиск по email / имени"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+              <select
+                className="rounded-xl border px-3 py-2 text-sm"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+              >
+                <option value="">Все роли</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+        </div>
+
         {!canUsers ? (
           <div className="mt-2 text-sm text-slate-600">Недостаточно прав (users:manage).</div>
         ) : (
           <>
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                {users.map((u) => (
-                  <button
+                {filteredUsers.map((u) => (
+                  <div
                     key={u.id}
-                    onClick={() => setActiveUserId(u.id)}
                     className={cls(
-                      'w-full text-left rounded-xl border px-3 py-2',
-                      u.id === activeUserId ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'
+                      'rounded-xl border px-3 py-3',
+                      u.id === activeUserId ? 'bg-slate-50' : 'bg-white'
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold">{u.displayName}</div>
-                        <div className="text-xs text-slate-500">{u.email}</div>
+                    <div className="flex items-start justify-between gap-3">
+                      <button onClick={() => setActiveUserId(u.id)} className="min-w-0 flex-1 text-left">
+                        <div className="truncate text-sm font-semibold">{u.displayName}</div>
+                        <div className="truncate text-xs text-slate-500">{u.email}</div>
+                        <div className="mt-1 text-xs text-slate-500">Roles: {(u.roleIds || []).join(', ') || '—'}</div>
+                      </button>
+
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <div className={cls('text-xs', u.isActive ? 'text-emerald-600' : 'text-slate-400')}>
+                          {u.isActive ? 'Active' : 'Disabled'}
+                        </div>
+
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <button
+                            onClick={() => toggleUserActive(u)}
+                            className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+                          >
+                            {u.isActive ? 'Disable' : 'Enable'}
+                          </button>
+                          <button
+                            onClick={() => resetPassword(u)}
+                            className="rounded-lg border px-2 py-1 text-xs hover:bg-slate-50"
+                          >
+                            Reset PW
+                          </button>
+                        </div>
                       </div>
-                      <div className={cls('text-xs', u.isActive ? 'text-emerald-600' : 'text-slate-400')}>{u.isActive ? 'Active' : 'Disabled'}</div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">Roles: {(u.roleIds || []).join(', ') || '—'}</div>
-                  </button>
+                  </div>
                 ))}
+
+                {filteredUsers.length === 0 ? (
+                  <div className="rounded-xl border border-dashed px-3 py-6 text-sm text-slate-500">
+                    Ничего не найдено.
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-2xl border p-3">
-                <div className="text-sm font-semibold">{activeUser ? 'Редактировать' : 'Создать'} пользователя</div>
+                <div className="text-sm font-semibold">{activeUser ? 'Редактировать пользователя' : 'Создать пользователя'}</div>
                 <div className="mt-2 space-y-2">
                   {!activeUser ? (
                     <Field label="Email">
-                      <input className="w-full rounded-xl border px-3 py-2" value={userDraft.email} onChange={(e) => setUserDraft({ ...userDraft, email: e.target.value })} />
+                      <input
+                        className="w-full rounded-xl border px-3 py-2"
+                        value={userDraft.email}
+                        onChange={(e) => setUserDraft({ ...userDraft, email: e.target.value })}
+                      />
                     </Field>
                   ) : (
-                    <div className="text-sm text-slate-600">{activeUser.email}</div>
+                    <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{activeUser.email}</div>
                   )}
 
                   <Field label="Display name">
-                    <input className="w-full rounded-xl border px-3 py-2" value={userDraft.displayName} onChange={(e) => setUserDraft({ ...userDraft, displayName: e.target.value })} />
+                    <input
+                      className="w-full rounded-xl border px-3 py-2"
+                      value={userDraft.displayName}
+                      onChange={(e) => setUserDraft({ ...userDraft, displayName: e.target.value })}
+                    />
                   </Field>
 
                   <Field label={activeUser ? 'Новый пароль (опционально)' : 'Пароль'}>
-                    <input className="w-full rounded-xl border px-3 py-2" type="password" value={userDraft.password} onChange={(e) => setUserDraft({ ...userDraft, password: e.target.value })} />
+                    <input
+                      className="w-full rounded-xl border px-3 py-2"
+                      type="password"
+                      value={userDraft.password}
+                      onChange={(e) => setUserDraft({ ...userDraft, password: e.target.value })}
+                    />
                   </Field>
 
                   <Field label="Роли">
-                    <div className="space-y-1">
+                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border p-3">
                       {roles.map((r) => (
                         <label key={r.id} className="flex items-center gap-2 text-sm">
                           <input
@@ -399,44 +560,61 @@ function SecurityTab({ me }: { me: MeUser | null }) {
                               const on = e.target.checked;
                               setUserDraft({
                                 ...userDraft,
-                                roleIds: on ? [...userDraft.roleIds, r.id] : userDraft.roleIds.filter((x) => x !== r.id)
+                                roleIds: on
+                                  ? [...userDraft.roleIds, r.id]
+                                  : userDraft.roleIds.filter((x) => x !== r.id)
                               });
                             }}
                           />
-                          <span>{r.name} <span className="text-xs text-slate-500">({r.id})</span></span>
+                          <span>
+                            {r.name} <span className="text-xs text-slate-500">({r.id})</span>
+                          </span>
                         </label>
                       ))}
                     </div>
                   </Field>
 
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={userDraft.isActive} onChange={(e) => setUserDraft({ ...userDraft, isActive: e.target.checked })} />
+                    <input
+                      type="checkbox"
+                      checked={userDraft.isActive}
+                      onChange={(e) => setUserDraft({ ...userDraft, isActive: e.target.checked })}
+                    />
                     Активен
                   </label>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {!activeUser ? (
-                      <button onClick={createUser} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">Создать</button>
+                      <button onClick={createUser} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
+                        Создать
+                      </button>
                     ) : (
                       <>
-                        <button onClick={updateUser} className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm hover:bg-slate-800">Сохранить</button>
-                        <button onClick={deleteUser} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">Удалить</button>
+                        <button onClick={updateUser} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
+                          Сохранить
+                        </button>
+                        <button onClick={deleteUser} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+                          Удалить
+                        </button>
                       </>
                     )}
-                    <button onClick={() => { setActiveUserId(''); setUserDraft({ email: '', displayName: '', password: '', roleIds: [], isActive: true }); }} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
+
+                    <button onClick={resetUserDraft} className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50">
                       Сброс
                     </button>
+                  </div>
+
+                  <div className="text-xs text-slate-500">
+                    Новые пользователи без явно выбранной роли получают роль <span className="font-mono">user</span>.
                   </div>
                 </div>
               </div>
             </div>
           </>
         )}
-      </div>
 
-      {status ? (
-        <div className="lg:col-span-12 text-sm text-slate-600">{status}</div>
-      ) : null}
+        {status ? <div className="mt-4 text-sm text-slate-600">{status}</div> : null}
+      </div>
     </div>
   );
 }
