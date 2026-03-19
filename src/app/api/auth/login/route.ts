@@ -17,7 +17,7 @@ function enrichPermissions(roleIds: string[], permissions: string[]) {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as { email?: string; password?: string } | null;
+  const body = (await req.json().catch(() => null)) as { email?: string; password?: string; next?: string } | null;
   const email = (body?.email || '').trim().toLowerCase();
   const password = body?.password || '';
 
@@ -46,12 +46,18 @@ export async function POST(req: Request) {
   };
 
   const { token, payload } = await signSession(payloadBase, 60 * 60 * 24 * 7);
+  const isAdmin = permissions.includes(PERM_ALL) || permissions.includes(PERM_ADMIN_ACCESS);
 
   const res = NextResponse.json({
     ok: true,
+    token,
+    isAdmin,
+    redirect: isAdmin ? '/admin' : '/profile',
     user: {
+      uid: payload.uid,
       email: payload.email,
       displayName: payload.displayName,
+      roleIds: payload.roleIds,
       permissions: payload.permissions
     }
   });

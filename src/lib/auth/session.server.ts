@@ -29,16 +29,30 @@ function parseCookieValue(rawCookieHeader: string, name: string): string | null 
   return null;
 }
 
-async function readSessionCookie(): Promise<string | null> {
+function parseBearerToken(authHeader: string): string | null {
+  const raw = String(authHeader || '').trim();
+  if (!raw) return null;
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m?.[1]?.trim() || null;
+}
+
+async function readSessionToken(): Promise<string | null> {
   try {
-    const cookieStore = cookies() as any;
-    const direct = cookieStore?.get?.(SESSION_COOKIE)?.value;
+    const h = headers() as any;
+    const auth = String(h?.get?.('authorization') || '');
+    const bearer = parseBearerToken(auth);
+    if (bearer) return bearer;
+  } catch {}
+
+  try {
+    const store = cookies() as any;
+    const direct = store?.get?.(SESSION_COOKIE)?.value;
     if (direct) return direct;
   } catch {}
 
   try {
-    const headerStore = headers() as any;
-    const rawCookieHeader = String(headerStore?.get?.('cookie') || '');
+    const h = headers() as any;
+    const rawCookieHeader = String(h?.get?.('cookie') || '');
     const fromHeader = parseCookieValue(rawCookieHeader, SESSION_COOKIE);
     if (fromHeader) return fromHeader;
   } catch {}
@@ -70,7 +84,7 @@ async function hydratePermissions(session: SessionPayload): Promise<SessionPaylo
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  const raw = await readSessionCookie();
+  const raw = await readSessionToken();
   if (!raw) return null;
 
   const session = await verifySession(raw);
@@ -90,7 +104,6 @@ export function hasRole(session: SessionUser | null | undefined, roleId: string)
 
 export function hasPermission(session: SessionUser | null | undefined, permission: string): boolean {
   if (!session) return false;
-
   const perms = Array.isArray(session.permissions) ? session.permissions : [];
   return perms.includes(PERM_ALL) || perms.includes(permission);
 }

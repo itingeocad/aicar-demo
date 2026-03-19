@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 type Mode = 'login' | 'register';
@@ -29,9 +29,9 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
 
   async function completeLogin() {
     const { res, data } = await fetchJson('/api/auth/login', {
-      credentials: 'same-origin',
       method: 'POST',
       headers: { 'content-type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password, next })
     });
 
@@ -40,11 +40,22 @@ export default function AuthPanelClient({ mode }: { mode: Mode }) {
       return;
     }
 
-    const me = await fetchJson('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
+    const token = typeof data?.token === 'string' ? data.token : '';
+
+    if (token && typeof window !== 'undefined') {
+      window.localStorage.setItem('aicar_session_token', token);
+    }
+
+    const me = await fetchJson('/api/auth/me', {
+      cache: 'no-store',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    });
+
     const redirectTo =
       typeof me.data?.redirect === 'string' && me.data.redirect
         ? me.data.redirect
-        : '/profile';
+        : (typeof data?.redirect === 'string' && data.redirect ? data.redirect : '/profile');
 
     setStatus('Готово ✅');
     window.location.assign(redirectTo);

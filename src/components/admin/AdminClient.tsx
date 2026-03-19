@@ -48,7 +48,23 @@ function can(me: MeUser | null, perm: string) {
 }
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { cache: 'no-store', credentials: 'include', ...init });
+  const token =
+    typeof window !== 'undefined'
+      ? window.localStorage.getItem('aicar_session_token') || ''
+      : '';
+
+  const headers = new Headers(init?.headers || {});
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const res = await fetch(url, {
+    cache: 'no-store',
+    credentials: 'include',
+    ...init,
+    headers
+  });
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error((data as any)?.error || `HTTP ${res.status}`);
