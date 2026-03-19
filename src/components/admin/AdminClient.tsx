@@ -652,12 +652,15 @@ export default function AdminClient() {
       try {
         setStatus('Проверка доступа…');
 
-        const meRes = await fetch('/api/auth/me', {
+        const meData = await fetchJSON<{
+          authenticated?: boolean;
+          isAdmin?: boolean;
+          redirect?: string;
+          user?: MeUser | null;
+        }>('/api/auth/me', {
           cache: 'no-store',
           credentials: 'include'
         });
-
-        const meData = await meRes.json().catch(() => ({}));
 
         if (!alive) return;
 
