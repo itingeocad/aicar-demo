@@ -2,20 +2,52 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { Bookmark, Heart, Loader2, Pencil, Plus, Save } from 'lucide-react';
+import { upload } from '@vercel/blob/client';
+import {
+  Bookmark,
+  Heart,
+  Loader2,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+  UploadCloud
+} from 'lucide-react';
 import type { AIClipView, UserProfileDoc } from '@/lib/aiclips/types';
 import type { DemoCar, DemoReel } from '@/lib/site/types';
 
 type ProfileResponse = { ok: true; profile: UserProfileDoc | null };
 type ClipsResponse = { ok: true; clips: AIClipView[] };
 type CreateClipResponse = { ok: true; clip: AIClipView };
+type UpdateClipResponse = { ok: true; clip: AIClipView };
+
+type BlobUploadKind = 'avatar' | 'cover' | 'clip-poster' | 'clip-video';
+
+type UploadState = {
+  avatar: boolean;
+  cover: boolean;
+  poster: boolean;
+  video: boolean;
+};
+
+function authToken() {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem('aicar_session_token') || '';
+}
+
+function safeFilename(value: string) {
+  const clean = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return clean || 'file';
+}
 
 async function fetchAuthJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const token =
-    typeof window !== 'undefined'
-      ? window.localStorage.getItem('aicar_session_token') || ''
-      : '';
-
+  const token = authToken();
   const headers = new Headers(init?.headers || {});
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -37,50 +69,124 @@ async function fetchAuthJSON<T>(url: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-function ClipCard({ clip }: { clip: AIClipView }) {
+async function uploadPublicFile(
+  file: File,
+  kind: BlobUploadKind,
+  uid: string,
+  onProgress?: (percentage: number) => void
+) {
+  const name = safeFilename(file.name);
+  const pathname =
+    kind === 'avatar'
+      ? `profiles/${uid}/avatar-${name}`
+      : kind === 'cover'
+        ? `profiles/${uid}/cover-${name}`
+        : kind === 'clip-poster'
+          ? `clips/${uid}/posters/${Date.now()}-${name}`
+          : `clips/${uid}/videos/${Date.now()}-${name}`;
+
+  const token = authToken();
+
+  const blob = await upload(pathname, file, {
+    access: 'public',
+    contentType: file.type || undefined,
+    handleUploadUrl: '/api/blob/upload',
+    clientPayload: JSON.stringify({
+      kind,
+      token
+    }),
+    multipart: kind === 'clip-video',
+    onUploadProgress: (event) => {
+      onProgress?.(Math.round(event.percentage));
+    }
+  });
+
+  return blob;
+}
+
+function ClipCard({
+  clip,
+  editable = false,
+  busy = false,
+  onEdit,
+  onDelete
+}: {
+  clip: AIClipView;
+  editable?: boolean;
+  busy?: boolean;
+  onEdit?: (clip: AIClipView) => void;
+  onDelete?: (clip: AIClipView) => void;
+}) {
   const media = clip.posterUrl || clip.videoUrl || '';
 
   return (
-    <Link
-      href={`/aiclips?reel=${encodeURIComponent(clip.id)}`}
-      className="group overflow-hidden rounded-[20px] bg-[#efefef] shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-    >
-      <div className="relative aspect-[9/16] w-full overflow-hidden bg-[#d9d9d9]">
-        {media ? (
-          <img
-            src={media}
-            alt={clip.title}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-[18px] text-slate-700">
-            AIClip
+    <div className="overflow-hidden rounded-[20px] bg-[#efefef] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+      <Link href={`/aiclips?reel=${encodeURIComponent(clip.id)}`} className="group block">
+        <div className="relative aspect-[9/16] w-full overflow-hidden bg-[#d9d9d9]">
+          {media ? (
+            <img
+              src={media}
+              alt={clip.title}
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-[18px] text-slate-700">
+              AIClip
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2 px-4 py-4">
+          <div className="line-clamp-2 text-[17px] font-semibold leading-[1.15] text-slate-900">
+            {clip.title}
           </div>
-        )}
-      </div>
 
-      <div className="space-y-2 px-4 py-4">
-        <div className="line-clamp-2 text-[17px] font-semibold leading-[1.15] text-slate-900">
-          {clip.title}
-        </div>
+          <div className="text-[13px] text-slate-600">
+            {clip.ownerProfile?.displayName || clip.ownerDisplayName}
+          </div>
 
-        <div className="text-[13px] text-slate-600">
-          {clip.ownerProfile?.displayName || clip.ownerDisplayName}
-        </div>
+          <div className="flex items-center gap-4 text-[13px] text-slate-700">
+            <span className="inline-flex items-center gap-1">
+              <Heart className="h-4 w-4" strokeWidth={1.8} />
+              {clip.likeCount}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Bookmark className="h-4 w-4" strokeWidth={1.8} />
+              {clip.favoriteCount}
+            </span>
+            <span>{clip.commentCount} комм.</span>
+          </div>
 
-        <div className="flex items-center gap-4 text-[13px] text-slate-700">
-          <span className="inline-flex items-center gap-1">
-            <Heart className="h-4 w-4" strokeWidth={1.8} />
-            {clip.likeCount}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Bookmark className="h-4 w-4" strokeWidth={1.8} />
-            {clip.favoriteCount}
-          </span>
-          <span>{clip.commentCount} комм.</span>
+          <div className="text-[12px] text-slate-500">
+            {clip.visibility === 'draft' ? 'draft' : 'public'}
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {editable ? (
+        <div className="flex gap-2 border-t border-black/5 px-4 pb-4 pt-1">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onEdit?.(clip)}
+            className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-[13px] text-white disabled:opacity-60"
+          >
+            <Pencil className="h-4 w-4" />
+            Изменить
+          </button>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onDelete?.(clip)}
+            className="inline-flex items-center gap-2 rounded-full bg-[#ececec] px-4 py-2 text-[13px] text-slate-900 disabled:opacity-60"
+          >
+            <Trash2 className="h-4 w-4" />
+            Удалить
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -122,6 +228,13 @@ export function ProfilePageClient({
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [clipBusyId, setClipBusyId] = useState('');
+  const [uploading, setUploading] = useState<UploadState>({
+    avatar: false,
+    cover: false,
+    poster: false,
+    video: false
+  });
 
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [myClips, setMyClips] = useState<AIClipView[]>([]);
@@ -142,11 +255,17 @@ export function ProfilePageClient({
     title: '',
     description: '',
     videoUrl: '',
-    posterUrl: ''
+    posterUrl: '',
+    sourceType: 'url' as 'url' | 'upload',
+    visibility: 'public' as 'public' | 'draft'
   });
 
   const demoReelCount = reels.length;
   const adItems = useMemo(() => cars.slice(0, 4), [cars]);
+
+  function setUploadFlag(slot: keyof UploadState, value: boolean) {
+    setUploading((prev) => ({ ...prev, [slot]: value }));
+  }
 
   async function loadProfileData() {
     const [me, mine, favorites] = await Promise.all([
@@ -176,20 +295,16 @@ export function ProfilePageClient({
       try {
         setLoading(true);
         setStatus('Загрузка профиля…');
-
         await loadProfileData();
-
         if (!alive) return;
         setStatus('');
       } catch (e) {
         if (!alive) return;
-
         const message = String((e as any)?.message || e || 'Ошибка');
         if (/401|unauthorized/i.test(message)) {
           window.location.assign('/login?next=/profile');
           return;
         }
-
         setStatus(message);
       } finally {
         if (alive) setLoading(false);
@@ -200,6 +315,65 @@ export function ProfilePageClient({
       alive = false;
     };
   }, []);
+
+  async function uploadProfileAsset(slot: 'avatar' | 'cover', file: File) {
+    if (!profile?.uid || !file) return;
+
+    try {
+      setUploadFlag(slot, true);
+      setStatus(`Загрузка ${slot === 'avatar' ? 'аватара' : 'обложки'}… 0%`);
+
+      const blob = await uploadPublicFile(file, slot, profile.uid, (percentage) => {
+        setStatus(`Загрузка ${slot === 'avatar' ? 'аватара' : 'обложки'}… ${percentage}%`);
+      });
+
+      if (slot === 'avatar') {
+        setDraft((prev) => ({ ...prev, avatarUrl: blob.url }));
+      } else {
+        setDraft((prev) => ({ ...prev, coverUrl: blob.url }));
+      }
+
+      setStatus('Файл загружен ✅ Теперь нажмите «Сохранить».');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка загрузки файла'));
+    } finally {
+      setUploadFlag(slot, false);
+    }
+  }
+
+  async function uploadClipAsset(slot: 'poster' | 'video', file: File) {
+    if (!profile?.uid || !file) return;
+
+    try {
+      setUploadFlag(slot, true);
+      setStatus(`Загрузка ${slot === 'poster' ? 'постера' : 'видео'}… 0%`);
+
+      const blob = await uploadPublicFile(
+        file,
+        slot === 'poster' ? 'clip-poster' : 'clip-video',
+        profile.uid,
+        (percentage) => {
+          setStatus(`Загрузка ${slot === 'poster' ? 'постера' : 'видео'}… ${percentage}%`);
+        }
+      );
+
+      if (slot === 'poster') {
+        setPublishDraft((prev) => ({ ...prev, posterUrl: blob.url }));
+      } else {
+        setPublishDraft((prev) => ({
+          ...prev,
+          videoUrl: blob.url,
+          sourceType: 'upload'
+        }));
+      }
+
+      setStatus('Файл AIClip загружен ✅');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка загрузки AIClip'));
+    } finally {
+      setUploadFlag(slot, false);
+    }
+  }
 
   async function saveProfile() {
     try {
@@ -213,6 +387,22 @@ export function ProfilePageClient({
       });
 
       setProfile(res.profile || null);
+      setMyClips((prev) =>
+        prev.map((clip) => ({
+          ...clip,
+          ownerProfile: clip.ownerProfile
+            ? {
+                ...clip.ownerProfile,
+                displayName: draft.displayName || clip.ownerProfile.displayName,
+                avatarUrl: draft.avatarUrl || clip.ownerProfile.avatarUrl
+              }
+            : {
+                uid: profile?.uid || '',
+                displayName: draft.displayName || displayName,
+                avatarUrl: draft.avatarUrl || ''
+              }
+        }))
+      );
       setEditOpen(false);
       setStatus('Профиль сохранён ✅');
     } catch (e) {
@@ -222,7 +412,7 @@ export function ProfilePageClient({
     }
   }
 
-  async function publishByUrl() {
+  async function publishClip() {
     try {
       setPublishing(true);
       setStatus('Публикация AIClip…');
@@ -232,8 +422,8 @@ export function ProfilePageClient({
         description: publishDraft.description.trim(),
         videoUrl: publishDraft.videoUrl.trim(),
         posterUrl: publishDraft.posterUrl.trim(),
-        sourceType: 'url',
-        visibility: 'public'
+        sourceType: publishDraft.sourceType,
+        visibility: publishDraft.visibility
       };
 
       const res = await fetchAuthJSON<CreateClipResponse>('/api/aiclips', {
@@ -248,7 +438,9 @@ export function ProfilePageClient({
         title: '',
         description: '',
         videoUrl: '',
-        posterUrl: ''
+        posterUrl: '',
+        sourceType: 'url',
+        visibility: 'public'
       });
       setPublishOpen(false);
       setStatus('AIClip опубликован ✅');
@@ -256,6 +448,64 @@ export function ProfilePageClient({
       setStatus(String((e as any)?.message || e || 'Ошибка публикации'));
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function editMyClip(clip: AIClipView) {
+    const title = window.prompt('Название AIClip', clip.title || '');
+    if (title == null) return;
+
+    const description = window.prompt('Описание AIClip', clip.description || '');
+    if (description == null) return;
+
+    const visibilityInput = window.prompt('Видимость: public или draft', clip.visibility || 'public');
+    if (visibilityInput == null) return;
+
+    const visibility = String(visibilityInput).trim().toLowerCase() === 'draft' ? 'draft' : 'public';
+
+    try {
+      setClipBusyId(clip.id);
+      setStatus('Сохранение AIClip…');
+
+      const res = await fetchAuthJSON<UpdateClipResponse>(`/api/aiclips/${encodeURIComponent(clip.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          visibility
+        })
+      });
+
+      setMyClips((prev) => prev.map((x) => (x.id === clip.id ? res.clip : x)));
+      setFavoriteClips((prev) => prev.map((x) => (x.id === clip.id ? res.clip : x)));
+      setStatus('AIClip обновлён ✅');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка обновления AIClip'));
+    } finally {
+      setClipBusyId('');
+    }
+  }
+
+  async function deleteMyClip(clip: AIClipView) {
+    const ok = window.confirm(`Удалить AIClip "${clip.title}"?`);
+    if (!ok) return;
+
+    try {
+      setClipBusyId(clip.id);
+      setStatus('Удаление AIClip…');
+
+      await fetchAuthJSON<{ ok: true }>(`/api/aiclips/${encodeURIComponent(clip.id)}`, {
+        method: 'DELETE'
+      });
+
+      setMyClips((prev) => prev.filter((x) => x.id !== clip.id));
+      setFavoriteClips((prev) => prev.filter((x) => x.id !== clip.id));
+      setStatus('AIClip удалён ✅');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка удаления AIClip'));
+    } finally {
+      setClipBusyId('');
     }
   }
 
@@ -302,6 +552,11 @@ export function ProfilePageClient({
             </div>
           </div>
 
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-[13px] text-slate-700 md:mt-8">
+            <span className="rounded-full bg-[#f1f1f1] px-4 py-2">Мои AIClips: {myClips.length}</span>
+            <span className="rounded-full bg-[#f1f1f1] px-4 py-2">Избранное: {favoriteClips.length}</span>
+          </div>
+
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:mt-8">
             <button
               type="button"
@@ -344,12 +599,56 @@ export function ProfilePageClient({
                 </label>
 
                 <label className="block md:col-span-2">
+                  <div className="mb-2 text-[13px] text-slate-700">Avatar file</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadProfileAsset('avatar', file);
+                        e.currentTarget.value = '';
+                      }}
+                      className="block w-full max-w-[420px] rounded-[14px] border border-slate-300 bg-white px-4 py-3"
+                    />
+                    {uploading.avatar ? (
+                      <span className="inline-flex items-center gap-2 text-[13px] text-slate-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        upload…
+                      </span>
+                    ) : null}
+                  </div>
+                </label>
+
+                <label className="block md:col-span-2">
                   <div className="mb-2 text-[13px] text-slate-700">Cover URL</div>
                   <input
                     value={draft.coverUrl}
                     onChange={(e) => setDraft((prev) => ({ ...prev, coverUrl: e.target.value }))}
                     className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                   />
+                </label>
+
+                <label className="block md:col-span-2">
+                  <div className="mb-2 text-[13px] text-slate-700">Cover file</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadProfileAsset('cover', file);
+                        e.currentTarget.value = '';
+                      }}
+                      className="block w-full max-w-[420px] rounded-[14px] border border-slate-300 bg-white px-4 py-3"
+                    />
+                    {uploading.cover ? (
+                      <span className="inline-flex items-center gap-2 text-[13px] text-slate-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        upload…
+                      </span>
+                    ) : null}
+                  </div>
                 </label>
 
                 <label className="block md:col-span-2">
@@ -380,7 +679,7 @@ export function ProfilePageClient({
           {publishOpen ? (
             <div className="mt-6 rounded-[22px] bg-[#f4f4f4] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.05)] md:p-6">
               <div className="mb-4 text-[18px] font-semibold text-slate-900 md:text-[22px]">
-                Новый AIClip по URL
+                Новый AIClip
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -394,6 +693,23 @@ export function ProfilePageClient({
                 </label>
 
                 <label className="block">
+                  <div className="mb-2 text-[13px] text-slate-700">Видимость</div>
+                  <select
+                    value={publishDraft.visibility}
+                    onChange={(e) =>
+                      setPublishDraft((prev) => ({
+                        ...prev,
+                        visibility: e.target.value === 'draft' ? 'draft' : 'public'
+                      }))
+                    }
+                    className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
+                  >
+                    <option value="public">public</option>
+                    <option value="draft">draft</option>
+                  </select>
+                </label>
+
+                <label className="block">
                   <div className="mb-2 text-[13px] text-slate-700">Poster URL</div>
                   <input
                     value={publishDraft.posterUrl}
@@ -402,13 +718,63 @@ export function ProfilePageClient({
                   />
                 </label>
 
-                <label className="block md:col-span-2">
+                <label className="block">
                   <div className="mb-2 text-[13px] text-slate-700">Video URL</div>
                   <input
                     value={publishDraft.videoUrl}
-                    onChange={(e) => setPublishDraft((prev) => ({ ...prev, videoUrl: e.target.value }))}
+                    onChange={(e) =>
+                      setPublishDraft((prev) => ({
+                        ...prev,
+                        videoUrl: e.target.value,
+                        sourceType: 'url'
+                      }))
+                    }
                     className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                   />
+                </label>
+
+                <label className="block md:col-span-2">
+                  <div className="mb-2 text-[13px] text-slate-700">Poster file</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadClipAsset('poster', file);
+                        e.currentTarget.value = '';
+                      }}
+                      className="block w-full max-w-[420px] rounded-[14px] border border-slate-300 bg-white px-4 py-3"
+                    />
+                    {uploading.poster ? (
+                      <span className="inline-flex items-center gap-2 text-[13px] text-slate-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        upload…
+                      </span>
+                    ) : null}
+                  </div>
+                </label>
+
+                <label className="block md:col-span-2">
+                  <div className="mb-2 text-[13px] text-slate-700">Video file</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadClipAsset('video', file);
+                        e.currentTarget.value = '';
+                      }}
+                      className="block w-full max-w-[420px] rounded-[14px] border border-slate-300 bg-white px-4 py-3"
+                    />
+                    {uploading.video ? (
+                      <span className="inline-flex items-center gap-2 text-[13px] text-slate-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        upload…
+                      </span>
+                    ) : null}
+                  </div>
                 </label>
 
                 <label className="block md:col-span-2">
@@ -422,15 +788,19 @@ export function ProfilePageClient({
                 </label>
               </div>
 
+              <div className="mt-4 rounded-[16px] bg-white px-4 py-3 text-[13px] text-slate-700">
+                Источник: <strong>{publishDraft.sourceType === 'upload' ? 'file upload' : 'url'}</strong>
+              </div>
+
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={publishByUrl}
+                  onClick={publishClip}
                   disabled={publishing}
                   className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-[14px] font-medium text-white disabled:opacity-60"
                 >
-                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  Опубликовать
+                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                  Опубликовать AIClip
                 </button>
               </div>
             </div>
@@ -473,7 +843,14 @@ export function ProfilePageClient({
             ) : visibleClips.length > 0 ? (
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleClips.map((clip) => (
-                  <ClipCard key={clip.id} clip={clip} />
+                  <ClipCard
+                    key={clip.id}
+                    clip={clip}
+                    editable={tab === 'mine'}
+                    busy={clipBusyId === clip.id}
+                    onEdit={editMyClip}
+                    onDelete={deleteMyClip}
+                  />
                 ))}
               </div>
             ) : (

@@ -1,6 +1,14 @@
+import { del } from '@vercel/blob';
 import { getRedis } from '@/lib/kv/upstash.server';
 import { findUserById, getUsers, saveUsers } from '@/lib/auth/store.server';
-import type { AIClipCommentDoc, AIClipDoc, AIClipView, ClipSourceType, ClipVisibility, UserProfileDoc } from './types';
+import type {
+  AIClipCommentDoc,
+  AIClipDoc,
+  AIClipView,
+  ClipSourceType,
+  ClipVisibility,
+  UserProfileDoc
+} from './types';
 
 function profileKey(uid: string) {
   return `aicar:profiles:${uid}`;
@@ -58,6 +66,14 @@ async function writeJson<T>(key: string, value: T): Promise<void> {
   await redis.set(key, JSON.stringify(value));
 }
 
+async function deleteKey(key: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    await redis.del(key);
+  } catch {}
+}
+
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set((values || []).map((x) => String(x).trim()).filter(Boolean)));
 }
@@ -68,6 +84,19 @@ function sortNewestFirst<T extends { createdAt: string }>(items: T[]): T[] {
 
 async function readIdList(key: string): Promise<string[]> {
   return uniqueStrings(await readJson<string[]>(key, []));
+}
+
+function isBlobUrl(value: string): boolean {
+  const url = String(value || '').trim();
+  return /blob\.vercel-storage\.com/i.test(url);
+}
+
+async function deleteBlobIfNeeded(value: string): Promise<void> {
+  const url = String(value || '').trim();
+  if (!url || !isBlobUrl(url)) return;
+  try {
+    await del(url);
+  } catch {}
 }
 
 export async function getProfileByUid(uid: string): Promise<UserProfileDoc | null> {
@@ -316,4 +345,78 @@ export async function addComment(input: {
   items.push(comment);
   await writeJson(clipCommentsKey(input.clipId), items);
   return comment;
+}
+
+export async function updateClip(input: {
+  clipId: string;
+  uid: string;
+  title?: string;
+  description?: string;
+  videoUrl?: string;
+  posterUrl?: string;
+  visibility?: ClipVisibility;
+  sourceType?: ClipSourceType;
+}): Promise<AIClipView | null> {
+  const current = await getClipById(input.clipId);
+  if (!current) return null;
+  if (current.ownerUid !== input.uid) return null;
+
+  const next: AIClipDoc = {
+    ...current,
+    title: String(input.title ?? current.title).trim() || current.title,
+    description: String(input.description ?? current.description ?? '').trim(),
+    videoUrl: String(input.videoUrl ?? current.videoUrl).trim() || current.videoUrl,
+    posterUrl: String(input.posterUrl ?? current.posterUrl ?? '').trim(),
+    visibility: input.visibility === 'draft' ? 'draft' : 'public',
+    sourceType: input.sourceType === 'upload' ? 'upload' : current.sourceType,
+    updatedAt: new Date().toISOString()
+  };
+
+  await writeJson(clipKey(next.id), next);
+  return await buildClipView(next, input.uid);
+}
+
+export async function deleteClip(clipId: string, uid: string): Promise<boolean> {
+  const current = await getClipById(clipId);
+  if (!current) return false;
+  if (current.ownerUid !== uid) return false;
+
+  const index = await readIdList(clipsIndexKey());
+  await writeJson(
+    clipsIndexKey(),
+    index.filter((x) => x !== clipId)
+  );
+
+  const ownerIndex = await readIdList(userClipsKey(uid));
+  await writeJson(
+    userClipsKey(uid),
+    ownerIndex.filter((x) => x !== clipId)
+  );
+
+  const users = await getUsers();
+  for (const user of users) {
+    const favs = await readIdList(userFavoritesKey(user.id));
+    if (favs.includes(clipId)) {
+      await writeJson(
+        userFavoritesKey(user.id),
+        favs.filter((x) => x !== clipId)
+      );
+    }
+  }
+
+  await Promise.all([
+    deleteKey(clipKey(clipId)),
+    deleteKey(clipLikesKey(clipId)),
+    deleteKey(clipFavoritesKey(clipId)),
+    deleteKey(clipCommentsKey(clipId))
+  ]);
+
+  if (current.sourceType === 'upload') {
+    await Promise.all([
+      deleteBlobIfNeeded(current.videoUrl),
+      deleteBlobIfNeeded(current.posterUrl || '')
+    ]);
+  }
+
+  return true;
 }
