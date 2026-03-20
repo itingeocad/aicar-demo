@@ -151,11 +151,7 @@ function ReelMedia({
         className="h-full w-full object-cover"
       />
 
-      <button
-        type="button"
-        className="absolute inset-x-0 top-0 z-[5] block bottom-[112px] md:bottom-[132px]"
-        aria-label="Toggle video playback"
-      />
+
 
       <button
         type="button"
