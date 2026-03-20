@@ -153,6 +153,12 @@ function ReelMedia({
 
       <button
         type="button"
+        className="absolute inset-x-0 top-0 z-[5] block bottom-[112px] md:bottom-[132px]"
+        aria-label="Toggle video playback"
+      />
+
+      <button
+        type="button"
         onClick={onTogglePlayback}
         className="absolute inset-x-0 top-0 z-[5] block bottom-[112px] md:bottom-[132px]"
         aria-label="Toggle video playback"
@@ -828,6 +834,23 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   </div>
                 )}
               </div>
+
+              <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
+                {items.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next reel"
+                    onClick={goNext}
+                    className="text-white"
+                  >
+                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
+                  </button>
+                ) : (
+                  <div className="text-white">
+                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -883,6 +906,23 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     ) : null}
                   </div>
                 ))}
+              </div>
+
+              <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
+                {items.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next reel"
+                    onClick={goNext}
+                    className="text-white"
+                  >
+                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
+                  </button>
+                ) : (
+                  <div className="text-white">
+                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
+                  </div>
+                )}
               </div>
 
               <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
