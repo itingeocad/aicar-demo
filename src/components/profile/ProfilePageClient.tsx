@@ -104,6 +104,51 @@ async function uploadPublicFile(
   return blob;
 }
 
+async function createPosterFromVideoFile(file: File): Promise<File | null> {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
+    video.src = objectUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      const onLoadedData = () => resolve();
+      const onError = () => reject(new Error('Не удалось прочитать видео для постера'));
+
+      video.addEventListener('loadeddata', onLoadedData, { once: true });
+      video.addEventListener('error', onError, { once: true });
+    });
+
+    const width = video.videoWidth || 720;
+    const height = video.videoHeight || 1280;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas недоступен');
+    }
+
+    ctx.drawImage(video, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.92)
+    );
+
+    if (!blob) return null;
+
+    const base = safeFilename(file.name.replace(/\.[^.]+$/, '')) || 'poster';
+    return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function ClipCard({
   clip,
   editable = false,
@@ -348,6 +393,8 @@ export function ProfilePageClient({
       setUploadFlag(slot, true);
       setStatus(`Загрузка ${slot === 'poster' ? 'постера' : 'видео'}… 0%`);
 
+      const needAutoPoster = slot === 'video' && !publishDraft.posterUrl.trim();
+
       const blob = await uploadPublicFile(
         file,
         slot === 'poster' ? 'clip-poster' : 'clip-video',
@@ -359,17 +406,48 @@ export function ProfilePageClient({
 
       if (slot === 'poster') {
         setPublishDraft((prev) => ({ ...prev, posterUrl: blob.url }));
+        setStatus('Poster file загружен ✅');
       } else {
+        let autoPosterUrl = '';
+
+        if (needAutoPoster) {
+          try {
+            setStatus('Генерация постера из первого кадра…');
+
+            const posterFile = await createPosterFromVideoFile(file);
+
+            if (posterFile) {
+              setStatus('Загрузка постера из первого кадра…');
+
+              const posterBlob = await uploadPublicFile(
+                posterFile,
+                'clip-poster',
+                profile.uid
+              );
+
+              autoPosterUrl = posterBlob.url;
+            }
+          } catch {
+            autoPosterUrl = '';
+          }
+        }
+
         setPublishDraft((prev) => ({
           ...prev,
           videoUrl: blob.url,
-          sourceType: 'upload'
+          sourceType: 'upload',
+          posterUrl: prev.posterUrl || autoPosterUrl
         }));
-      }
 
-      setStatus('Файл AIClip загружен ✅');
+        if (needAutoPoster && autoPosterUrl) {
+          setStatus('Видео и постер из первого кадра загружены ✅');
+        } else {
+          setStatus('Video file загружен ✅');
+        }
+      }
     } catch (e) {
-      setStatus(String((e as any)?.message || e || 'Ошибка загрузки AIClip'));
+      const msg = String((e as any)?.message || e || 'Ошибка загрузки AIClip');
+      setStatus(`Upload error: ${msg}. Проверьте /api/blob/debug и наличие BLOB_READ_WRITE_TOKEN в Production.`);
     } finally {
       setUploadFlag(slot, false);
     }

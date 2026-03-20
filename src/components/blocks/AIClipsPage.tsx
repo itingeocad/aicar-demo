@@ -128,6 +128,7 @@ function ReelMedia({
         loop
         playsInline
         preload="metadata"
+        controls={active}
         className="h-full w-full object-cover"
       />
 
