@@ -104,37 +104,7 @@ export async function TopNav({
               <Heart className="h-5 w-5" />
             </IconButton>
 
-            {!session ? (
-              <div className="ml-2 flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="rounded-xl bg-[#c7c7c7] px-5 py-2 text-[14px] text-slate-900 transition hover:bg-[#bdbdbd]"
-                >
-                  Войти
-                </Link>
-                <Link
-                  href="/register"
-                  className="rounded-xl bg-[#c7c7c7] px-5 py-2 text-[14px] text-slate-900 transition hover:bg-[#bdbdbd]"
-                >
-                  Регистрация
-                </Link>
-              </div>
-            ) : (
-              <div className="ml-2 flex items-center gap-2">
-                <div className="max-w-[180px] truncate rounded-xl bg-white/35 px-4 py-2 text-[14px] text-slate-900">
-                  {session.displayName || session.email}
-                </div>
-                <Link
-                  href={canAdmin ? '/admin' : '/profile'}
-                  className="rounded-xl bg-[#c7c7c7] px-4 py-2 text-[14px] text-slate-900"
-                >
-                  {canAdmin ? 'Админка' : 'Профиль'}
-                </Link>
-                <Link href="/logout?next=/" className="rounded-xl bg-[#c7c7c7] px-4 py-2 text-[14px] text-slate-900">
-                  Выйти
-                </Link>
-              </div>
-            )}
+            <TopNavAuthClient />
 
             <div className="ml-2 rounded-xl bg-[#c7c7c7] px-3 py-2 text-[14px] text-slate-900">Ro</div>
           </div>
