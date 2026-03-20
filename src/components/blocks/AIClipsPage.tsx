@@ -207,7 +207,6 @@ function ActionStack({
 
       <button type="button" onClick={onShare} className={btn(false)}>
         <Send className={iconSize} strokeWidth={1.8} />
-        <span className="mt-1">share</span>
       </button>
 
       <button type="button" onClick={onFavorite} disabled={busyFavorite} className={btn(reel.isFavorited)}>
@@ -531,7 +530,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
               className="relative shrink-0"
               style={{
                 aspectRatio: `${PROTO_W} / ${PROTO_H}`,
-                height: 'min(calc(100dvh - 90px - 12px), 820px)'
+                height: 'min(calc(100dvh - 90px - 8px), 980px)'
               }}
             >
               <div

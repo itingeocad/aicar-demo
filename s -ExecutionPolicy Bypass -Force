@@ -1,0 +1,66 @@
+warning: in the working copy of 'src/components/blocks/AIClipsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/aiclips/store.server.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/components/blocks/AIClipsPage.tsx b/src/components/blocks/AIClipsPage.tsx[m
+[1mindex 27bfcb2..bc22d10 100644[m
+[1m--- a/src/components/blocks/AIClipsPage.tsx[m
+[1m+++ b/src/components/blocks/AIClipsPage.tsx[m
+[36m@@ -207,7 +207,6 @@[m [mfunction ActionStack({[m
+ [m
+       <button type="button" onClick={onShare} className={btn(false)}>[m
+         <Send className={iconSize} strokeWidth={1.8} />[m
+[31m-        <span className="mt-1">share</span>[m
+       </button>[m
+ [m
+       <button type="button" onClick={onFavorite} disabled={busyFavorite} className={btn(reel.isFavorited)}>[m
+[36m@@ -531,7 +530,7 @@[m [mexport function AIClipsPage({ reels }: { reels: DemoReel[] }) {[m
+               className="relative shrink-0"[m
+               style={{[m
+                 aspectRatio: `${PROTO_W} / ${PROTO_H}`,[m
+[31m-                height: 'min(calc(100dvh - 90px - 12px), 820px)'[m
+[32m+[m[32m                height: 'min(calc(100dvh - 90px - 8px), 980px)'[m
+               }}[m
+             >[m
+               <div[m
+[1mdiff --git a/src/lib/aiclips/store.server.ts b/src/lib/aiclips/store.server.ts[m
+[1mindex c39919e..335cc63 100644[m
+[1m--- a/src/lib/aiclips/store.server.ts[m
+[1m+++ b/src/lib/aiclips/store.server.ts[m
+[36m@@ -316,7 +316,22 @@[m [mexport async function unfavoriteClip(clipId: string, uid: string): Promise<AICli[m
+ [m
+ export async function listComments(clipId: string): Promise<AIClipCommentDoc[]> {[m
+   const items = await readJson<AIClipCommentDoc[]>(clipCommentsKey(clipId), []);[m
+[31m-  return items.slice().sort((a, b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));[m
+[32m+[m[32m  const sorted = items[m
+[32m+[m[32m    .slice()[m
+[32m+[m[32m    .sort((a, b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));[m
+[32m+[m
+[32m+[m[32m  const hydrated = await Promise.all([m
+[32m+[m[32m    sorted.map(async (comment) => {[m
+[32m+[m[32m      const profile = await getProfileByUid(comment.authorUid);[m
+[32m+[m
+[32m+[m[32m      return {[m
+[32m+[m[32m        ...comment,[m
+[32m+[m[32m        authorDisplayName: profile?.displayName || comment.authorDisplayName[m
+[32m+[m[32m      };[m
+[32m+[m[32m    })[m
+[32m+[m[32m  );[m
+[32m+[m
+[32m+[m[32m  return hydrated;[m
+ }[m
+ [m
+ export async function addComment(input: {[m
+[36m@@ -333,11 +348,13 @@[m [mexport async function addComment(input: {[m
+ [m
+   const items = await listComments(input.clipId);[m
+ [m
+[32m+[m[32m  const authorProfile = await getProfileByUid(input.authorUid);[m
+[32m+[m
+   const comment: AIClipCommentDoc = {[m
+     id: crypto.randomUUID(),[m
+     clipId: input.clipId,[m
+     authorUid: input.authorUid,[m
+[31m-    authorDisplayName: input.authorDisplayName,[m
+[32m+[m[32m    authorDisplayName: authorProfile?.displayName || input.authorDisplayName,[m
+     text,[m
+     createdAt: new Date().toISOString()[m
+   };[m

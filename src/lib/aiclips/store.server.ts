@@ -316,7 +316,22 @@ export async function unfavoriteClip(clipId: string, uid: string): Promise<AICli
 
 export async function listComments(clipId: string): Promise<AIClipCommentDoc[]> {
   const items = await readJson<AIClipCommentDoc[]>(clipCommentsKey(clipId), []);
-  return items.slice().sort((a, b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
+  const sorted = items
+    .slice()
+    .sort((a, b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
+
+  const hydrated = await Promise.all(
+    sorted.map(async (comment) => {
+      const profile = await getProfileByUid(comment.authorUid);
+
+      return {
+        ...comment,
+        authorDisplayName: profile?.displayName || comment.authorDisplayName
+      };
+    })
+  );
+
+  return hydrated;
 }
 
 export async function addComment(input: {
@@ -333,11 +348,13 @@ export async function addComment(input: {
 
   const items = await listComments(input.clipId);
 
+  const authorProfile = await getProfileByUid(input.authorUid);
+
   const comment: AIClipCommentDoc = {
     id: crypto.randomUUID(),
     clipId: input.clipId,
     authorUid: input.authorUid,
-    authorDisplayName: input.authorDisplayName,
+    authorDisplayName: authorProfile?.displayName || input.authorDisplayName,
     text,
     createdAt: new Date().toISOString()
   };
