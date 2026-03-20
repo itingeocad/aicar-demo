@@ -166,6 +166,8 @@ function ReelMedia({
         </div>
       ) : null}
 
+      <div className="peer absolute inset-x-0 bottom-[78px] z-[6] hidden h-[84px] md:block" />
+
       {showFlash ? (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
           <div className="rounded-full bg-black/35 p-5 text-white backdrop-blur-sm">
@@ -178,7 +180,7 @@ function ReelMedia({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-32 text-white md:px-5 md:pb-40">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-28 md:peer-hover:pb-40">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
@@ -828,23 +830,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   </div>
                 )}
               </div>
-
-              <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
-                {items.length > 1 ? (
-                  <button
-                    type="button"
-                    aria-label="Next reel"
-                    onClick={goNext}
-                    className="text-white"
-                  >
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </button>
-                ) : (
-                  <div className="text-white">
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </section>
@@ -900,23 +885,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     ) : null}
                   </div>
                 ))}
-              </div>
-
-              <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
-                {items.length > 1 ? (
-                  <button
-                    type="button"
-                    aria-label="Next reel"
-                    onClick={goNext}
-                    className="text-white"
-                  >
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </button>
-                ) : (
-                  <div className="text-white">
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </div>
-                )}
               </div>
 
               <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
