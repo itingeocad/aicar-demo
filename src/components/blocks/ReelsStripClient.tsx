@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { ChevronLeft, ChevronRight, Eye, Heart, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Heart, Loader2, Play } from 'lucide-react';
 import type { DemoReel } from '@/lib/site/types';
 import type { AIClipView } from '@/lib/aiclips/types';
 
@@ -95,7 +95,7 @@ function ReelCard({ reel }: { reel: StripReel }) {
   return (
     <Link
       href={href}
-      className="group block w-full"
+      className="group block w-full shrink-0"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       aria-label={reel.title}
@@ -152,6 +152,19 @@ function ReelCard({ reel }: { reel: StripReel }) {
   );
 }
 
+function LoadingCard() {
+  return (
+    <div className="w-[200px] shrink-0">
+      <div className="relative aspect-[200/354] overflow-hidden rounded-[12px] bg-slate-200 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-slate-200 via-slate-300 to-slate-200" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-white/90" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ReelsStripClient({
   reels,
   showArrows
@@ -159,13 +172,18 @@ export function ReelsStripClient({
   reels: DemoReel[];
   showArrows?: boolean;
 }) {
-  const [items, setItems] = React.useState<StripReel[]>(() => reels.slice(0, 4).map(mapDemoReel));
+  const [items, setItems] = React.useState<StripReel[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [mobileIndex, setMobileIndex] = React.useState(0);
+  const desktopScrollRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     let alive = true;
 
     (async () => {
       try {
+        setLoading(true);
+
         const res = await fetch('/api/aiclips/feed', {
           cache: 'no-store',
           credentials: 'include'
@@ -176,13 +194,15 @@ export function ReelsStripClient({
         if (!alive) return;
 
         if (res.ok && Array.isArray((data as any)?.clips) && (data as any).clips.length > 0) {
-          setItems((data as any).clips.slice(0, 4).map(mapLiveClip));
+          setItems((data as any).clips.map(mapLiveClip));
         } else {
-          setItems(reels.slice(0, 4).map(mapDemoReel));
+          setItems(reels.map(mapDemoReel));
         }
       } catch {
         if (!alive) return;
-        setItems(reels.slice(0, 4).map(mapDemoReel));
+        setItems(reels.map(mapDemoReel));
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
 
@@ -191,7 +211,32 @@ export function ReelsStripClient({
     };
   }, [reels]);
 
-  const first = items[0];
+  React.useEffect(() => {
+    if (mobileIndex >= items.length && items.length > 0) {
+      setMobileIndex(0);
+    }
+  }, [items.length, mobileIndex]);
+
+  function desktopScroll(delta: number) {
+    const el = desktopScrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: delta,
+      behavior: 'smooth'
+    });
+  }
+
+  function mobilePrev() {
+    if (items.length <= 1) return;
+    setMobileIndex((prev) => (prev <= 0 ? items.length - 1 : prev - 1));
+  }
+
+  function mobileNext() {
+    if (items.length <= 1) return;
+    setMobileIndex((prev) => (prev >= items.length - 1 ? 0 : prev + 1));
+  }
+
+  const mobileItem = items[mobileIndex];
 
   return (
     <>
@@ -200,44 +245,67 @@ export function ReelsStripClient({
           <>
             <button
               aria-label="prev"
-              className="absolute -left-10 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+              className="absolute -left-10 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
+              onClick={() => desktopScroll(-520)}
             >
               <ChevronLeft className="h-10 w-10" />
             </button>
             <button
               aria-label="next"
-              className="absolute -right-10 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+              className="absolute -right-10 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
+              onClick={() => desktopScroll(520)}
             >
               <ChevronRight className="h-10 w-10" />
             </button>
           </>
         ) : null}
 
-        <div className="mx-auto grid max-w-[950px] grid-cols-4 justify-items-start gap-x-[50px]">
-          {items.map((r) => (
-            <div key={r.id} className="w-[200px]">
-              <ReelCard reel={r} />
-            </div>
-          ))}
+        <div
+          ref={desktopScrollRef}
+          className="mx-auto flex max-w-[950px] gap-x-[42px] overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {loading
+            ? Array.from({ length: 4 }).map((_, idx) => <LoadingCard key={idx} />)
+            : items.map((r) => (
+                <div key={r.id} className="w-[200px]">
+                  <ReelCard reel={r} />
+                </div>
+              ))}
         </div>
       </div>
 
       <div className="relative md:hidden">
-        {showArrows ? (
+        {showArrows && !loading ? (
           <>
-            <button aria-label="prev" className="absolute -left-5 top-1/2 -translate-y-1/2 text-slate-400" type="button">
+            <button
+              aria-label="prev"
+              className="absolute -left-5 top-1/2 z-10 -translate-y-1/2 text-slate-400"
+              type="button"
+              onClick={mobilePrev}
+            >
               <ChevronLeft className="h-9 w-9" />
             </button>
-            <button aria-label="next" className="absolute -right-5 top-1/2 -translate-y-1/2 text-slate-400" type="button">
+            <button
+              aria-label="next"
+              className="absolute -right-5 top-1/2 z-10 -translate-y-1/2 text-slate-400"
+              type="button"
+              onClick={mobileNext}
+            >
               <ChevronRight className="h-9 w-9" />
             </button>
           </>
         ) : null}
 
         <div className="mx-auto max-w-[200px]">
-          {first ? <ReelCard reel={first} /> : <div className="aspect-[200/354] rounded-[12px] bg-slate-200" />}
+          {loading ? (
+            <LoadingCard />
+          ) : mobileItem ? (
+            <ReelCard reel={mobileItem} />
+          ) : (
+            <div className="aspect-[200/354] rounded-[12px] bg-slate-200" />
+          )}
         </div>
       </div>
     </>
