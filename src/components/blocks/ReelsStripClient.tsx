@@ -4,6 +4,20 @@ import Link from 'next/link';
 import React from 'react';
 import { ChevronLeft, ChevronRight, Eye, Heart, Play } from 'lucide-react';
 import type { DemoReel } from '@/lib/site/types';
+import type { AIClipView } from '@/lib/aiclips/types';
+
+type StripReel = {
+  id: string;
+  title: string;
+  thumbUrl?: string;
+  posterUrl?: string;
+  previewUrl?: string;
+  videoUrl?: string;
+  views?: number;
+  likes?: number;
+  badges?: string[];
+  linkedCarId?: string;
+};
 
 function formatCount(n?: number) {
   const v = typeof n === 'number' ? n : 0;
@@ -17,12 +31,42 @@ function Badge({ text }: { text: string }) {
   return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${cls}`}>{text}</span>;
 }
 
-function ReelCard({ reel }: { reel: DemoReel }) {
+function mapDemoReel(reel: DemoReel): StripReel {
+  return {
+    id: reel.id,
+    title: reel.title,
+    thumbUrl: reel.thumbUrl ?? reel.posterUrl,
+    posterUrl: reel.posterUrl,
+    previewUrl: reel.previewUrl ?? reel.videoUrl,
+    videoUrl: reel.videoUrl,
+    views: reel.views,
+    likes: reel.likes,
+    badges: reel.badges,
+    linkedCarId: reel.linkedCarId
+  };
+}
+
+function mapLiveClip(clip: AIClipView): StripReel {
+  return {
+    id: clip.id,
+    title: clip.title,
+    thumbUrl: clip.posterUrl || clip.videoUrl,
+    posterUrl: clip.posterUrl,
+    previewUrl: clip.videoUrl,
+    videoUrl: clip.videoUrl,
+    views: clip.commentCount ?? 0,
+    likes: clip.likeCount ?? 0,
+    badges: ['AI'],
+    linkedCarId: undefined
+  };
+}
+
+function ReelCard({ reel }: { reel: StripReel }) {
   const [hover, setHover] = React.useState(false);
   const vref = React.useRef<HTMLVideoElement | null>(null);
 
-  const thumb = reel.thumbUrl ?? reel.posterUrl;
-  const preview = reel.previewUrl ?? reel.videoUrl;
+  const thumb = reel.thumbUrl ?? reel.posterUrl ?? reel.videoUrl ?? '';
+  const preview = reel.previewUrl ?? reel.videoUrl ?? '';
   const href = reel.linkedCarId
     ? `/aiclips?reel=${encodeURIComponent(reel.id)}&car=${encodeURIComponent(reel.linkedCarId)}`
     : `/aiclips?reel=${encodeURIComponent(reel.id)}`;
@@ -57,23 +101,27 @@ function ReelCard({ reel }: { reel: DemoReel }) {
       aria-label={reel.title}
     >
       <div className="relative aspect-[200/354] overflow-hidden rounded-[12px] bg-slate-200 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-        <img
-          src={thumb}
-          alt={reel.title}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${hover ? 'opacity-0' : 'opacity-100'}`}
-          loading="lazy"
-        />
+        {thumb ? (
+          <img
+            src={thumb}
+            alt={reel.title}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${hover ? 'opacity-0' : 'opacity-100'}`}
+            loading="lazy"
+          />
+        ) : null}
 
-        <video
-          ref={vref}
-          src={preview}
-          poster={thumb}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${hover ? 'opacity-100' : 'opacity-0'}`}
-        />
+        {preview ? (
+          <video
+            ref={vref}
+            src={preview}
+            poster={thumb}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${hover ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ) : null}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/10" />
 
@@ -111,7 +159,38 @@ export function ReelsStripClient({
   reels: DemoReel[];
   showArrows?: boolean;
 }) {
-  const items = reels.slice(0, 4);
+  const [items, setItems] = React.useState<StripReel[]>(() => reels.slice(0, 4).map(mapDemoReel));
+
+  React.useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/aiclips/feed', {
+          cache: 'no-store',
+          credentials: 'include'
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!alive) return;
+
+        if (res.ok && Array.isArray((data as any)?.clips) && (data as any).clips.length > 0) {
+          setItems((data as any).clips.slice(0, 4).map(mapLiveClip));
+        } else {
+          setItems(reels.slice(0, 4).map(mapDemoReel));
+        }
+      } catch {
+        if (!alive) return;
+        setItems(reels.slice(0, 4).map(mapDemoReel));
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [reels]);
+
   const first = items[0];
 
   return (
