@@ -546,9 +546,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     }
 
     dragStartYRef.current = e.clientY;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {}
+
   }
 
   function onDesktopPointerUp(e: React.PointerEvent<HTMLDivElement>) {
@@ -800,18 +798,18 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 <div className="flex flex-col items-center gap-4">
                   <button
                     type="button"
-                    onClick={goPrev}
+                    onClick={goNext}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
-                    aria-label="Предыдущее видео"
+                    aria-label="Следующее видео"
                   >
                     <ChevronUp className="h-7 w-7" strokeWidth={1.8} />
                   </button>
 
                   <button
                     type="button"
-                    onClick={goNext}
+                    onClick={goPrev}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
-                    aria-label="Следующее видео"
+                    aria-label="Предыдущее видео"
                   >
                     <ChevronDown className="h-7 w-7" strokeWidth={1.8} />
                   </button>
