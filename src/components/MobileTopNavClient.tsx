@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Bell, Heart, Menu, X } from 'lucide-react';
 import { SiteConfig } from '@/lib/site/types';
@@ -17,6 +17,34 @@ function IconButton({ children, label }: { children: React.ReactNode; label: str
   );
 }
 
+function authToken() {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem('aicar_session_token') || '';
+}
+
+async function fetchMe() {
+  const token = authToken();
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const res = await fetch('/api/auth/me', {
+    cache: 'no-store',
+    credentials: 'include',
+    headers
+  });
+
+  return (await res.json().catch(() => ({}))) as {
+    authenticated?: boolean;
+    isAdmin?: boolean;
+    user?: {
+      displayName?: string;
+      email?: string;
+    } | null;
+  };
+}
+
 export function MobileTopNavClient({
   config,
   loggedIn,
@@ -31,12 +59,40 @@ export function MobileTopNavClient({
   variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
   const [open, setOpen] = useState(false);
+  const [liveLoggedIn, setLiveLoggedIn] = useState(Boolean(loggedIn));
+  const [liveCanAdmin, setLiveCanAdmin] = useState(Boolean(canAdmin));
+  const [liveDisplayName, setLiveDisplayName] = useState(displayName || '');
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const me = await fetchMe();
+        if (!alive) return;
+
+        setLiveLoggedIn(Boolean(me?.authenticated));
+        setLiveCanAdmin(Boolean(me?.isAdmin));
+        setLiveDisplayName(String(me?.user?.displayName || me?.user?.email || ''));
+      } catch {
+        if (!alive) return;
+        setLiveLoggedIn(false);
+        setLiveCanAdmin(false);
+        setLiveDisplayName('');
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const footerGroups = config.footer.groups ?? [];
   const accountVariant = variant === 'account';
   const panelTopClass = 'top-[57px]';
-  const primaryHref = canAdmin ? '/admin' : '/profile';
-  const primaryLabel = canAdmin ? 'Админка' : 'Профиль';
-  const safeName = displayName || 'Пользователь';
+  const primaryHref = liveCanAdmin ? '/admin' : '/profile';
+  const primaryLabel = liveCanAdmin ? 'Админка' : 'Профиль';
+  const safeName = liveDisplayName || 'Пользователь';
 
   return (
     <div className="md:hidden">
@@ -59,7 +115,7 @@ export function MobileTopNavClient({
               <Heart className="h-5 w-5" />
             </IconButton>
 
-            {!loggedIn ? (
+            {!liveLoggedIn ? (
               <Link
                 href="/login"
                 className="rounded-xl bg-[#bdbdbd] px-4 py-2 text-[13px] font-medium text-slate-900"
@@ -108,7 +164,7 @@ export function MobileTopNavClient({
               <Bell className="h-5 w-5" />
             </IconButton>
 
-            {!loggedIn ? (
+            {!liveLoggedIn ? (
               <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
             ) : (
               <Link
@@ -143,12 +199,12 @@ export function MobileTopNavClient({
                   </button>
                 </div>
 
-                {loggedIn ? (
+                {liveLoggedIn ? (
                   <div className="border-b border-black/5 px-4 py-4">
                     <div className="rounded-xl bg-slate-100 px-4 py-3">
                       <div className="text-sm font-medium text-slate-900">{safeName}</div>
                       <div className="mt-1 text-xs text-slate-500">
-                        {canAdmin ? 'Администратор' : 'Пользователь'}
+                        {liveCanAdmin ? 'Администратор' : 'Пользователь'}
                       </div>
                     </div>
                   </div>
@@ -219,7 +275,7 @@ export function MobileTopNavClient({
 
                 <div className="border-t border-black/5 p-3">
                   <div className="flex flex-wrap gap-2">
-                    {!loggedIn ? (
+                    {!liveLoggedIn ? (
                       <>
                         <Link
                           href="/login"
@@ -255,7 +311,7 @@ export function MobileTopNavClient({
                       </>
                     )}
 
-                    {!loggedIn ? (
+                    {!liveLoggedIn ? (
                       <div className="rounded-xl bg-slate-200 px-4 py-2 text-sm text-slate-900">Ro</div>
                     ) : null}
                   </div>

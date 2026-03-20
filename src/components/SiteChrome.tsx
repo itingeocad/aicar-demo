@@ -2,10 +2,9 @@ import Link from 'next/link';
 import { Bell, ChevronDown, Heart, MessageCircle } from 'lucide-react';
 import { SiteConfig, SiteNavItem, FooterGroup, SocialLink, StoreBadge } from '@/lib/site/types';
 import { formatBuildLabel } from '@/lib/version';
-import { getSession, hasPermission } from '@/lib/auth/session.server';
 import { APP_VERSION_INFO } from '@/lib/version.generated';
-import { PERM_ADMIN_ACCESS } from '@/lib/auth/constants';
 import { MobileTopNavClient } from '@/components/MobileTopNavClient';
+import { TopNavAuthClient } from '@/components/TopNavAuthClient';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
   return (
@@ -61,17 +60,15 @@ export async function TopNav({
   config: SiteConfig;
   variant?: 'default' | 'aichat' | 'aiclips' | 'account';
 }) {
-  const session = await getSession();
-  const canAdmin = hasPermission(session, PERM_ADMIN_ACCESS);
 
   return (
     <header className="border-b border-black/5 bg-[#d9d9d9]">
       <div className="aicar-header-container">
         <MobileTopNavClient
           config={config}
-          loggedIn={Boolean(session)}
-          canAdmin={canAdmin}
-          displayName={session?.displayName || ''}
+          loggedIn={false}
+          canAdmin={false}
+          displayName={''}
           variant={variant}
         />
 

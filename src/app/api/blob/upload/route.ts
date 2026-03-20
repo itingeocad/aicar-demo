@@ -39,19 +39,16 @@ function rulesForKind(kind: UploadKind) {
     case 'cover':
     case 'clip-poster':
       return {
-        prefix: 'profiles',
         allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp'],
         maximumSizeInBytes: 15 * 1024 * 1024
       };
     case 'clip-video':
       return {
-        prefix: 'clips',
         allowedContentTypes: ['video/*'],
         maximumSizeInBytes: 500 * 1024 * 1024
       };
     default:
       return {
-        prefix: 'clips',
         allowedContentTypes: ['video/*'],
         maximumSizeInBytes: 500 * 1024 * 1024
       };
@@ -72,10 +69,20 @@ function expectedPrefixFor(uid: string, kind: UploadKind) {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const blobToken = String(process.env.BLOB_READ_WRITE_TOKEN || '').trim();
+
+  if (!blobToken) {
+    return NextResponse.json(
+      { error: 'BLOB_READ_WRITE_TOKEN is missing in Vercel environment variables' },
+      { status: 500 }
+    );
+  }
+
   const body = (await request.json()) as HandleUploadBody;
 
   try {
     const jsonResponse = await handleUpload({
+      token: blobToken,
       body,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
