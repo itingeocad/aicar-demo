@@ -607,7 +607,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       ) : null}
 
       <div className="hidden h-full md:block">
-        <section className="relative h-full overflow-hidden bg-[#050b14]">
+        <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
           <div className="mx-auto flex h-full max-w-[1900px] items-center justify-center px-6 py-3">
             <div
               className="flex items-center gap-8"
@@ -650,14 +650,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 className="flex flex-col items-center justify-between text-white"
                 style={{ height: 'min(calc(100dvh - 56px - 24px), 1040px)' }}
               >
-                <button
-                  type="button"
-                  onClick={openPublish}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
-                  aria-label="Опубликовать AIClip"
-                >
-                  <Plus className="h-6 w-6" strokeWidth={2} />
-                </button>
+                <div />
 
                 {activeReel ? (
                   <ActionStack
@@ -705,7 +698,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       </div>
 
       <div className="md:hidden h-[calc(100dvh-56px)]">
-        <section className="h-full overflow-hidden bg-[#050b14]">
+        <section className="h-full overflow-hidden bg-[#a9a9a9]">
           <div className="flex h-full items-center justify-center">
             <div className="relative h-full w-full">
               <div
