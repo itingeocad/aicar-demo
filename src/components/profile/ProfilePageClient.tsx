@@ -518,7 +518,7 @@ export function ProfilePageClient({
       <div className="aicar-container">
         <div className="mx-auto max-w-[960px]">
           <div
-            className="relative overflow-hidden rounded-[22px] bg-[#d9d9d9] md:rounded-[0px]"
+            className="relative z-0 overflow-hidden rounded-[22px] bg-[#d9d9d9] md:rounded-[0px]"
             style={{
               minHeight: '180px',
               backgroundImage: profile?.coverUrl ? `url(${profile.coverUrl})` : undefined,
@@ -535,8 +535,8 @@ export function ProfilePageClient({
             )}
           </div>
 
-          <div className="-mt-[88px] flex justify-center md:-mt-[130px]">
-            <div className="flex h-[176px] w-[176px] items-center justify-center overflow-hidden rounded-full bg-[#d9d9d9] text-center text-[18px] text-slate-900 shadow-[0_4px_16px_rgba(0,0,0,0.12)] md:h-[260px] md:w-[260px] md:text-[20px]">
+          <div className="relative z-10 -mt-[88px] flex justify-center md:-mt-[130px]">
+            <div className="flex h-[176px] w-[176px] items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#d9d9d9] text-center text-[18px] text-slate-900 shadow-[0_4px_16px_rgba(0,0,0,0.12)] md:h-[260px] md:w-[260px] md:text-[20px]">
               {profile?.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={effectiveName} className="h-full w-full object-cover" />
               ) : (
@@ -671,6 +671,23 @@ export function ProfilePageClient({
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Сохранить
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft({
+                      displayName: profile?.displayName || displayName || '',
+                      bio: profile?.bio || '',
+                      avatarUrl: profile?.avatarUrl || '',
+                      coverUrl: profile?.coverUrl || ''
+                    });
+                    setEditOpen(false);
+                    setStatus('');
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#e8e8e8] px-5 py-3 text-[14px] font-medium text-slate-900"
+                >
+                  Отмена
                 </button>
               </div>
             </div>
