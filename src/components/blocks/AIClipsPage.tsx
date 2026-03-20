@@ -8,8 +8,11 @@ import {
   ChevronDown,
   ChevronUp,
   Heart,
+  Loader2,
   MessageCircle,
   MoreHorizontal,
+  Pause,
+  Play,
   Plus,
   Send,
   X
@@ -35,6 +38,11 @@ type ReelItem = {
   isFavorited: boolean;
   source: 'live' | 'demo';
 };
+
+type PlaybackFlash = {
+  reelId: string;
+  mode: 'play' | 'pause';
+} | null;
 
 function authToken() {
   if (typeof window === 'undefined') return '';
@@ -110,16 +118,21 @@ function mapDemoReel(reel: DemoReel): ReelItem {
 function ReelMedia({
   reel,
   active,
-  videoRef
+  videoRef,
+  playbackFlash,
+  onTogglePlayback
 }: {
   reel: ReelItem;
   active: boolean;
   videoRef: (node: HTMLVideoElement | null) => void;
+  playbackFlash: PlaybackFlash;
+  onTogglePlayback: (e: React.MouseEvent<HTMLVideoElement>) => void;
 }) {
   const hasMedia = Boolean(reel.videoUrl || reel.posterUrl);
+  const showFlash = playbackFlash?.reelId === reel.id;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#0a111b]">
+    <div className="relative h-full w-full overflow-hidden bg-[#0b1220]">
       <video
         ref={videoRef}
         src={reel.videoUrl || undefined}
@@ -129,6 +142,13 @@ function ReelMedia({
         playsInline
         preload="metadata"
         controls={active}
+        autoPlay={active}
+        onLoadedMetadata={(e) => {
+          if (active) {
+            e.currentTarget.play().catch(() => {});
+          }
+        }}
+        onClick={onTogglePlayback}
         className="h-full w-full object-cover"
       />
 
@@ -138,10 +158,19 @@ function ReelMedia({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[36%] bg-gradient-to-t from-black/75 to-transparent" />
-      {!active ? <div className="absolute inset-0 bg-black/8" /> : null}
+      {showFlash ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="rounded-full bg-black/35 p-5 text-white backdrop-blur-sm">
+            {playbackFlash?.mode === 'pause' ? (
+              <Pause className="h-12 w-12" strokeWidth={2.4} />
+            ) : (
+              <Play className="h-12 w-12" strokeWidth={2.4} fill="currentColor" />
+            )}
+          </div>
+        </div>
+      ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-6 text-white md:px-5 md:pb-7">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white md:px-5 md:pb-28">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
@@ -160,7 +189,7 @@ function ReelMedia({
         <div className="mt-4 max-w-[78%]">
           <div className="text-[18px] font-semibold leading-[1.1] md:text-[22px]">{reel.title}</div>
           {reel.description ? (
-            <div className="mt-2 line-clamp-3 text-[13px] leading-[1.4] text-white/92 md:text-[14px]">
+            <div className="mt-2 line-clamp-3 text-[13px] leading-[1.4] text-white md:text-[14px]">
               {reel.description}
             </div>
           ) : null}
@@ -205,10 +234,10 @@ function ActionStack({
       <button
         type="button"
         onClick={onPublish}
-        className={`flex items-center justify-center rounded-full bg-white/16 text-white backdrop-blur ${mobile ? 'h-12 w-12' : 'h-12 w-12'}`}
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
         aria-label="Опубликовать AIClip"
       >
-        <Plus className={mobile ? 'h-6 w-6' : 'h-6 w-6'} strokeWidth={2} />
+        <Plus className="h-6 w-6" strokeWidth={2} />
       </button>
 
       <button type="button" onClick={onLike} disabled={busyLike} className={btn(reel.isLiked)}>
@@ -252,13 +281,16 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   const wheelLockRef = useRef(0);
   const dragStartYRef = useRef<number | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
 
-  const [items, setItems] = useState<ReelItem[]>(reels.map(mapDemoReel));
+  const [items, setItems] = useState<ReelItem[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [status, setStatus] = useState('');
   const [busyLike, setBusyLike] = useState(false);
   const [busyFavorite, setBusyFavorite] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [playbackFlash, setPlaybackFlash] = useState<PlaybackFlash>(null);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -311,6 +343,52 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     window.location.assign('/profile');
   }
 
+  function currentVideoElement() {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      return desktopVideoRefs.current[activeIndex] || null;
+    }
+    return mobileVideoRefs.current[activeIndex] || null;
+  }
+
+  function flashPlayback(mode: 'play' | 'pause') {
+    if (!activeReel) return;
+
+    setPlaybackFlash({
+      reelId: activeReel.id,
+      mode
+    });
+
+    if (flashTimerRef.current) {
+      window.clearTimeout(flashTimerRef.current);
+    }
+
+    flashTimerRef.current = window.setTimeout(() => {
+      setPlaybackFlash(null);
+    }, 520);
+  }
+
+  function toggleCurrentPlayback(e?: React.MouseEvent<HTMLVideoElement>) {
+    const video = currentVideoElement();
+    if (!video) return;
+
+    if (e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const localY = e.clientY - rect.top;
+
+      if (localY > rect.height - 86) {
+        return;
+      }
+    }
+
+    if (video.paused) {
+      video.play().catch(() => {});
+      flashPlayback('play');
+    } else {
+      video.pause();
+      flashPlayback('pause');
+    }
+  }
+
   useEffect(() => {
     let alive = true;
 
@@ -335,6 +413,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
     (async () => {
       try {
+        setFeedLoading(true);
+
         const data = await fetchAuthJSON<{ ok: true; clips: AIClipView[] }>('/api/aiclips/feed');
 
         if (!alive) return;
@@ -347,6 +427,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       } catch {
         if (!alive) return;
         setItems(reels.map(mapDemoReel));
+      } finally {
+        if (alive) setFeedLoading(false);
       }
     })();
 
@@ -356,6 +438,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   }, [reels]);
 
   useEffect(() => {
+    if (items.length === 0) return;
+
     setActiveIndex(startIndex);
 
     const id = window.requestAnimationFrame(() => {
@@ -364,7 +448,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     });
 
     return () => window.cancelAnimationFrame(id);
-  }, [startIndex]);
+  }, [startIndex, items.length]);
 
   useEffect(() => {
     const desktopNodes = desktopSlideRefs.current.filter(Boolean) as HTMLDivElement[];
@@ -424,7 +508,15 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
     syncVideos(desktopVideoRefs.current);
     syncVideos(mobileVideoRefs.current);
-  }, [activeIndex]);
+  }, [activeIndex, items]);
+
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) {
+        window.clearTimeout(flashTimerRef.current);
+      }
+    };
+  }, []);
 
   function onDesktopWheel(e: React.WheelEvent<HTMLDivElement>) {
     if (Math.abs(e.deltaY) < 24) return;
@@ -445,7 +537,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     const rect = e.currentTarget.getBoundingClientRect();
     const localY = e.clientY - rect.top;
 
-    if (localY > rect.height - 96) {
+    if (localY > rect.height - 120) {
       dragStartYRef.current = null;
       return;
     }
@@ -599,9 +691,29 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     }
   }
 
+  if (feedLoading) {
+    return (
+      <section className="flex h-full items-center justify-center bg-[#a9a9a9] px-4">
+        <div className="flex items-center gap-8">
+          <div
+            className="animate-pulse bg-[#8f8f8f]"
+            style={{
+              aspectRatio: `${PROTO_W} / ${PROTO_H}`,
+              height: 'min(calc(100dvh - 56px - 24px), 1040px)'
+            }}
+          />
+          <div className="hidden md:flex flex-col items-center gap-4 text-white">
+            <Loader2 className="h-10 w-10 animate-spin" />
+            <div className="text-[14px]">Загрузка AIClips…</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (items.length === 0) {
     return (
-      <section className="flex h-full items-center justify-center bg-[#050b14] px-4">
+      <section className="flex h-full items-center justify-center bg-[#a9a9a9] px-4">
         <div className="text-center text-[20px] text-white">Пока нет роликов AIClips</div>
       </section>
     );
@@ -618,15 +730,12 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       <div className="hidden h-full md:block">
         <section className="relative h-full overflow-hidden bg-[#a9a9a9]">
           <div className="mx-auto flex h-full max-w-[1900px] items-center justify-center px-6 py-3">
-            <div
-              className="flex items-center gap-8"
-              onWheel={onDesktopWheel}
-            >
+            <div className="flex items-center gap-8" onWheel={onDesktopWheel}>
               <div
                 className="relative shrink-0 select-none"
                 style={{
                   aspectRatio: `${PROTO_W} / ${PROTO_H}`,
-                  height: 'min(calc(100dvh - 56px - 24px), 1040px)'
+                  height: 'min(calc(100dvh - 56px - 20px), 1060px)'
                 }}
                 onPointerDown={onDesktopPointerDown}
                 onPointerUp={onDesktopPointerUp}
@@ -646,6 +755,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       <ReelMedia
                         reel={reel}
                         active={idx === activeIndex}
+                        playbackFlash={playbackFlash}
+                        onTogglePlayback={toggleCurrentPlayback}
                         videoRef={(node) => {
                           desktopVideoRefs.current[idx] = node;
                         }}
@@ -657,9 +768,9 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
               <div
                 className="flex flex-col items-center justify-between text-white"
-                style={{ height: 'min(calc(100dvh - 56px - 24px), 1040px)' }}
+                style={{ height: 'min(calc(100dvh - 56px - 20px), 1060px)' }}
               >
-                <div />
+                <div className="h-12 w-12" />
 
                 {activeReel ? (
                   <ActionStack
@@ -679,7 +790,9 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     onShare={shareClip}
                     onFavorite={toggleFavorite}
                   />
-                ) : <div />}
+                ) : (
+                  <div />
+                )}
 
                 <div className="flex flex-col items-center gap-4">
                   <button
@@ -725,13 +838,15 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     <ReelMedia
                       reel={reel}
                       active={idx === activeIndex}
+                      playbackFlash={playbackFlash}
+                      onTogglePlayback={toggleCurrentPlayback}
                       videoRef={(node) => {
                         mobileVideoRefs.current[idx] = node;
                       }}
                     />
 
                     {activeReel && idx === activeIndex ? (
-                      <div className="absolute bottom-[72px] right-[10px] z-10">
+                      <div className="absolute bottom-[122px] right-[10px] z-10">
                         <ActionStack
                           reel={activeReel}
                           mobile
@@ -755,21 +870,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                   </div>
                 ))}
               </div>
-
-              {items.length > 1 ? (
-                <button
-                  type="button"
-                  aria-label="Next reel"
-                  onClick={goNext}
-                  className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white"
-                >
-                  <ChevronDown className="h-[38px] w-[38px]" strokeWidth={1.7} />
-                </button>
-              ) : (
-                <div className="absolute bottom-[8px] left-1/2 z-20 -translate-x-1/2 text-white">
-                  <ChevronDown className="h-[38px] w-[38px]" strokeWidth={1.7} />
-                </div>
-              )}
             </div>
           </div>
         </section>
