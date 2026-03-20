@@ -814,22 +814,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 </div>
               </div>
 
-              <div className="flex h-[44px] items-center justify-center bg-[#a9a9a9]">
-                {items.length > 1 ? (
-                  <button
-                    type="button"
-                    aria-label="Next reel"
-                    onClick={goNext}
-                    className="text-white"
-                  >
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </button>
-                ) : (
-                  <div className="text-white">
-                    <ChevronDown className="h-[32px] w-[32px]" strokeWidth={1.7} />
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </section>
