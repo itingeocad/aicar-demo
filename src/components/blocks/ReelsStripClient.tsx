@@ -175,6 +175,7 @@ export function ReelsStripClient({
   const [items, setItems] = React.useState<StripReel[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [mobileIndex, setMobileIndex] = React.useState(0);
+  const [desktopIndex, setDesktopIndex] = React.useState(0);
   const desktopScrollRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
