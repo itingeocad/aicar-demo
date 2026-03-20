@@ -217,13 +217,18 @@ export function ReelsStripClient({
     }
   }, [items.length, mobileIndex]);
 
-  function desktopScroll(delta: number) {
-    const el = desktopScrollRef.current;
-    if (!el) return;
-    el.scrollBy({
-      left: delta,
-      behavior: 'smooth'
-    });
+  const desktopVisibleCount = 4;
+  const desktopItems = items.length > 0 ? items : [];
+  const maxDesktopIndex = Math.max(0, desktopItems.length - desktopVisibleCount);
+
+  function desktopPrev() {
+    if (desktopItems.length <= desktopVisibleCount) return;
+    setDesktopIndex((prev) => (prev <= 0 ? maxDesktopIndex : prev - 1));
+  }
+
+  function desktopNext() {
+    if (desktopItems.length <= desktopVisibleCount) return;
+    setDesktopIndex((prev) => (prev >= maxDesktopIndex ? 0 : prev + 1));
   }
 
   function mobilePrev() {
@@ -247,7 +252,7 @@ export function ReelsStripClient({
               aria-label="prev"
               className="absolute -left-10 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
-              onClick={() => desktopScroll(-520)}
+              onClick={desktopPrev}
             >
               <ChevronLeft className="h-10 w-10" />
             </button>
@@ -255,24 +260,30 @@ export function ReelsStripClient({
               aria-label="next"
               className="absolute -right-10 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
               type="button"
-              onClick={() => desktopScroll(520)}
+              onClick={desktopNext}
             >
               <ChevronRight className="h-10 w-10" />
             </button>
           </>
         ) : null}
 
-        <div
-          ref={desktopScrollRef}
-          className="mx-auto flex max-w-[950px] gap-x-[42px] overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {loading
-            ? Array.from({ length: 4 }).map((_, idx) => <LoadingCard key={idx} />)
-            : items.map((r) => (
-                <div key={r.id} className="w-[200px]">
+        <div className="mx-auto max-w-[926px] overflow-hidden pb-2">
+          {loading ? (
+            <div className="grid grid-cols-4 gap-x-[42px]">
+              {Array.from({ length: 4 }).map((_, idx) => <LoadingCard key={idx} />)}
+            </div>
+          ) : (
+            <div
+              className="flex gap-x-[42px] transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${desktopIndex * 242}px)` }}
+            >
+              {items.map((r) => (
+                <div key={r.id} className="w-[200px] shrink-0">
                   <ReelCard reel={r} />
                 </div>
               ))}
+            </div>
+          )}
         </div>
       </div>
 
