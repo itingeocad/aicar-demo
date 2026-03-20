@@ -141,7 +141,7 @@ function ReelMedia({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[36%] bg-gradient-to-t from-black/75 to-transparent" />
       {!active ? <div className="absolute inset-0 bg-black/8" /> : null}
 
-      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-6 text-white md:px-5 md:pb-7">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-6 text-white md:px-5 md:pb-7">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
@@ -442,6 +442,14 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   }
 
   function onDesktopPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const localY = e.clientY - rect.top;
+
+    if (localY > rect.height - 96) {
+      dragStartYRef.current = null;
+      return;
+    }
+
     dragStartYRef.current = e.clientY;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
