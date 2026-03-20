@@ -5,7 +5,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Go to repo root (scripts/ is inside repo)
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
@@ -14,37 +13,66 @@ function Write-Utf8NoBom([string]$Path, [string]$Text) {
   [System.IO.File]::WriteAllText($Path, $Text, $utf8NoBom)
 }
 
+function Invoke-GitCmd {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$GitArgs
+  )
+
+  Write-Host ("git " + ($GitArgs -join " "))
+  & git @GitArgs
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "git $($GitArgs -join ' ') failed with exit code $LASTEXITCODE"
+  }
+}
+
 if ($Version -ne "") {
-  # Update package.json version safely (no BOM)
   $pkgPath = Join-Path $root "package.json"
   $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
   $pkg.version = $Version
   $json = $pkg | ConvertTo-Json -Depth 100
   Write-Utf8NoBom $pkgPath $json
 
-  # Also update default site config version (for fresh installs)
-  $dcPath = Join-Path $root "src\lib\site\defaultConfig.ts"
-  if (Test-Path $dcPath) {
-    $dc = Get-Content $dcPath -Raw
-    $dc = $dc -replace "version:\s*'[^']+'", ("version: '" + $Version + "'")
-    Write-Utf8NoBom $dcPath $dc
-  }
-
   if ($Message -eq "chore: publish") {
     $Message = "chore: publish v$Version"
   }
 }
 
-git add -A
+$defaultConfigRel = "src/lib/site/defaultConfig.ts"
+$defaultConfigAbs = Join-Path $root $defaultConfigRel
 
-# If nothing to commit, exit
+if (Test-Path $defaultConfigAbs) {
+  try {
+    Invoke-GitCmd -GitArgs @("restore", "--source=HEAD", "--staged", "--worktree", "--", $defaultConfigRel)
+  } catch {
+    Write-Warning "Could not restore $defaultConfigRel from HEAD, continuing..."
+  }
+
+  $size = (Get-Item $defaultConfigAbs).Length
+  if ($size -gt 5MB) {
+    Write-Warning "$defaultConfigRel is unusually large: $size bytes"
+  }
+}
+
+Invoke-GitCmd -GitArgs @("add", "-A")
+
+try {
+  Invoke-GitCmd -GitArgs @("restore", "--source=HEAD", "--staged", "--worktree", "--", $defaultConfigRel)
+} catch {
+  Write-Warning "Could not restore $defaultConfigRel after staging, continuing..."
+}
+
+Write-Host "Staged files:"
+& git diff --cached --name-only
+
 $status = git status --porcelain
 if ([string]::IsNullOrWhiteSpace($status)) {
   Write-Host "Nothing to publish (working tree clean)."
   exit 0
 }
 
-git commit -m $Message
-git push
+Invoke-GitCmd -GitArgs @("commit", "-m", $Message)
+Invoke-GitCmd -GitArgs @("push", "origin", "main")
 
 Write-Host "Published successfully."
