@@ -41,7 +41,7 @@ function mapDemoReel(reel: DemoReel): StripReel {
     videoUrl: reel.videoUrl,
     views: reel.views,
     likes: reel.likes,
-    badges: reel.badges,
+    badges: reel.badges ? [...reel.badges] : undefined,
     linkedCarId: reel.linkedCarId
   };
 }
