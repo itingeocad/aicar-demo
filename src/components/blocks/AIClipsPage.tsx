@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Bookmark,
@@ -162,8 +161,6 @@ function ReelMedia({
         className="h-full w-full object-cover"
       />
 
-
-
       <button
         type="button"
         onClick={onTogglePlayback}
@@ -171,13 +168,13 @@ function ReelMedia({
         aria-label="Toggle video playback"
       />
 
+      <div className="peer absolute inset-x-0 bottom-[78px] z-[6] hidden h-[84px] md:block" />
+
       {!hasMedia ? (
         <div className="absolute inset-0 flex items-center justify-center text-[18px] text-white">
           Video
         </div>
       ) : null}
-
-      <div className="peer absolute inset-x-0 bottom-[78px] z-[6] hidden h-[84px] md:block" />
 
       {showFlash ? (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
@@ -394,8 +391,16 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   }
 
   function handleVideoVolumeChange(e: React.SyntheticEvent<HTMLVideoElement>) {
-    setMuted(e.currentTarget.muted);
-    setVolume(e.currentTarget.volume);
+    const nextMuted = e.currentTarget.muted;
+    const nextVolume = e.currentTarget.volume;
+
+    setMuted(nextMuted);
+    setVolume(nextVolume);
+
+    try {
+      window.localStorage.setItem('aicar_reel_muted', String(nextMuted));
+      window.localStorage.setItem('aicar_reel_volume', String(nextVolume));
+    } catch {}
   }
 
   function toggleCurrentPlayback() {
@@ -570,7 +575,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     }
 
     dragStartYRef.current = e.clientY;
-
   }
 
   function onDesktopPointerUp(e: React.PointerEvent<HTMLDivElement>) {
@@ -782,7 +786,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                         active={idx === activeIndex}
                         playbackFlash={playbackFlash}
                         onTogglePlayback={toggleCurrentPlayback}
-                        muted={muted}={muted}
+                        muted={muted}
+                        volume={volume}
                         onVideoVolumeChange={handleVideoVolumeChange}
                         videoRef={(node) => {
                           desktopVideoRefs.current[idx] = node;
@@ -824,24 +829,23 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 <div className="flex flex-col items-center gap-4">
                   <button
                     type="button"
-                    onClick={goNext}
+                    onClick={goPrev}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
-                    aria-label="Следующее видео"
+                    aria-label="Предыдущее видео"
                   >
                     <ChevronUp className="h-7 w-7" strokeWidth={1.8} />
                   </button>
 
                   <button
                     type="button"
-                    onClick={goPrev}
+                    onClick={goNext}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur"
-                    aria-label="Предыдущее видео"
+                    aria-label="Следующее видео"
                   >
                     <ChevronDown className="h-7 w-7" strokeWidth={1.8} />
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </section>
@@ -868,7 +872,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       active={idx === activeIndex}
                       playbackFlash={playbackFlash}
                       onTogglePlayback={toggleCurrentPlayback}
-                      muted={muted}={muted}
+                      muted={muted}
+                      volume={volume}
                       onVideoVolumeChange={handleVideoVolumeChange}
                       videoRef={(node) => {
                         mobileVideoRefs.current[idx] = node;
