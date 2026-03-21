@@ -120,13 +120,17 @@ function ReelMedia({
   active,
   videoRef,
   playbackFlash,
-  onTogglePlayback
+  onTogglePlayback,
+  muted,
+  onVideoVolumeChange
 }: {
   reel: ReelItem;
   active: boolean;
   videoRef: (node: HTMLVideoElement | null) => void;
   playbackFlash: PlaybackFlash;
   onTogglePlayback: () => void;
+  muted: boolean;
+  onVideoVolumeChange: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
 }) {
   const hasMedia = Boolean(reel.videoUrl || reel.posterUrl);
   const showFlash = playbackFlash?.reelId === reel.id;
@@ -180,9 +184,9 @@ function ReelMedia({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-28 md:peer-hover:pb-40">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-10 md:peer-hover:pb-40">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
               <img src={reel.ownerAvatarUrl} alt={reel.ownerDisplayName} className="h-full w-full object-cover" />
             ) : (
@@ -190,19 +194,15 @@ function ReelMedia({
             )}
           </div>
 
-          <div>
-            <div className="text-[14px] font-medium md:text-[15px]">{reel.ownerDisplayName}</div>
-            <div className="text-[12px] text-white/80">{reel.source === 'live' ? 'AIClip' : 'demo'}</div>
+          <div className="min-w-0 max-w-[80%] pt-[2px]">
+            <div className="truncate text-[14px] font-medium md:text-[15px]">{reel.ownerDisplayName}</div>
+            <div className="mt-1 line-clamp-1 text-[18px] font-semibold leading-[1.1] md:text-[22px]">{reel.title}</div>
+            {reel.description ? (
+              <div className="mt-1 line-clamp-2 text-[13px] leading-[1.35] text-white md:text-[14px]">
+                {reel.description}
+              </div>
+            ) : null}
           </div>
-        </div>
-
-        <div className="mt-4 max-w-[78%]">
-          <div className="text-[18px] font-semibold leading-[1.1] md:text-[22px]">{reel.title}</div>
-          {reel.description ? (
-            <div className="mt-2 line-clamp-3 text-[13px] leading-[1.4] text-white md:text-[14px]">
-              {reel.description}
-            </div>
-          ) : null}
         </div>
       </div>
     </div>
@@ -301,6 +301,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   const [busyFavorite, setBusyFavorite] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [playbackFlash, setPlaybackFlash] = useState<PlaybackFlash>(null);
+  const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(1);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -375,6 +377,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     flashTimerRef.current = window.setTimeout(() => {
       setPlaybackFlash(null);
     }, 520);
+  }
+
+  function handleVideoVolumeChange(e: React.SyntheticEvent<HTMLVideoElement>) {
+    setMuted(e.currentTarget.muted);
+    setVolume(e.currentTarget.volume);
   }
 
   function toggleCurrentPlayback() {
@@ -494,6 +501,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         const el = refs[i];
         if (!el) continue;
 
+        try {
+          el.muted = muted;
+          el.volume = volume;
+        } catch {}
+
         if (i === activeIndex) {
           try {
             await el.play();
@@ -509,7 +521,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
     syncVideos(desktopVideoRefs.current);
     syncVideos(mobileVideoRefs.current);
-  }, [activeIndex, items]);
+  }, [activeIndex, items, muted, volume]);
 
   useEffect(() => {
     return () => {
@@ -756,6 +768,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                         active={idx === activeIndex}
                         playbackFlash={playbackFlash}
                         onTogglePlayback={toggleCurrentPlayback}
+                        muted={muted}
+                        onVideoVolumeChange={handleVideoVolumeChange}
                         videoRef={(node) => {
                           desktopVideoRefs.current[idx] = node;
                         }}
@@ -840,6 +854,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       active={idx === activeIndex}
                       playbackFlash={playbackFlash}
                       onTogglePlayback={toggleCurrentPlayback}
+                      muted={muted}
+                      onVideoVolumeChange={handleVideoVolumeChange}
                       videoRef={(node) => {
                         mobileVideoRefs.current[idx] = node;
                       }}
