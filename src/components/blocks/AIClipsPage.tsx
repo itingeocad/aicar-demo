@@ -168,7 +168,6 @@ function ReelMedia({
         aria-label="Toggle video playback"
       />
 
-      <div className="peer absolute inset-x-0 bottom-[78px] z-[6] hidden h-[84px] md:block" />
 
       {!hasMedia ? (
         <div className="absolute inset-0 flex items-center justify-center text-[18px] text-white">
@@ -188,7 +187,7 @@ function ReelMedia({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-8 md:peer-hover:pb-40">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-[56px] text-white md:px-5 md:pb-[56px]">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
