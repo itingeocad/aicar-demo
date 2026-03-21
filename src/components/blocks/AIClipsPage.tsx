@@ -122,6 +122,7 @@ function ReelMedia({
   playbackFlash,
   onTogglePlayback,
   muted,
+  volume,
   onVideoVolumeChange
 }: {
   reel: ReelItem;
@@ -130,6 +131,7 @@ function ReelMedia({
   playbackFlash: PlaybackFlash;
   onTogglePlayback: () => void;
   muted: boolean;
+  volume: number;
   onVideoVolumeChange: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
 }) {
   const hasMedia = Boolean(reel.videoUrl || reel.posterUrl);
@@ -141,7 +143,7 @@ function ReelMedia({
         ref={videoRef}
         src={reel.videoUrl || undefined}
         poster={reel.posterUrl || undefined}
-        muted
+        muted={muted}
         loop
         playsInline
         preload="metadata"
@@ -149,9 +151,14 @@ function ReelMedia({
         autoPlay={active}
         onLoadedMetadata={(e) => {
           if (active) {
+            try {
+              e.currentTarget.muted = muted;
+              e.currentTarget.volume = volume;
+            } catch {}
             e.currentTarget.play().catch(() => {});
           }
         }}
+        onVolumeChange={onVideoVolumeChange}
         className="h-full w-full object-cover"
       />
 
@@ -184,7 +191,7 @@ function ReelMedia({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-10 md:peer-hover:pb-40">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 text-white transition-all duration-200 md:px-5 md:pb-8 md:peer-hover:pb-40">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-[13px] font-medium text-slate-900 md:h-11 md:w-11">
             {reel.ownerAvatarUrl ? (
@@ -310,8 +317,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     const raw = Number(window.localStorage.getItem('aicar_reel_volume') || '1');
     return Number.isFinite(raw) ? Math.max(0, Math.min(1, raw)) : 1;
   });
-  const [muted, setMuted] = useState(true);
-  const [volume, setVolume] = useState(1);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -777,7 +782,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                         active={idx === activeIndex}
                         playbackFlash={playbackFlash}
                         onTogglePlayback={toggleCurrentPlayback}
-                        muted={muted}
+                        muted={muted}={muted}
                         onVideoVolumeChange={handleVideoVolumeChange}
                         videoRef={(node) => {
                           desktopVideoRefs.current[idx] = node;
@@ -863,7 +868,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       active={idx === activeIndex}
                       playbackFlash={playbackFlash}
                       onTogglePlayback={toggleCurrentPlayback}
-                      muted={muted}
+                      muted={muted}={muted}
                       onVideoVolumeChange={handleVideoVolumeChange}
                       videoRef={(node) => {
                         mobileVideoRefs.current[idx] = node;
