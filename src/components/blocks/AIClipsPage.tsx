@@ -301,6 +301,15 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   const [busyFavorite, setBusyFavorite] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [playbackFlash, setPlaybackFlash] = useState<PlaybackFlash>(null);
+  const [muted, setMuted] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.localStorage.getItem('aicar_reel_muted') !== 'false';
+  });
+  const [volume, setVolume] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const raw = Number(window.localStorage.getItem('aicar_reel_volume') || '1');
+    return Number.isFinite(raw) ? Math.max(0, Math.min(1, raw)) : 1;
+  });
   const [muted, setMuted] = useState(true);
   const [volume, setVolume] = useState(1);
 
