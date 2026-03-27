@@ -26,6 +26,7 @@ const PROTO_H = 961;
 type ReelItem = {
   id: string;
   title: string;
+  ownerUid?: string;
   description?: string;
   videoUrl?: string;
   posterUrl?: string;
