@@ -562,7 +562,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
       try {
         const data = await fetchAuthJSON<{ ok: true; policy: { enabled: boolean } }>(
-          /api/aiclips//comments-policy
+          `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments-policy`
         );
         if (!alive) return;
         setActiveCommentsEnabled(data.policy?.enabled !== false);
@@ -748,7 +748,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       setStatus(nextEnabled ? 'Включение комментариев…' : 'Отключение комментариев…');
 
       const data = await fetchAuthJSON<{ ok: true; policy: { enabled: boolean } }>(
-        /api/aiclips//comments-policy,
+        `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments-policy`,
         {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
