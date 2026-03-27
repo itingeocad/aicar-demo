@@ -5,6 +5,7 @@ import { formatBuildLabel } from '@/lib/version';
 import { APP_VERSION_INFO } from '@/lib/version.generated';
 import { MobileTopNavClient } from '@/components/MobileTopNavClient';
 import { TopNavAuthClient } from '@/components/TopNavAuthClient';
+import { NotificationsBellClient } from '@/components/notifications/NotificationsBellClient';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
   return (

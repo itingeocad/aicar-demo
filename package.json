@@ -1,7 +1,7 @@
 {
     "name":  "aicar-demo-builder",
     "private":  true,
-    "version":  "0.1.230",
+    "version":  "0.1.231",
     "type":  "module",
     "engines":  {
                     "node":  "20.x"

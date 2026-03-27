@@ -963,15 +963,7 @@ export function ProfilePageClient({
             </div>
           </section>
 
-          <section className="mt-[54px] md:mt-[90px]">
-            <h2 className="text-[28px] font-medium text-slate-900 md:text-[36px]">Объявления</h2>
-
-            <div className="mt-6 space-y-4">
-              {adItems.map((car) => (
-                <DemoAdCard key={car.id} car={car} />
-              ))}
-            </div>
-          </section>
+          <ListingsSectionClient />
         </div>
       </div>
     </section>

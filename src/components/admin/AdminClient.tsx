@@ -8,6 +8,7 @@ import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { SiteConfig, PageDoc, BlockInstance } from '@/lib/site/types';
 import { uid } from '@/lib/site/utils';
 import { formatBuildLabel } from '@/lib/version';
+import { CommentsSettingsCard } from '@/components/admin/CommentsSettingsCard';
 
 type Tab = 'pages' | 'site' | 'security';
 
