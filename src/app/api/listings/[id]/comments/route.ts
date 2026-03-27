@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const [state, comments] = await Promise.all([
-    getEffectiveCommentsState('clip', params.id),
-    listCommentsTree('clip', params.id)
+    getEffectiveCommentsState('listing', params.id),
+    listCommentsTree('listing', params.id)
   ]);
 
   if (!state.exists) {
@@ -24,14 +24,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { text?: string; parentId?: string | null } | null;
-
   const result = await addComment({
-    targetType: 'clip',
+    targetType: 'listing',
     targetId: params.id,
     parentId: body?.parentId || null,
     authorUid: session.uid,
@@ -42,14 +39,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!result.comment) {
     const status =
       result.error === 'not_found' ? 404 :
-      result.error === 'clips_globally_disabled' || result.error === 'target_comments_disabled' ? 403 :
+      result.error === 'listings_globally_disabled' || result.error === 'target_comments_disabled' ? 403 :
       400;
 
     return NextResponse.json({ error: result.error || 'comment_failed' }, { status });
   }
 
-  return NextResponse.json({
-    ok: true,
-    comment: result.comment
-  });
+  return NextResponse.json({ ok: true, comment: result.comment });
 }
