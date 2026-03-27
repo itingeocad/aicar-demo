@@ -20,6 +20,7 @@ export async function GET() {
     isAdmin,
     redirect: isAdmin ? '/admin' : '/profile',
     user: {
+      uid: session.uid,
       email: session.email,
       displayName: session.displayName,
       roleIds: session.roleIds,

@@ -3,6 +3,7 @@ import { Bike, Bus, Car, Search, Truck, Plus, ChevronRight } from 'lucide-react'
 import { SiteConfig, BlockInstance } from '@/lib/site/types';
 import { ReelsStripClient } from '@/components/blocks/ReelsStripClient';
 import { SearchPrototypeForm } from '@/components/blocks/SearchPrototypeForm';
+import { PublicListingsGridClient } from '@/components/blocks/PublicListingsGridClient';
 
 function Section({
   title,
@@ -384,11 +385,7 @@ function CarGrid({
 
   return (
     <Section title={title}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cars.map((c) => (
-          <CarCard key={c.id} car={c} />
-        ))}
-      </div>
+      <PublicListingsGridClient demoCars={cars} limit={limit} />
     </Section>
   );
 }

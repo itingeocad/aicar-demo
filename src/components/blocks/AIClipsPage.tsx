@@ -9,6 +9,7 @@ import {
   Heart,
   Loader2,
   MessageCircle,
+  MessageSquareOff,
   MoreHorizontal,
   Pause,
   Play,
@@ -85,6 +86,7 @@ function mapLiveClip(clip: AIClipView): ReelItem {
     description: clip.description,
     videoUrl: clip.videoUrl,
     posterUrl: clip.posterUrl,
+    ownerUid: clip.ownerUid,
     ownerDisplayName: clip.ownerProfile?.displayName || clip.ownerDisplayName,
     ownerAvatarUrl: clip.ownerProfile?.avatarUrl,
     likeCount: clip.likeCount,
@@ -420,9 +422,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
     (async () => {
       try {
-        const me = await fetchAuthJSON<{ authenticated?: boolean }>('/api/auth/me');
+        const me = await fetchAuthJSON<{ authenticated?: boolean; isAdmin?: boolean; user?: { uid?: string } }>('/api/auth/me');
         if (!alive) return;
         setAuthenticated(Boolean(me?.authenticated));
+        setCurrentUid(String(me?.user?.uid || ''));
+        setCurrentIsAdmin(Boolean(me?.isAdmin));
       } catch {
         if (!alive) return;
         setAuthenticated(false);
@@ -540,6 +544,38 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     syncVideos(desktopVideoRefs.current);
     syncVideos(mobileVideoRefs.current);
   }, [activeIndex, items, muted, volume]);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      if (!activeReel || activeReel.source !== 'live') {
+        if (alive) setActiveCommentsEnabled(null);
+        return;
+      }
+
+      const canModerate = Boolean(currentIsAdmin || (currentUid && activeReel.ownerUid === currentUid));
+      if (!canModerate) {
+        if (alive) setActiveCommentsEnabled(null);
+        return;
+      }
+
+      try {
+        const data = await fetchAuthJSON<{ ok: true; policy: { enabled: boolean } }>(
+          /api/aiclips//comments-policy
+        );
+        if (!alive) return;
+        setActiveCommentsEnabled(data.policy?.enabled !== false);
+      } catch {
+        if (!alive) return;
+        setActiveCommentsEnabled(true);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [activeReel?.id, activeReel?.ownerUid, activeReel?.source, currentUid, currentIsAdmin]);
 
   useEffect(() => {
     return () => {
@@ -703,6 +739,32 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     }
   }
 
+  async function toggleActiveClipComments(nextEnabled: boolean) {
+    if (!activeReel || activeReel.source !== 'live') return;
+    if (!(currentIsAdmin || (currentUid && activeReel.ownerUid === currentUid))) return;
+
+    try {
+      setCommentsPolicyBusy(true);
+      setStatus(nextEnabled ? 'Включение комментариев…' : 'Отключение комментариев…');
+
+      const data = await fetchAuthJSON<{ ok: true; policy: { enabled: boolean } }>(
+        /api/aiclips//comments-policy,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ enabled: nextEnabled })
+        }
+      );
+
+      setActiveCommentsEnabled(data.policy?.enabled !== false);
+      setStatus(nextEnabled ? 'Комментарии на видео включены ✅' : 'Комментарии на видео отключены ✅');
+    } catch (e) {
+      setStatus(String((e as any)?.message || e || 'Ошибка изменения комментариев'));
+    } finally {
+      setCommentsPolicyBusy(false);
+    }
+  }
+
   async function shareClip() {
     if (!activeReel) return;
 
@@ -804,23 +866,39 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                 <div className="h-12 w-12" />
 
                 {activeReel ? (
-                  <ActionStack
-                    reel={activeReel}
-                    busyLike={busyLike}
-                    busyFavorite={busyFavorite}
-                    onRequireAuth={() => {
-                      if (!authenticated) {
-                        window.location.assign(loginTarget());
-                        return;
-                      }
-                      setStatus('');
-                    }}
-                    onPublish={openPublish}
-                    onLike={toggleLike}
-                    onComment={openComments}
-                    onShare={shareClip}
-                    onFavorite={toggleFavorite}
-                  />
+                  <div className="flex flex-col items-center gap-4">
+                    <ActionStack
+                      reel={activeReel}
+                      busyLike={busyLike}
+                      busyFavorite={busyFavorite}
+                      onRequireAuth={() => {
+                        if (!authenticated) {
+                          window.location.assign(loginTarget());
+                          return;
+                        }
+                        setStatus('');
+                      }}
+                      onPublish={openPublish}
+                      onLike={toggleLike}
+                      onComment={openComments}
+                      onShare={shareClip}
+                      onFavorite={toggleFavorite}
+                    />
+
+                    {(currentIsAdmin || (currentUid && activeReel.ownerUid === currentUid)) && activeReel.source === 'live' ? (
+                      <button
+                        type="button"
+                        disabled={commentsPolicyBusy}
+                        onClick={() => void toggleActiveClipComments(!(activeCommentsEnabled !== false))}
+                        className="flex flex-col items-center text-[12px] text-white disabled:opacity-60"
+                      >
+                        <MessageSquareOff className="h-10 w-10" strokeWidth={1.8} />
+                        <span className="mt-1">
+                          {activeCommentsEnabled === false ? 'Вкл. комм.' : 'Откл. комм.'}
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
                 ) : (
                   <div />
                 )}
@@ -880,7 +958,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                     />
 
                     {activeReel && idx === activeIndex ? (
-                      <div className="absolute bottom-[138px] right-[10px] z-10">
+                      <div className="absolute bottom-[138px] right-[10px] z-10 flex flex-col items-center gap-4">
                         <ActionStack
                           reel={activeReel}
                           mobile
@@ -899,6 +977,20 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                           onShare={shareClip}
                           onFavorite={toggleFavorite}
                         />
+
+                        {(currentIsAdmin || (currentUid && activeReel.ownerUid === currentUid)) && activeReel.source === 'live' ? (
+                          <button
+                            type="button"
+                            disabled={commentsPolicyBusy}
+                            onClick={() => void toggleActiveClipComments(!(activeCommentsEnabled !== false))}
+                            className="flex flex-col items-center text-[10px] text-white disabled:opacity-60"
+                          >
+                            <MessageSquareOff className="h-6 w-6" strokeWidth={1.8} />
+                            <span className="mt-1">
+                              {activeCommentsEnabled === false ? 'Вкл. комм.' : 'Откл. комм.'}
+                            </span>
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
