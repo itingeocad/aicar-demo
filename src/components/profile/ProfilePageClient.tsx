@@ -1,5 +1,7 @@
 'use client';
 
+import { ListingsSectionClient } from '@/components/profile/ListingsSectionClient';
+
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { upload } from '@vercel/blob/client';
