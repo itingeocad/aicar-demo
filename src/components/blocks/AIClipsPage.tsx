@@ -306,7 +306,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   const [busyLike, setBusyLike] = useState(false);
   const [busyFavorite, setBusyFavorite] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [currentUid, setCurrentUid] = useState('');
+  const [currentIsAdmin, setCurrentIsAdmin] = useState(false);
   const [playbackFlash, setPlaybackFlash] = useState<PlaybackFlash>(null);
+  const [activeCommentsEnabled, setActiveCommentsEnabled] = useState<boolean | null>(null);
+  const [commentsPolicyBusy, setCommentsPolicyBusy] = useState(false);
   const [muted, setMuted] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     return window.localStorage.getItem('aicar_reel_muted') !== 'false';
