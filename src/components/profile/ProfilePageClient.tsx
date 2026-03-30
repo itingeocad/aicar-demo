@@ -78,20 +78,26 @@ async function uploadPublicFile(
 ): Promise<{ url: string }> {
   void uid;
 
-  const token = authToken();
+  const cloudName = String(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '').trim();
+  const uploadPreset = String(process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '').trim();
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary public upload is not configured');
+  }
+
+  const endpoint =
+    kind === 'clip-video'
+      ? `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`
+      : `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('kind', kind);
+  formData.append('upload_preset', uploadPreset);
 
   return await new Promise<{ url: string }>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/media/upload');
+    xhr.open('POST', endpoint);
     xhr.responseType = 'json';
-
-    if (token) {
-      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-    }
 
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
@@ -115,13 +121,19 @@ async function uploadPublicFile(
             })();
 
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error((data as any)?.error || ('HTTP ' + xhr.status)));
+        reject(
+          new Error(
+            (data as any)?.error?.message ||
+              (data as any)?.error ||
+              ('HTTP ' + xhr.status)
+          )
+        );
         return;
       }
 
-      const url = String((data as any)?.url || '').trim();
+      const url = String((data as any)?.secure_url || (data as any)?.url || '').trim();
       if (!url) {
-        reject(new Error((data as any)?.error || 'Upload failed'));
+        reject(new Error((data as any)?.error?.message || (data as any)?.error || 'Upload failed'));
         return;
       }
 
