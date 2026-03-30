@@ -864,6 +864,7 @@ export default function AdminClient() {
 
         {tab === 'security' ? (
           <div className="mt-4">
+            <CommentsSettingsCard />
             <SecurityTab me={me} />
           </div>
         ) : (
