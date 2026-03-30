@@ -115,7 +115,7 @@ async function uploadPublicFile(
             })();
 
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error((data as any)?.error || HTTP ));
+        reject(new Error((data as any)?.error || ('HTTP ' + xhr.status)));
         return;
       }
 
