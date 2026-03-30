@@ -4,7 +4,6 @@ import { ListingsSectionClient } from '@/components/profile/ListingsSectionClien
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { upload } from '@vercel/blob/client';
 import {
   Bookmark,
   Heart,
@@ -76,34 +75,60 @@ async function uploadPublicFile(
   kind: BlobUploadKind,
   uid: string,
   onProgress?: (percentage: number) => void
-) {
-  const name = safeFilename(file.name);
-  const pathname =
-    kind === 'avatar'
-      ? `profiles/${uid}/avatar-${name}`
-      : kind === 'cover'
-        ? `profiles/${uid}/cover-${name}`
-        : kind === 'clip-poster'
-          ? `clips/${uid}/posters/${Date.now()}-${name}`
-          : `clips/${uid}/videos/${Date.now()}-${name}`;
+): Promise<{ url: string }> {
+  void uid;
 
   const token = authToken();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('kind', kind);
 
-  const blob = await upload(pathname, file, {
-    access: 'public',
-    contentType: file.type || undefined,
-    handleUploadUrl: '/api/blob/upload',
-    clientPayload: JSON.stringify({
-      kind,
-      token
-    }),
-    multipart: kind === 'clip-video',
-    onUploadProgress: (event) => {
-      onProgress?.(Math.round(event.percentage));
+  return await new Promise<{ url: string }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/media/upload');
+    xhr.responseType = 'json';
+
+    if (token) {
+      xhr.setRequestHeader('Authorization', Bearer );
     }
-  });
 
-  return blob;
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      onProgress?.(Math.max(1, Math.round((event.loaded / event.total) * 100)));
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during upload'));
+    };
+
+    xhr.onload = () => {
+      const data =
+        xhr.response && typeof xhr.response === 'object'
+          ? xhr.response
+          : (() => {
+              try {
+                return JSON.parse(xhr.responseText || '{}');
+              } catch {
+                return {};
+              }
+            })();
+
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error((data as any)?.error || HTTP ));
+        return;
+      }
+
+      const url = String((data as any)?.url || '').trim();
+      if (!url) {
+        reject(new Error((data as any)?.error || 'Upload failed'));
+        return;
+      }
+
+      resolve({ url });
+    };
+
+    xhr.send(formData);
+  });
 }
 
 async function createPosterFromVideoFile(file: File): Promise<File | null> {
@@ -449,7 +474,7 @@ export function ProfilePageClient({
       }
     } catch (e) {
       const msg = String((e as any)?.message || e || 'Ошибка загрузки AIClip');
-      setStatus(`Upload error: ${msg}. Проверьте /api/blob/debug и наличие BLOB_READ_WRITE_TOKEN в Production.`);
+      setStatus(`Upload error: ${msg}. Проверьте /api/media/debug и наличие CLOUDINARY_* в Production.`);
     } finally {
       setUploadFlag(slot, false);
     }
