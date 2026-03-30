@@ -95,9 +95,7 @@ export async function TopNav({
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <IconButton label="notifications">
-              <Bell className="h-5 w-5" />
-            </IconButton>
+            <NotificationsBellClient />
             <IconButton label="messages">
               <MessageCircle className="h-5 w-5" />
             </IconButton>

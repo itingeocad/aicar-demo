@@ -370,6 +370,7 @@ function SecurityTab({ me }: { me: MeUser | null }) {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <CommentsSettingsCard />
       <div className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-4">
         <div className="text-sm font-semibold">Права (roles)</div>
         {!canRoles ? (
