@@ -89,7 +89,8 @@ async function uploadPublicFile(
     xhr.responseType = 'json';
 
     if (token) {
-      xhr.setRequestHeader('Authorization', Bearer );
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
     }
 
     xhr.upload.onprogress = (event) => {
