@@ -150,15 +150,11 @@ function ReelMedia({
         playsInline
         preload="metadata"
         controls={active}
-        autoPlay={active}
         onLoadedMetadata={(e) => {
-          if (active) {
-            try {
-              e.currentTarget.muted = muted;
-              e.currentTarget.volume = volume;
-            } catch {}
-            e.currentTarget.play().catch(() => {});
-          }
+          try {
+            e.currentTarget.muted = muted;
+            e.currentTarget.volume = volume;
+          } catch {}
         }}
         onVolumeChange={onVideoVolumeChange}
         className="h-full w-full object-cover"
@@ -372,11 +368,35 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     window.location.assign('/profile');
   }
 
+  function isDesktopViewport() {
+    return typeof window !== 'undefined' && window.innerWidth >= 768;
+  }
+
   function currentVideoElement() {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      return desktopVideoRefs.current[activeIndex] || null;
+    return isDesktopViewport()
+      ? desktopVideoRefs.current[activeIndex] || null
+      : mobileVideoRefs.current[activeIndex] || null;
+  }
+
+  function pauseVideoList(
+    refs: (HTMLVideoElement | null)[],
+    keep?: HTMLVideoElement | null,
+    reset = true
+  ) {
+    for (const el of refs) {
+      if (!el || el === keep) continue;
+      try {
+        el.pause();
+        if (reset) {
+          el.currentTime = 0;
+        }
+      } catch {}
     }
-    return mobileVideoRefs.current[activeIndex] || null;
+  }
+
+  function pauseAllOtherVideos(current?: HTMLVideoElement | null, reset = true) {
+    pauseVideoList(desktopVideoRefs.current, current || null, reset);
+    pauseVideoList(mobileVideoRefs.current, current || null, reset);
   }
 
   function flashPlayback(mode: 'play' | 'pause') {
@@ -412,6 +432,8 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   function toggleCurrentPlayback() {
     const video = currentVideoElement();
     if (!video) return;
+
+    pauseAllOtherVideos(video, true);
 
     if (video.paused) {
       video.play().catch(() => {});
@@ -523,6 +545,11 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   }, [items.length]);
 
   useEffect(() => {
+    const primaryRefs = isDesktopViewport() ? desktopVideoRefs.current : mobileVideoRefs.current;
+    const secondaryRefs = isDesktopViewport() ? mobileVideoRefs.current : desktopVideoRefs.current;
+
+    pauseVideoList(secondaryRefs, null, true);
+
     const syncVideos = async (refs: (HTMLVideoElement | null)[]) => {
       for (let i = 0; i < refs.length; i += 1) {
         const el = refs[i];
@@ -546,8 +573,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       }
     };
 
-    syncVideos(desktopVideoRefs.current);
-    syncVideos(mobileVideoRefs.current);
+    syncVideos(primaryRefs);
   }, [activeIndex, items, muted, volume]);
 
   useEffect(() => {
