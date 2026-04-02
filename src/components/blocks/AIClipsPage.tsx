@@ -230,7 +230,7 @@ function ActionStack({
   onRequireAuth: () => void;
   onPublish: () => void;
   onLike: () => void;
-  onComment: () => void;
+  onComment?: () => void;
   onShare: () => void;
   onFavorite: () => void;
 }) {
@@ -257,10 +257,12 @@ function ActionStack({
         <span className="mt-1">{reel.likeCount}</span>
       </button>
 
-      <button type="button" onClick={onComment} className={btn(false)}>
-        <MessageCircle className={iconSize} strokeWidth={1.8} />
-        <span className="mt-1">{reel.commentCount}</span>
-      </button>
+      {onComment ? (
+        <button type="button" onClick={onComment} className={btn(false)}>
+          <MessageCircle className={iconSize} strokeWidth={1.8} />
+          <span className="mt-1">{reel.commentCount}</span>
+        </button>
+      ) : null}
 
       <button type="button" onClick={onShare} className={btn(false)}>
         <Send className={iconSize} strokeWidth={1.8} />
@@ -585,12 +587,6 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         return;
       }
 
-      const canModerate = Boolean(currentIsAdmin || (currentUid && activeReel.ownerUid === currentUid));
-      if (!canModerate) {
-        if (alive) setActiveCommentsEnabled(null);
-        return;
-      }
-
       try {
         const data = await fetchAuthJSON<{ ok: true; policy: { enabled: boolean } }>(
           `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments-policy`
@@ -606,7 +602,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     return () => {
       alive = false;
     };
-  }, [activeReel?.id, activeReel?.ownerUid, activeReel?.source, currentUid, currentIsAdmin]);
+  }, [activeReel?.id, activeReel?.source]);
 
   useEffect(() => {
     return () => {
@@ -660,6 +656,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   async function openComments() {
     if (!activeReel) return;
+    if (activeCommentsEnabled === false) {
+      setStatus('Комментарии к этому видео отключены.');
+      return;
+    }
     if (!requireAuth()) return;
 
     try {
@@ -741,6 +741,10 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
 
   async function submitComment() {
     if (!activeReel || !commentText.trim()) return;
+    if (activeCommentsEnabled === false) {
+      setStatus('Комментарии к этому видео отключены.');
+      return;
+    }
     if (!requireAuth()) return;
 
     if (activeReel.source === 'demo') {
@@ -911,7 +915,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                       }}
                       onPublish={openPublish}
                       onLike={toggleLike}
-                      onComment={openComments}
+                      onComment={activeCommentsEnabled === false ? undefined : openComments}
                       onShare={shareClip}
                       onFavorite={toggleFavorite}
                     />
@@ -1004,7 +1008,7 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
                           }}
                           onPublish={openPublish}
                           onLike={toggleLike}
-                          onComment={openComments}
+                          onComment={activeCommentsEnabled === false ? undefined : openComments}
                           onShare={shareClip}
                           onFavorite={toggleFavorite}
                         />
@@ -1095,22 +1099,26 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
             </div>
 
             <div className="border-t border-slate-200 p-4">
-              <div className="flex items-end gap-3">
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  rows={3}
-                  placeholder="Напишите комментарий…"
-                  className="min-h-[72px] flex-1 rounded-[16px] border border-slate-300 px-4 py-3 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={submitComment}
-                  className="rounded-full bg-black px-4 py-3 text-[13px] text-white"
-                >
-                  Отправить
-                </button>
-              </div>
+              {activeCommentsEnabled === false ? (
+                <div className="text-[14px] text-slate-600">Комментарии к этому видео отключены.</div>
+              ) : (
+                <div className="flex items-end gap-3">
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    rows={3}
+                    placeholder="Напишите комментарий…"
+                    className="min-h-[72px] flex-1 rounded-[16px] border border-slate-300 px-4 py-3 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitComment}
+                    className="rounded-full bg-black px-4 py-3 text-[13px] text-white"
+                  >
+                    Отправить
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>
