@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Loader2 } from 'lucide-react';
+import { Bell, Loader2, X } from 'lucide-react';
 
 type NotificationItem = {
   id: string;
@@ -69,6 +69,8 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
   const [authenticated, setAuthenticated] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [busyClear, setBusyClear] = useState(false);
+  const [busyIds, setBusyIds] = useState<string[]>([]);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
@@ -103,19 +105,70 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  async function markAllRead() {
+  async function markRead(ids?: string[]) {
     try {
       await fetchAuthJSON('/api/notifications/read', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ ids })
       });
-      setNotifications((prev) => prev.map((x) => ({ ...x, isRead: true })));
-      setUnreadCount(0);
+
+      if (!ids || ids.length === 0) {
+        setNotifications((prev) => prev.map((x) => ({ ...x, isRead: true })));
+        setUnreadCount(0);
+        return;
+      }
+
+      const idSet = new Set(ids.map(String));
+      let delta = 0;
+
+      setNotifications((prev) =>
+        prev.map((x) => {
+          if (idSet.has(x.id) && !x.isRead) {
+            delta += 1;
+            return { ...x, isRead: true };
+          }
+          return x;
+        })
+      );
+
+      if (delta > 0) {
+        setUnreadCount((prev) => Math.max(0, prev - delta));
+      }
     } catch {}
   }
 
+  async function deleteOne(id: string) {
+    try {
+      setBusyIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      const item = notifications.find((x) => x.id === id);
+      await fetchAuthJSON(`/api/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+      setNotifications((prev) => prev.filter((x) => x.id !== id));
+      if (item && !item.isRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch {
+    } finally {
+      setBusyIds((prev) => prev.filter((x) => x !== id));
+    }
+  }
+
+  async function clearAll() {
+    try {
+      setBusyClear(true);
+      await fetchAuthJSON('/api/notifications', { method: 'DELETE' });
+      setNotifications([]);
+      setUnreadCount(0);
+      setOpen(false);
+    } catch {
+    } finally {
+      setBusyClear(false);
+    }
+  }
+
   const hasUnread = unreadCount > 0;
+  const hasItems = notifications.length > 0;
   const topItems = useMemo(() => notifications.slice(0, 8), [notifications]);
 
   const buttonClass =
@@ -158,44 +211,74 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
             <div className="text-sm font-semibold text-slate-900">Оповещения</div>
             <button
               type="button"
-              onClick={() => void markAllRead()}
-              className="text-xs text-slate-600 hover:text-slate-900"
+              disabled={!hasItems || busyClear}
+              onClick={() => void clearAll()}
+              className="text-xs text-slate-600 hover:text-slate-900 disabled:cursor-default disabled:opacity-40"
             >
-              Прочитать всё
+              Очистить всё
             </button>
           </div>
 
-          <div className={mobile ? "max-h-[min(70vh,420px)] overflow-y-auto" : "max-h-[420px] overflow-y-auto"}>
+          <div className={mobile ? 'max-h-[min(70vh,420px)] overflow-y-auto' : 'max-h-[420px] overflow-y-auto'}>
             {topItems.length > 0 ? (
-              topItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={targetHref(item)}
-                  className="flex gap-3 border-b border-black/5 px-4 py-3 hover:bg-slate-50"
-                  onClick={() => setOpen(false)}
-                >
-                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-                    {item.actorAvatarUrl ? (
-                      <img src={item.actorAvatarUrl} alt={item.actorDisplayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <span>{item.actorDisplayName.slice(0, 1).toUpperCase()}</span>
-                    )}
-                  </div>
+              topItems.map((item) => {
+                const deleting = busyIds.includes(item.id);
 
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] text-slate-900">
-                      <span className="font-semibold">{item.actorDisplayName}</span>{' '}
-                      <span className="text-slate-600">{labelForType(item)}</span>
-                    </div>
-                    {item.textSnippet ? (
-                      <div className="mt-1 line-clamp-2 text-[12px] text-slate-600">{item.textSnippet}</div>
-                    ) : null}
-                    <div className="mt-1 text-[11px] text-slate-500">
-                      {new Date(item.createdAt).toLocaleString('ru-RU')}
-                    </div>
+                return (
+                  <div key={item.id} className="flex items-start gap-2 border-b border-black/5 px-3 py-3 hover:bg-slate-50">
+                    <Link
+                      href={targetHref(item)}
+                      className="flex min-w-0 flex-1 gap-3"
+                      onClick={() => {
+                        void markRead([item.id]);
+                        setOpen(false);
+                      }}
+                    >
+                      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
+                        {item.actorAvatarUrl ? (
+                          <img src={item.actorAvatarUrl} alt={item.actorDisplayName} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{item.actorDisplayName.slice(0, 1).toUpperCase()}</span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1 text-[13px] text-slate-900">
+                            <span className="font-semibold">{item.actorDisplayName}</span>{' '}
+                            <span className="text-slate-600">{labelForType(item)}</span>
+                          </div>
+                          {!item.isRead ? (
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-black" />
+                          ) : null}
+                        </div>
+
+                        {item.textSnippet ? (
+                          <div className="mt-1 line-clamp-2 text-[12px] text-slate-600">{item.textSnippet}</div>
+                        ) : null}
+
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {new Date(item.createdAt).toLocaleString('ru-RU')}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <button
+                      type="button"
+                      aria-label="Удалить оповещение"
+                      disabled={deleting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void deleteOne(item.id);
+                      }}
+                      className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-black/5 hover:text-slate-900 disabled:opacity-40"
+                    >
+                      {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    </button>
                   </div>
-                </Link>
-              ))
+                );
+              })
             ) : (
               <div className="px-4 py-6 text-sm text-slate-600">Пока нет оповещений.</div>
             )}

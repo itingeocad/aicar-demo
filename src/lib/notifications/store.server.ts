@@ -91,3 +91,19 @@ export async function markNotificationsRead(userUid: string, ids?: string[]): Pr
 
   await writeJson(notificationsKey(userUid), next);
 }
+
+export async function deleteNotification(userUid: string, id: string): Promise<boolean> {
+  const current = await listNotifications(userUid);
+  const next = current.filter((x) => x.id !== String(id));
+
+  if (next.length === current.length) {
+    return false;
+  }
+
+  await writeJson(notificationsKey(userUid), next);
+  return true;
+}
+
+export async function clearNotifications(userUid: string): Promise<void> {
+  await writeJson(notificationsKey(userUid), []);
+}
