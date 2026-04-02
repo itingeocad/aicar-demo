@@ -118,6 +118,14 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
   const hasUnread = unreadCount > 0;
   const topItems = useMemo(() => notifications.slice(0, 8), [notifications]);
 
+  const buttonClass = mobile
+    ? 'relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5'
+    : 'relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5';
+
+  const panelClass = mobile
+    ? 'absolute right-0 top-full z-50 mt-3 w-[min(92vw,360px)] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg'
+    : 'absolute right-0 top-full z-40 mt-3 w-[360px] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg';
+
   return (
     <div ref={rootRef} className="relative">
       <button
