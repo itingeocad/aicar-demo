@@ -122,7 +122,7 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
     'relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5';
 
   const panelClass = mobile
-    ? 'absolute right-0 top-full z-50 mt-3 w-[min(92vw,360px)] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg'
+    ? 'fixed left-3 right-3 top-[68px] z-50 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg'
     : 'absolute right-0 top-full z-40 mt-3 w-[360px] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg';
 
   return (
@@ -165,7 +165,7 @@ export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }
             </button>
           </div>
 
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className={mobile ? "max-h-[min(70vh,420px)] overflow-y-auto" : "max-h-[420px] overflow-y-auto"}>
             {topItems.length > 0 ? (
               topItems.map((item) => (
                 <Link
