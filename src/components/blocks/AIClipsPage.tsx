@@ -667,9 +667,9 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
   async function openComments() {
     if (!activeReel) return;
     if (activeCommentsEnabled === false) {
-  setStatus('Комментарии к этому видео отключены.');
-  return;
-}
+      setStatus('Комментарии к этому видео отключены.');
+      return;
+    }
     if (!requireAuth()) return;
 
     try {
@@ -682,14 +682,37 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
         return;
       }
 
-      const data = await fetchAuthJSON<{ ok: true; comments: AIClipCommentDoc[] }>(
+      const data = await fetchAuthJSON<{
+        ok: true;
+        enabled?: boolean;
+        reason?: string | null;
+        comments: AIClipCommentDoc[];
+      }>(
         `/api/aiclips/${encodeURIComponent(activeReel.id)}/comments`
       );
+
+      if (data.enabled === false || data.reason === 'clips_globally_disabled' || data.reason === 'target_comments_disabled') {
+        setActiveCommentsEnabled(false);
+        setCommentsOpen(false);
+        setComments([]);
+        setCommentText('');
+        setStatus('Комментарии к этому видео отключены.');
+        return;
+      }
 
       setComments(data.comments || []);
       setStatus('');
     } catch (e) {
-      setStatus(String((e as any)?.message || e || 'Ошибка загрузки комментариев'));
+      const message = String((e as any)?.message || e || '');
+      if (message === 'clips_globally_disabled' || message === 'target_comments_disabled') {
+        setActiveCommentsEnabled(false);
+        setCommentsOpen(false);
+        setComments([]);
+        setCommentText('');
+        setStatus('Комментарии к этому видео отключены.');
+        return;
+      }
+      setStatus(message || 'Ошибка загрузки комментариев');
     } finally {
       setCommentsLoading(false);
     }
@@ -753,9 +776,9 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
     if (!activeReel || !commentText.trim()) return;
     if (!requireAuth()) return;
     if (activeCommentsEnabled === false) {
-  setStatus('Комментарии к этому видео отключены.');
-  return;
-}
+      setStatus('Комментарии к этому видео отключены.');
+      return;
+    }
 
     if (activeReel.source === 'demo') {
       setStatus('Комментарии работают только для опубликованных AIClips.');
@@ -780,7 +803,16 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
       });
       setStatus('');
     } catch (e) {
-      setStatus(String((e as any)?.message || e || 'Ошибка'));
+      const message = String((e as any)?.message || e || '');
+      if (message === 'clips_globally_disabled' || message === 'target_comments_disabled') {
+        setActiveCommentsEnabled(false);
+        setCommentsOpen(false);
+        setComments([]);
+        setCommentText('');
+        setStatus('Комментарии к этому видео отключены.');
+        return;
+      }
+      setStatus(message || 'Ошибка');
     }
   }
 
@@ -1109,22 +1141,28 @@ export function AIClipsPage({ reels }: { reels: DemoReel[] }) {
             </div>
 
             <div className="border-t border-slate-200 p-4">
-              <div className="flex items-end gap-3">
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  rows={3}
-                  placeholder="Напишите комментарий…"
-                  className="min-h-[72px] flex-1 rounded-[16px] border border-slate-300 px-4 py-3 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={submitComment}
-                  className="rounded-full bg-black px-4 py-3 text-[13px] text-white"
-                >
-                  Отправить
-                </button>
-              </div>
+              {activeCommentsEnabled === false ? (
+                <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-700">
+                  Комментарии к этому видео отключены.
+                </div>
+              ) : (
+                <div className="flex items-end gap-3">
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    rows={3}
+                    placeholder="Напишите комментарий…"
+                    className="min-h-[72px] flex-1 rounded-[16px] border border-slate-300 px-4 py-3 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitComment}
+                    className="rounded-full bg-black px-4 py-3 text-[13px] text-white"
+                  >
+                    Отправить
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>

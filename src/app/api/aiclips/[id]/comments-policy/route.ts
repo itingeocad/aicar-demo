@@ -2,16 +2,44 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth/session.server';
 import { ROLE_SUPER_ADMIN } from '@/lib/auth/constants';
 import { getClipById } from '@/lib/aiclips/store.server';
-import { getTargetCommentsPolicy, setTargetCommentsPolicy } from '@/lib/comments/store.server';
+import {
+  getEffectiveCommentsState,
+  getTargetCommentsPolicy,
+  setTargetCommentsPolicy
+} from '@/lib/comments/store.server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const clip = await getClipById(params.id);
-  if (!clip) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  const [clip, state, storedPolicy] = await Promise.all([
+    getClipById(params.id),
+    getEffectiveCommentsState('clip', params.id),
+    getTargetCommentsPolicy('clip', params.id)
+  ]);
 
-  const policy = await getTargetCommentsPolicy('clip', params.id);
-  return NextResponse.json({ ok: true, policy });
+  if (!clip || !state.exists) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    policy: {
+      targetType: 'clip',
+      targetId: params.id,
+      enabled: state.enabled,
+      disabledBy:
+        state.reason === 'target_comments_disabled'
+          ? storedPolicy.disabledBy
+          : state.reason === 'clips_globally_disabled'
+            ? 'admin'
+            : null,
+      updatedAt:
+        state.reason === 'target_comments_disabled'
+          ? storedPolicy.updatedAt
+          : new Date().toISOString(),
+      reason: state.reason
+    }
+  });
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -37,6 +65,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     enabled,
     disabledBy: isAdmin ? 'admin' : 'owner'
   });
+
+  if (!policy) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true, policy });
 }
