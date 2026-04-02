@@ -109,9 +109,7 @@ export function MobileTopNavClient({
           </button>
 
           <div className="flex items-center gap-1">
-            <IconButton label="notifications">
-              <Bell className="h-5 w-5" />
-            </IconButton>
+            <NotificationsBellClient mobile />
             <IconButton label="favorites">
               <Heart className="h-5 w-5" />
             </IconButton>
@@ -161,9 +159,7 @@ export function MobileTopNavClient({
           </Link>
 
           <div className="flex items-center gap-1">
-            <IconButton label="notifications">
-              <Bell className="h-5 w-5" />
-            </IconButton>
+            <NotificationsBellClient mobile />
 
             {!liveLoggedIn ? (
               <div className="rounded-xl bg-[#c7c7c7] px-3 py-2 text-xs text-slate-900">Ro</div>
