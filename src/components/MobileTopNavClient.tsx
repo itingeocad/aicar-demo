@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Bell, Heart, Menu, X } from 'lucide-react';
 import { SiteConfig } from '@/lib/site/types';
+import { NotificationsBellClient } from '@/components/notifications/NotificationsBellClient';
 
 function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
   return (

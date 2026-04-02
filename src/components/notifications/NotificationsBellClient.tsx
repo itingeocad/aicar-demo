@@ -63,7 +63,7 @@ function labelForType(item: NotificationItem) {
   return 'оставил комментарий к вашему объявлению';
 }
 
-export function NotificationsBellClient() {
+export function NotificationsBellClient({ mobile = false }: { mobile?: boolean }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
@@ -130,11 +130,8 @@ export function NotificationsBellClient() {
             return;
           }
           setOpen((v) => !v);
-          if (!open && hasUnread) {
-            void markAllRead();
-          }
         }}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-black/5"
+        className={buttonClass}
       >
         <Bell className="h-5 w-5" />
         {loading ? (
@@ -149,7 +146,7 @@ export function NotificationsBellClient() {
       </button>
 
       {open && authenticated ? (
-        <div className="absolute right-0 top-full z-40 mt-3 w-[360px] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg">
+        <div className={panelClass}>
           <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
             <div className="text-sm font-semibold text-slate-900">Оповещения</div>
             <button
