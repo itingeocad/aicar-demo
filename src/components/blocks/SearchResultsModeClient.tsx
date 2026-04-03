@@ -411,14 +411,11 @@ export function SearchResultsModeClient({
     [liveListings, search]
   );
 
-  const filteredDemo = useMemo(
-    () => demoCars.filter((car) => matchesDemoCar(car, search)),
-    [demoCars, search]
-  );
+  const listLive = useMemo(() => liveListings.slice(0, 5), [liveListings]);
+  const hotDemo = useMemo(() => demoCars.slice(0, 3), [demoCars]);
+  const listDemo = useMemo(() => demoCars.slice(0, 5), [demoCars]);
 
   if (active) {
-    const useLive = filteredLive.length > 0;
-
     return (
       <>
         <div className="hidden md:block">
@@ -434,10 +431,8 @@ export function SearchResultsModeClient({
                   <div className="rounded-[18px] bg-[#f4f4f4] p-6 text-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
                     Загрузка объявлений…
                   </div>
-                ) : useLive ? (
+                ) : filteredLive.length > 0 ? (
                   filteredLive.map((listing) => <LiveResultCard key={listing.id} listing={listing} />)
-                ) : filteredDemo.length > 0 ? (
-                  filteredDemo.map((car) => <DemoResultCard key={car.id} car={car} />)
                 ) : (
                   <div className="rounded-[18px] bg-[#f4f4f4] p-6 text-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
                     По вашему запросу объявлений не найдено.
@@ -465,10 +460,8 @@ export function SearchResultsModeClient({
                 <div className="rounded-[14px] bg-[#d7d7d7] p-4 text-slate-700">
                   Загрузка объявлений…
                 </div>
-              ) : useLive ? (
+              ) : filteredLive.length > 0 ? (
                 filteredLive.map((listing) => <MobileLiveResultCard key={listing.id} listing={listing} />)
-              ) : filteredDemo.length > 0 ? (
-                filteredDemo.map((car) => <MobileDemoResultCard key={car.id} car={car} />)
               ) : (
                 <div className="rounded-[14px] bg-[#d7d7d7] p-4 text-slate-700">
                   По вашему запросу объявлений не найдено.
@@ -480,10 +473,6 @@ export function SearchResultsModeClient({
       </>
     );
   }
-
-  const hotDemo = demoCars.slice(0, 3);
-  const listLive = liveListings.slice(0, 5);
-  const listDemo = demoCars.slice(0, 5);
 
   return (
     <>
