@@ -1,36 +1,33 @@
 import { notFound } from 'next/navigation';
-import { getSiteConfig, getPageBySlug } from '@/lib/site/store.server';
-
-
-import { normalizeDeep } from '@/lib/text/normalize';
 import { SiteFrame } from '@/components/SiteChrome';
-import { BlockRenderer } from '@/components/blocks/BlockRenderer';
+import { ListingDetailsPageClient } from '@/components/listings/ListingDetailsPageClient';
+import { getListingViewById, listPublicListings } from '@/lib/listings/store.server';
+import { getSiteConfig } from '@/lib/site/store.server';
 
 export const dynamic = 'force-dynamic';
 
+export default async function CarDetailPage({ params }: { params: { id: string } }) {
+  const [config, listing, allPublic] = await Promise.all([
+    getSiteConfig(),
+    getListingViewById(params.id),
+    listPublicListings()
+  ]);
 
-export default async function CarDetail({ params }: { params: { id: string } }) {
-  const config = normalizeDeep(await getSiteConfig());
-  const car = config.demoData.cars.find((c) => c.id === params.id);
-  if (!car) return notFound();
-
-  const template = getPageBySlug(config, 'cars/[id]');
-  if (!template || !template.isPublished) {
-    // Fallback: if template is missing, still render something.
-    return (
-      <SiteFrame config={config}>
-        <div className="aicar-container py-10">
-          <div className="rounded-2xl border bg-white p-6 shadow-sm">Шаблон страницы не найден.</div>
-        </div>
-      </SiteFrame>
-    );
+  if (!listing || listing.visibility !== 'public' || listing.moderationStatus !== 'approved') {
+    notFound();
   }
+
+  const sameCategory = allPublic.filter(
+    (item) => item.id !== listing.id && item.vehicleCategory === listing.vehicleCategory
+  );
+
+  const fallback = allPublic.filter((item) => item.id !== listing.id);
+
+  const related = (sameCategory.length > 0 ? sameCategory : fallback).slice(0, 3);
 
   return (
     <SiteFrame config={config}>
-      {template.blocks.map((b) => (
-        <BlockRenderer key={b.id} block={b} config={config} ctx={{ carId: params.id }} />
-      ))}
+      <ListingDetailsPageClient listing={listing} related={related} />
     </SiteFrame>
   );
 }
