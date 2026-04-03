@@ -9,6 +9,7 @@ import { SiteConfig, PageDoc, BlockInstance } from '@/lib/site/types';
 import { uid } from '@/lib/site/utils';
 import { formatBuildLabel } from '@/lib/version';
 import { CommentsSettingsCard } from '@/components/admin/CommentsSettingsCard';
+import { ListingsModerationCard } from '@/components/admin/ListingsModerationCard';
 
 type Tab = 'pages' | 'site' | 'security';
 
@@ -863,8 +864,9 @@ export default function AdminClient() {
         </div>
 
         {tab === 'security' ? (
-          <div className="mt-4">
+          <div className="mt-4 space-y-4">
             <CommentsSettingsCard />
+            <ListingsModerationCard />
             <SecurityTab me={me} />
           </div>
         ) : (
