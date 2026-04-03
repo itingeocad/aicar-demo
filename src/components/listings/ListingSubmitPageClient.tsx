@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Loader2, Plus, UploadCloud, X } from 'lucide-react';
+import { Check, Loader2, Plus, X } from 'lucide-react';
 import type { AIClipView } from '@/lib/aiclips/types';
 import type { ListingCatalog, ListingView } from '@/lib/listings/types';
 
@@ -38,6 +38,53 @@ type FormState = {
   priceAmount: string;
   priceCurrency: string;
   linkedClipIds: string[];
+};
+
+const CATEGORY_RULES: Record<
+  string,
+  {
+    brands: string[];
+    drivetrains: string[];
+    fuelTypes: string[];
+    transmissions: string[];
+    engines: string[];
+  }
+> = {
+  car: {
+    brands: ['bmw', 'mercedes', 'audi', 'toyota', 'byd', 'tesla', 'volkswagen', 'ford'],
+    drivetrains: ['fwd', 'rwd', 'awd'],
+    fuelTypes: ['petrol', 'diesel', 'hybrid', 'plugin_hybrid', 'electric', 'lpg'],
+    transmissions: ['manual', 'automatic', 'cvt', 'robot'],
+    engines: ['1_0', '1_2', '1_4', '1_5', '1_6', '2_0', '2_5', '3_0', 'ev']
+  },
+  suv: {
+    brands: ['bmw', 'mercedes', 'audi', 'toyota', 'byd', 'tesla', 'volkswagen', 'ford'],
+    drivetrains: ['fwd', 'awd', '4wd'],
+    fuelTypes: ['petrol', 'diesel', 'hybrid', 'plugin_hybrid', 'electric', 'lpg'],
+    transmissions: ['manual', 'automatic', 'cvt', 'robot'],
+    engines: ['1_4', '1_5', '1_6', '2_0', '2_5', '3_0', 'ev']
+  },
+  truck: {
+    brands: ['ford', 'mercedes', 'volkswagen'],
+    drivetrains: ['rwd', 'awd', '4wd'],
+    fuelTypes: ['diesel', 'petrol', 'electric'],
+    transmissions: ['manual', 'automatic', 'robot'],
+    engines: ['2_0', '2_5', '3_0', 'ev']
+  },
+  motorcycle: {
+    brands: ['bmw_moto', 'yamaha', 'honda_moto', 'kawasaki'],
+    drivetrains: ['rwd'],
+    fuelTypes: ['petrol', 'electric'],
+    transmissions: ['manual', 'automatic'],
+    engines: ['0_5', '0_7', '0_9', 'ev']
+  }
+};
+
+const MODEL_RULES: Record<string, string[]> = {
+  car: ['bmw_5', 'mercedes_e', 'audi_a6', 'toyota_camry', 'byd_seal', 'tesla_model3', 'vw_golf'],
+  suv: ['bmw_x5', 'mercedes_gle', 'audi_q7', 'toyota_rav4', 'byd_song', 'tesla_modely', 'vw_tiguan', 'ford_kuga'],
+  truck: ['ford_ranger'],
+  motorcycle: ['bmw_f900gs', 'yamaha_mt07', 'honda_cb500x', 'kawasaki_ninja650']
 };
 
 function authToken() {
@@ -203,10 +250,43 @@ export function ListingSubmitPageClient() {
     linkedClipIds: []
   });
 
+  const categoryRule = useMemo(
+    () => CATEGORY_RULES[form.vehicleCategory] || CATEGORY_RULES.car,
+    [form.vehicleCategory]
+  );
+
+  const filteredBrandOptions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.brands.filter((x) => categoryRule.brands.includes(x.id));
+  }, [catalog, categoryRule]);
+
   const modelOptions = useMemo(() => {
     if (!catalog) return [];
-    return catalog.models.filter((x) => x.brandId === form.brandId);
-  }, [catalog, form.brandId]);
+    const allowedModels = MODEL_RULES[form.vehicleCategory] || MODEL_RULES.car;
+    return catalog.models.filter(
+      (x) => x.brandId === form.brandId && allowedModels.includes(x.id)
+    );
+  }, [catalog, form.brandId, form.vehicleCategory]);
+
+  const filteredDrivetrainOptions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.drivetrains.filter((x) => categoryRule.drivetrains.includes(x.id));
+  }, [catalog, categoryRule]);
+
+  const filteredFuelOptions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.fuelTypes.filter((x) => categoryRule.fuelTypes.includes(x.id));
+  }, [catalog, categoryRule]);
+
+  const filteredTransmissionOptions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.transmissions.filter((x) => categoryRule.transmissions.includes(x.id));
+  }, [catalog, categoryRule]);
+
+  const filteredEngineOptions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.engines.filter((x) => categoryRule.engines.includes(x.id));
+  }, [catalog, categoryRule]);
 
   const selectedBrandLabel = useMemo(
     () => (catalog ? optionLabel(catalog.brands, form.brandId) : ''),
@@ -214,8 +294,8 @@ export function ListingSubmitPageClient() {
   );
 
   const selectedModelLabel = useMemo(
-    () => (catalog ? optionLabel(modelOptions, form.modelId) : ''),
-    [catalog, modelOptions, form.modelId]
+    () => optionLabel(modelOptions, form.modelId),
+    [modelOptions, form.modelId]
   );
 
   const selectedRegionLabel = useMemo(
@@ -293,8 +373,61 @@ export function ListingSubmitPageClient() {
     };
   }, [listingId]);
 
+  useEffect(() => {
+    setForm((prev) => {
+      let next = { ...prev };
+
+      if (next.brandId && !filteredBrandOptions.some((x) => x.id === next.brandId)) {
+        next.brandId = '';
+        next.modelId = '';
+      }
+
+      if (next.modelId && !modelOptions.some((x) => x.id === next.modelId)) {
+        next.modelId = '';
+      }
+
+      if (next.drivetrain && !filteredDrivetrainOptions.some((x) => x.id === next.drivetrain)) {
+        next.drivetrain = '';
+      }
+
+      if (next.fuelType && !filteredFuelOptions.some((x) => x.id === next.fuelType)) {
+        next.fuelType = '';
+      }
+
+      if (next.transmission && !filteredTransmissionOptions.some((x) => x.id === next.transmission)) {
+        next.transmission = '';
+      }
+
+      if (next.engine && !filteredEngineOptions.some((x) => x.id === next.engine)) {
+        next.engine = '';
+      }
+
+      return next;
+    });
+  }, [
+    filteredBrandOptions,
+    modelOptions,
+    filteredDrivetrainOptions,
+    filteredFuelOptions,
+    filteredTransmissionOptions,
+    filteredEngineOptions
+  ]);
+
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setCategory(nextCategory: string) {
+    setForm((prev) => ({
+      ...prev,
+      vehicleCategory: nextCategory,
+      brandId: '',
+      modelId: '',
+      drivetrain: '',
+      fuelType: '',
+      transmission: '',
+      engine: ''
+    }));
   }
 
   function toggleClip(clipId: string) {
@@ -428,13 +561,8 @@ export function ListingSubmitPageClient() {
 
   const typeOptions = catalog?.listingTypes || [];
   const categoryOptions = catalog?.vehicleCategories || [];
-  const drivetrainOptions = catalog?.drivetrains || [];
-  const fuelOptions = catalog?.fuelTypes || [];
-  const transmissionOptions = catalog?.transmissions || [];
-  const engineOptions = catalog?.engines || [];
   const regionOptions = catalog?.regions || [];
   const currencyOptions = catalog?.currencies || [];
-  const brandOptions = catalog?.brands || [];
 
   return (
     <section className="bg-[#ececec]">
@@ -457,16 +585,12 @@ export function ListingSubmitPageClient() {
             </div>
           ) : (
             <>
-              <div className="text-center">
-                <div className="text-[28px] font-medium text-slate-900 md:hidden">Анкета объявления</div>
-              </div>
-
               <div className="mt-2 md:mt-0">
                 <div className="text-center text-[22px] font-medium text-slate-900 md:text-[28px]">
                   Тип объявления
                 </div>
 
-                <div className="mt-5 grid grid-cols-3 gap-3 md:mx-auto md:max-w-[720px] md:gap-8">
+                <div className="mt-5 grid grid-cols-1 gap-3 md:mx-auto md:max-w-[720px] md:grid-cols-3 md:gap-4">
                   {typeOptions.map((item) => {
                     const active = form.listingType === item.id;
                     return (
@@ -474,17 +598,13 @@ export function ListingSubmitPageClient() {
                         key={item.id}
                         type="button"
                         onClick={() => setField('listingType', item.id)}
-                        className="flex flex-col items-center"
+                        className={`rounded-full border px-5 py-3 text-center text-[14px] font-medium transition md:text-[15px] ${
+                          active
+                            ? 'border-black bg-black text-white'
+                            : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
+                        }`}
                       >
-                        <span
-                          className={`flex h-[88px] w-[88px] items-center justify-center rounded-full border text-center text-[13px] transition md:h-[120px] md:w-[120px] md:text-[15px] ${
-                            active
-                              ? 'border-black bg-black text-white'
-                              : 'border-black/10 bg-[#d9d9d9] text-slate-800'
-                          }`}
-                        >
-                          {item.label}
-                        </span>
+                        {item.label}
                       </button>
                     );
                   })}
@@ -494,25 +614,21 @@ export function ListingSubmitPageClient() {
                   Категория
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-8">
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
                   {categoryOptions.map((item) => {
                     const active = form.vehicleCategory === item.id;
                     return (
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setField('vehicleCategory', item.id)}
-                        className="flex flex-col items-center"
+                        onClick={() => setCategory(item.id)}
+                        className={`rounded-full border px-4 py-3 text-center text-[14px] font-medium transition md:text-[15px] ${
+                          active
+                            ? 'border-black bg-black text-white'
+                            : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
+                        }`}
                       >
-                        <span
-                          className={`flex h-[88px] w-[88px] items-center justify-center rounded-full border px-2 text-center text-[13px] transition md:h-[120px] md:w-[120px] md:text-[15px] ${
-                            active
-                              ? 'border-black bg-black text-white'
-                              : 'border-black/10 bg-[#d9d9d9] text-slate-800'
-                          }`}
-                        >
-                          {item.label}
-                        </span>
+                        {item.label}
                       </button>
                     );
                   })}
@@ -535,7 +651,7 @@ export function ListingSubmitPageClient() {
                         className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         <option value="">Выберите</option>
-                        {brandOptions.map((item) => (
+                        {filteredBrandOptions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>
@@ -588,7 +704,7 @@ export function ListingSubmitPageClient() {
                         className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         <option value="">Выберите</option>
-                        {drivetrainOptions.map((item) => (
+                        {filteredDrivetrainOptions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>
@@ -604,7 +720,7 @@ export function ListingSubmitPageClient() {
                         className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         <option value="">Выберите</option>
-                        {fuelOptions.map((item) => (
+                        {filteredFuelOptions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>
@@ -620,7 +736,7 @@ export function ListingSubmitPageClient() {
                         className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         <option value="">Выберите</option>
-                        {transmissionOptions.map((item) => (
+                        {filteredTransmissionOptions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>
@@ -636,7 +752,7 @@ export function ListingSubmitPageClient() {
                         className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         <option value="">Выберите</option>
-                        {engineOptions.map((item) => (
+                        {filteredEngineOptions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>

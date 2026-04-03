@@ -37,6 +37,9 @@ const transmissions = [
 ];
 
 const engines = [
+  { id: '0_5', label: '0.5' },
+  { id: '0_7', label: '0.7' },
+  { id: '0_9', label: '0.9' },
   { id: '1_0', label: '1.0' },
   { id: '1_2', label: '1.2' },
   { id: '1_4', label: '1.4' },
@@ -71,7 +74,12 @@ const brands = [
   { id: 'byd', label: 'BYD' },
   { id: 'tesla', label: 'Tesla' },
   { id: 'volkswagen', label: 'Volkswagen' },
-  { id: 'ford', label: 'Ford' }
+  { id: 'ford', label: 'Ford' },
+
+  { id: 'bmw_moto', label: 'BMW Motorrad' },
+  { id: 'yamaha', label: 'Yamaha' },
+  { id: 'honda_moto', label: 'Honda Moto' },
+  { id: 'kawasaki', label: 'Kawasaki' }
 ];
 
 const models = [
@@ -97,7 +105,12 @@ const models = [
   { id: 'vw_golf', brandId: 'volkswagen', label: 'Golf' },
 
   { id: 'ford_kuga', brandId: 'ford', label: 'Kuga' },
-  { id: 'ford_ranger', brandId: 'ford', label: 'Ranger' }
+  { id: 'ford_ranger', brandId: 'ford', label: 'Ranger' },
+
+  { id: 'bmw_f900gs', brandId: 'bmw_moto', label: 'F 900 GS' },
+  { id: 'yamaha_mt07', brandId: 'yamaha', label: 'MT-07' },
+  { id: 'honda_cb500x', brandId: 'honda_moto', label: 'CB500X' },
+  { id: 'kawasaki_ninja650', brandId: 'kawasaki', label: 'Ninja 650' }
 ];
 
 export function getListingCatalog(): ListingCatalog {
