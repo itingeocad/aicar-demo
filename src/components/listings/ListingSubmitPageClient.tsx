@@ -3,7 +3,19 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Loader2, Plus, X } from 'lucide-react';
+import {
+  Bike,
+  Car,
+  CarFront,
+  Check,
+  Clock3,
+  Loader2,
+  PackageCheck,
+  Plus,
+  Search,
+  Truck,
+  X
+} from 'lucide-react';
 import type { AIClipView } from '@/lib/aiclips/types';
 import type { ListingCatalog, ListingView } from '@/lib/listings/types';
 
@@ -87,6 +99,19 @@ const MODEL_RULES: Record<string, string[]> = {
   motorcycle: ['bmw_f900gs', 'yamaha_mt07', 'honda_cb500x', 'kawasaki_ninja650']
 };
 
+const TYPE_UI: Record<string, { label: string; Icon: any }> = {
+  in_stock: { label: 'В наличии', Icon: PackageCheck },
+  in_transit: { label: 'В пути', Icon: Truck },
+  on_order: { label: 'Под заказ', Icon: Clock3 }
+};
+
+const CATEGORY_UI: Record<string, { label: string; Icon: any }> = {
+  car: { label: 'Легковой автомобиль', Icon: Car },
+  suv: { label: 'SUV', Icon: CarFront },
+  truck: { label: 'Грузовой автомобиль', Icon: Truck },
+  motorcycle: { label: 'Мотоцикл', Icon: Bike }
+};
+
 function authToken() {
   if (typeof window === 'undefined') return '';
   return window.localStorage.getItem('aicar_session_token') || '';
@@ -162,6 +187,16 @@ function numericOrUndefined(value: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function clipDateValue(clip: AIClipView): number {
+  const raw = String((clip as any)?.createdAt || '');
+  const t = Date.parse(raw);
+  return Number.isFinite(t) ? t : 0;
+}
+
+function clipDescription(clip: AIClipView): string {
+  return String((clip as any)?.description || '');
+}
+
 function FileSlot({
   index,
   imageUrl,
@@ -232,6 +267,11 @@ export function ListingSubmitPageClient() {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [status, setStatus] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
+  const [clipModalOpen, setClipModalOpen] = useState(false);
+  const [clipSearch, setClipSearch] = useState('');
+  const [clipSort, setClipSort] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [clipDateFilter, setClipDateFilter] = useState<'all' | '7' | '30' | '365'>('all');
+
   const [form, setForm] = useState<FormState>({
     listingType: 'in_stock',
     vehicleCategory: 'car',
@@ -302,6 +342,39 @@ export function ListingSubmitPageClient() {
     () => (catalog ? optionLabel(catalog.regions, form.regionId) : ''),
     [catalog, form.regionId]
   );
+
+  const selectedClips = useMemo(
+    () => clips.filter((clip) => form.linkedClipIds.includes(clip.id)),
+    [clips, form.linkedClipIds]
+  );
+
+  const filteredClips = useMemo(() => {
+    let next = [...clips];
+
+    const query = clipSearch.trim().toLowerCase();
+    if (query) {
+      next = next.filter((clip) => {
+        const hay = `${clip.title} ${clipDescription(clip)}`.toLowerCase();
+        return hay.includes(query);
+      });
+    }
+
+    if (clipDateFilter !== 'all') {
+      const days = Number(clipDateFilter);
+      const since = Date.now() - days * 24 * 60 * 60 * 1000;
+      next = next.filter((clip) => clipDateValue(clip) >= since);
+    }
+
+    if (clipSort === 'title') {
+      next.sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+    } else if (clipSort === 'oldest') {
+      next.sort((a, b) => clipDateValue(a) - clipDateValue(b));
+    } else {
+      next.sort((a, b) => clipDateValue(b) - clipDateValue(a));
+    }
+
+    return next;
+  }, [clips, clipSearch, clipDateFilter, clipSort]);
 
   useEffect(() => {
     let alive = true;
@@ -485,7 +558,6 @@ export function ListingSubmitPageClient() {
     }
 
     const title = [selectedBrandLabel, selectedModelLabel, form.year.trim()].filter(Boolean).join(' ') || 'Объявление';
-
     const cleanedImages = imageUrls.map((x) => String(x || '').trim()).filter(Boolean);
 
     const payload = {
@@ -590,21 +662,31 @@ export function ListingSubmitPageClient() {
                   Тип объявления
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-3 md:mx-auto md:max-w-[720px] md:grid-cols-3 md:gap-4">
+                <div className="mt-5 grid grid-cols-3 gap-3 md:mx-auto md:max-w-[720px] md:gap-8">
                   {typeOptions.map((item) => {
+                    const ui = TYPE_UI[item.id] || { label: item.label, Icon: PackageCheck };
                     const active = form.listingType === item.id;
+                    const Icon = ui.Icon;
+
                     return (
                       <button
                         key={item.id}
                         type="button"
                         onClick={() => setField('listingType', item.id)}
-                        className={`rounded-full border px-5 py-3 text-center text-[14px] font-medium transition md:text-[15px] ${
-                          active
-                            ? 'border-black bg-black text-white'
-                            : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
-                        }`}
+                        className="flex flex-col items-center"
                       >
-                        {item.label}
+                        <span
+                          className={`flex h-[88px] w-[88px] items-center justify-center rounded-full border transition md:h-[120px] md:w-[120px] ${
+                            active
+                              ? 'border-black bg-black text-white'
+                              : 'border-black/10 bg-[#d9d9d9] text-slate-700'
+                          }`}
+                        >
+                          <Icon className="h-9 w-9 md:h-12 md:w-12" strokeWidth={1.8} />
+                        </span>
+                        <span className="mt-3 text-center text-[12px] text-slate-800 md:text-[14px]">
+                          {ui.label}
+                        </span>
                       </button>
                     );
                   })}
@@ -614,21 +696,31 @@ export function ListingSubmitPageClient() {
                   Категория
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-8">
                   {categoryOptions.map((item) => {
+                    const ui = CATEGORY_UI[item.id] || { label: item.label, Icon: Car };
                     const active = form.vehicleCategory === item.id;
+                    const Icon = ui.Icon;
+
                     return (
                       <button
                         key={item.id}
                         type="button"
                         onClick={() => setCategory(item.id)}
-                        className={`rounded-full border px-4 py-3 text-center text-[14px] font-medium transition md:text-[15px] ${
-                          active
-                            ? 'border-black bg-black text-white'
-                            : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
-                        }`}
+                        className="flex flex-col items-center"
                       >
-                        {item.label}
+                        <span
+                          className={`flex h-[88px] w-[88px] items-center justify-center rounded-full border transition md:h-[120px] md:w-[120px] ${
+                            active
+                              ? 'border-black bg-black text-white'
+                              : 'border-black/10 bg-[#d9d9d9] text-slate-700'
+                          }`}
+                        >
+                          <Icon className="h-9 w-9 md:h-12 md:w-12" strokeWidth={1.8} />
+                        </span>
+                        <span className="mt-3 text-center text-[12px] text-slate-800 md:text-[14px]">
+                          {ui.label}
+                        </span>
                       </button>
                     );
                   })}
@@ -816,46 +908,50 @@ export function ListingSubmitPageClient() {
                     <div>
                       <div className="mb-2 text-[15px] text-slate-900">Выбрать AIClips</div>
 
-                      {clips.length > 0 ? (
-                        <div className="space-y-3">
-                          {clips.slice(0, 6).map((clip) => {
-                            const selected = form.linkedClipIds.includes(clip.id);
-                            const thumb = clip.posterUrl || clip.videoUrl || '';
+                      <button
+                        type="button"
+                        onClick={() => setClipModalOpen(true)}
+                        className="flex h-[112px] w-[112px] items-center justify-center rounded-[12px] bg-[#d9d9d9] text-slate-700"
+                      >
+                        <Plus className="h-9 w-9" strokeWidth={1.5} />
+                      </button>
 
-                            return (
+                      <div className="mt-3 text-[12px] text-slate-500">
+                        {selectedClips.length > 0
+                          ? `Выбрано AIClips: ${selectedClips.length}`
+                          : 'Нажмите, чтобы выбрать AIClips'}
+                      </div>
+
+                      {selectedClips.length > 0 ? (
+                        <div className="mt-3 space-y-2">
+                          {selectedClips.slice(0, 4).map((clip) => (
+                            <div
+                              key={clip.id}
+                              className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-left"
+                            >
+                              <div className="h-10 w-10 overflow-hidden rounded-[10px] bg-[#d9d9d9]">
+                                {clip.posterUrl || clip.videoUrl ? (
+                                  <img
+                                    src={clip.posterUrl || clip.videoUrl || ''}
+                                    alt={clip.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : null}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="line-clamp-1 text-[13px] font-medium text-slate-900">{clip.title}</div>
+                              </div>
                               <button
-                                key={clip.id}
                                 type="button"
                                 onClick={() => toggleClip(clip.id)}
-                                className={`flex w-full items-center gap-3 rounded-[16px] border px-3 py-3 text-left transition ${
-                                  selected
-                                    ? 'border-black bg-black text-white'
-                                    : 'border-black/10 bg-white text-slate-900'
-                                }`}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-black/5"
                               >
-                                <div className="h-14 w-14 overflow-hidden rounded-[10px] bg-[#d9d9d9]">
-                                  {thumb ? (
-                                    <img src={thumb} alt={clip.title} className="h-full w-full object-cover" />
-                                  ) : null}
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                  <div className="line-clamp-1 text-[14px] font-medium">{clip.title}</div>
-                                  <div className={`mt-1 text-[12px] ${selected ? 'text-white/80' : 'text-slate-500'}`}>
-                                    {clip.ownerProfile?.displayName || clip.ownerDisplayName}
-                                  </div>
-                                </div>
-
-                                {selected ? <Check className="h-4 w-4 shrink-0" /> : null}
+                                <X className="h-4 w-4" />
                               </button>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
-                      ) : (
-                        <div className="rounded-[16px] bg-white px-4 py-4 text-[14px] text-slate-600">
-                          У вас пока нет AIClips для привязки.
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
@@ -928,6 +1024,156 @@ export function ListingSubmitPageClient() {
           )}
         </div>
       </div>
+
+      {clipModalOpen ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setClipModalOpen(false)}
+            className="fixed inset-0 z-40 bg-black/45"
+            aria-label="Закрыть выбор AIClips"
+          />
+
+          <div className="fixed inset-x-3 bottom-0 z-50 flex h-[82dvh] flex-col rounded-t-[24px] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.22)] md:inset-auto md:left-1/2 md:top-1/2 md:h-[78vh] md:w-[920px] md:max-w-[calc(100vw-48px)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[24px]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 md:px-6">
+              <div>
+                <div className="text-[18px] font-semibold text-slate-900">Выбрать AIClips</div>
+                <div className="text-[12px] text-slate-500">
+                  Поиск по названию и описанию, сортировка и фильтр по дате публикации
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setClipModalOpen(false)}
+                className="rounded-full p-2 text-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid gap-3 border-b border-slate-200 px-4 py-4 md:grid-cols-[1fr_180px_180px_auto] md:px-6">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={clipSearch}
+                  onChange={(e) => setClipSearch(e.target.value)}
+                  placeholder="Поиск по названию / описанию"
+                  className="w-full rounded-[14px] border border-slate-300 bg-white py-3 pl-10 pr-4 outline-none"
+                />
+              </label>
+
+              <select
+                value={clipDateFilter}
+                onChange={(e) => setClipDateFilter(e.target.value as any)}
+                className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
+              >
+                <option value="all">Все даты</option>
+                <option value="7">За 7 дней</option>
+                <option value="30">За 30 дней</option>
+                <option value="365">За год</option>
+              </select>
+
+              <select
+                value={clipSort}
+                onChange={(e) => setClipSort(e.target.value as any)}
+                className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 outline-none"
+              >
+                <option value="newest">Сначала новые</option>
+                <option value="oldest">Сначала старые</option>
+                <option value="title">По названию</option>
+              </select>
+
+              <Link
+                href="/profile"
+                onClick={() => setClipModalOpen(false)}
+                className="inline-flex items-center justify-center rounded-[14px] bg-black px-4 py-3 text-[14px] text-white"
+              >
+                Добавить AIClip
+              </Link>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
+              {filteredClips.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {filteredClips.map((clip) => {
+                    const selected = form.linkedClipIds.includes(clip.id);
+                    const thumb = clip.posterUrl || clip.videoUrl || '';
+                    const published = clipDateValue(clip)
+                      ? new Date(clipDateValue(clip)).toLocaleDateString('ru-RU')
+                      : 'Дата не указана';
+
+                    return (
+                      <div
+                        key={clip.id}
+                        className={`rounded-[18px] border p-3 transition ${
+                          selected ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-900'
+                        }`}
+                      >
+                        <div className="flex gap-3">
+                          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[12px] bg-[#d9d9d9]">
+                            {thumb ? (
+                              <img src={thumb} alt={clip.title} className="h-full w-full object-cover" />
+                            ) : null}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="line-clamp-1 text-[15px] font-semibold">{clip.title}</div>
+                            <div className={`mt-1 text-[12px] ${selected ? 'text-white/75' : 'text-slate-500'}`}>
+                              {published}
+                            </div>
+                            <div className={`mt-2 line-clamp-2 text-[12px] ${selected ? 'text-white/80' : 'text-slate-600'}`}>
+                              {clipDescription(clip) || 'Без описания'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className={`text-[12px] ${selected ? 'text-white/80' : 'text-slate-500'}`}>
+                            {clip.ownerProfile?.displayName || clip.ownerDisplayName}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleClip(clip.id)}
+                            className={`rounded-[12px] px-3 py-2 text-[13px] font-medium transition ${
+                              selected
+                                ? 'bg-white text-black'
+                                : 'bg-black text-white'
+                            }`}
+                          >
+                            {selected ? 'Убрать' : 'Добавить'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-[16px] bg-slate-50 px-4 py-6 text-[14px] text-slate-600">
+                  По вашему фильтру AIClips не найдены.
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-200 px-4 py-4 md:px-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="text-[14px] text-slate-700">
+                  Выбрано AIClips: <span className="font-semibold">{selectedClips.length}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setClipModalOpen(false)}
+                  className="rounded-[14px] bg-black px-5 py-3 text-[14px] text-white"
+                >
+                  Готово
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
