@@ -48,6 +48,18 @@ function includesSoft(hay: unknown, needle: string): boolean {
   return h.includes(n);
 }
 
+function typeMatches(queryType: string, rawItemType: string): boolean {
+  if (!queryType) return true;
+
+  const itemType = normalizeType(rawItemType || 'car');
+
+  if (queryType === 'car') {
+    return itemType === 'car' || itemType === 'suv';
+  }
+
+  return itemType === queryType;
+}
+
 function listingThumb(item: ListingView) {
   return item.coverUrl || item.imageUrls?.[0] || '';
 }
@@ -100,7 +112,7 @@ function matchesListing(item: ListingView, search?: SearchMap): boolean {
   const priceFrom = numOrNaN(val(search, 'priceFrom'));
   const priceTo = numOrNaN(val(search, 'priceTo'));
 
-  const itemType = normalizeType(String(item.vehicleCategory || ''));
+  const itemType = normalizeType(String(item.vehicleCategory || 'car'));
   const itemBrand = normalizeText(item.brandId || item.brand || '');
   const itemModel = normalizeText(item.modelId || item.model || '');
   const itemFuel = normalizeText(item.fuelType || '');
@@ -109,7 +121,7 @@ function matchesListing(item: ListingView, search?: SearchMap): boolean {
   const itemMileage = Number(item.mileageKm || 0);
   const itemPrice = Number(item.priceAmount ?? item.price ?? NaN);
 
-  if (type && itemType !== type) return false;
+  if (!typeMatches(type, itemType)) return false;
   if (brand && !includesSoft(itemBrand, brand) && !includesSoft(item.brand, brand)) return false;
   if (model && !includesSoft(itemModel, model) && !includesSoft(item.model, model)) return false;
   if (fuel && !includesSoft(itemFuel, fuel)) return false;
@@ -144,7 +156,7 @@ function matchesDemoCar(car: DemoCar, search?: SearchMap): boolean {
   const carMileage = Number(car.mileageKm || 0);
   const carPrice = Number(car.price || NaN);
 
-  if (type && carType !== type) return false;
+  if (!typeMatches(type, carType)) return false;
   if (brand && !includesSoft(carBrand, brand) && !includesSoft(car.title, brand)) return false;
   if (model && !includesSoft(carModel, model) && !includesSoft(car.title, model)) return false;
   if (fuel && !includesSoft(carFuel, fuel)) return false;
