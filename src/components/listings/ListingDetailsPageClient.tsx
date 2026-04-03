@@ -46,7 +46,7 @@ async function fetchAuthJSON<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 function buildLoginTarget(listingId: string) {
-  return `/login?next=${encodeURIComponent(`/cars/${listingId}`)}`;
+  return `/login?next=${encodeURIComponent(`/listing/${listingId}`)}`;
 }
 
 function formatPrice(item: ListingView) {
@@ -415,7 +415,7 @@ export function ListingDetailsPageClient({
                 related.map((item) => (
                   <Link
                     key={item.id}
-                    href={`/cars/${encodeURIComponent(item.id)}`}
+                    href={`/listing/${encodeURIComponent(item.id)}`}
                     className="block rounded-[18px] bg-[#f2f2f2] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] md:p-5"
                   >
                     <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">

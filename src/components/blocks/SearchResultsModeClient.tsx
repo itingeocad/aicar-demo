@@ -170,41 +170,43 @@ function LiveResultCard({ listing }: { listing: ListingView }) {
   const thumb = listingThumb(listing);
 
   return (
-    <article className="rounded-[18px] bg-[#f4f4f4] p-4 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-      <div className="flex gap-5">
-        <div className="h-[190px] w-[240px] flex-none overflow-hidden rounded-[8px] bg-white">
-          {thumb ? (
-            <img src={thumb} alt={listing.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">Нет фото</div>
-          )}
-        </div>
+    <Link href={`/listing/${encodeURIComponent(listing.id)}`} className="block">
+      <article className="rounded-[18px] bg-[#f4f4f4] p-4 shadow-[0_6px_18px_rgba(0,0,0,0.06)] transition hover:shadow-[0_10px_24px_rgba(0,0,0,0.10)]">
+        <div className="flex gap-5">
+          <div className="h-[190px] w-[240px] flex-none overflow-hidden rounded-[8px] bg-white">
+            {thumb ? (
+              <img src={thumb} alt={listing.title} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">Нет фото</div>
+            )}
+          </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="truncate text-[18px] font-semibold">{listing.title}</div>
-              <div className="mt-2 text-[13px] text-slate-600">
-                {listingMeta(listing) || 'Объявление'}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="truncate text-[18px] font-semibold">{listing.title}</div>
+                <div className="mt-2 text-[13px] text-slate-600">
+                  {listingMeta(listing) || 'Объявление'}
+                </div>
+                <div className="mt-3 text-[14px] text-slate-700">
+                  {listingSpecs(listing) || 'Характеристики не указаны'}
+                </div>
+                <div className="mt-5 line-clamp-2 text-[14px] text-slate-700">
+                  {listing.description || 'Описание объявления'}
+                </div>
+                <div className="mt-3 text-[12px] text-slate-500">
+                  {listing.ownerProfile?.displayName || listing.ownerDisplayName || ''}
+                </div>
               </div>
-              <div className="mt-3 text-[14px] text-slate-700">
-                {listingSpecs(listing) || 'Характеристики не указаны'}
-              </div>
-              <div className="mt-5 line-clamp-2 text-[14px] text-slate-700">
-                {listing.description || 'Описание объявления'}
-              </div>
-              <div className="mt-3 text-[12px] text-slate-500">
-                {listing.ownerProfile?.displayName || listing.ownerDisplayName || ''}
-              </div>
-            </div>
 
-            <div className="whitespace-nowrap text-[18px] font-bold">
-              {listingPrice(listing)}
+              <div className="whitespace-nowrap text-[18px] font-bold">
+                {listingPrice(listing)}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
@@ -238,57 +240,38 @@ function MobileLiveResultCard({ listing }: { listing: ListingView }) {
   const thumb = listingThumb(listing);
 
   return (
-    <article className="rounded-[16px] bg-[#d7d7d7] p-4">
-      <div className="flex gap-3">
-        <div className="h-[95px] w-[95px] flex-none overflow-hidden rounded-[8px] bg-white">
-          {thumb ? (
-            <img src={thumb} alt={listing.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[12px] text-slate-500">Нет фото</div>
-          )}
+    <Link href={`/listing/${encodeURIComponent(listing.id)}`} className="block">
+      <article className="rounded-[16px] bg-[#d7d7d7] p-4 transition hover:bg-[#d1d1d1]">
+        <div className="flex gap-3">
+          <div className="h-[95px] w-[95px] flex-none overflow-hidden rounded-[8px] bg-white">
+            {thumb ? (
+              <img src={thumb} alt={listing.title} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[12px] text-slate-500">Нет фото</div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="truncate text-[15px] font-semibold">{listing.title}</div>
+              <div className="whitespace-nowrap text-[15px] font-bold">{listingPrice(listing)}</div>
+            </div>
+
+            <div className="mt-1 text-[11px] text-slate-700">
+              {listingMeta(listing) || 'Объявление'}
+            </div>
+
+            <div className="mt-2 text-[12px] text-slate-700">
+              {listingSpecs(listing) || 'Характеристики не указаны'}
+            </div>
+
+            <div className="mt-2 line-clamp-2 text-[13px] text-slate-800">
+              {listing.description || 'Описание'}
+            </div>
+          </div>
         </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="truncate text-[15px] font-semibold">{listing.title}</div>
-            <div className="whitespace-nowrap text-[15px] font-bold">{listingPrice(listing)}</div>
-          </div>
-
-          <div className="mt-1 text-[11px] text-slate-700">
-            {listingMeta(listing) || 'Объявление'}
-          </div>
-
-          <div className="mt-2 text-[12px] text-slate-700">
-            {listingSpecs(listing) || 'Характеристики не указаны'}
-          </div>
-
-          <div className="mt-2 line-clamp-2 text-[13px] text-slate-800">
-            {listing.description || 'Описание'}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function FilterField({
-  label,
-  name,
-  defaultValue
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-}) {
-  return (
-    <label className="block">
-      <div className="mb-1 text-[12px] text-slate-700">{label}</div>
-      <input
-        name={name}
-        defaultValue={defaultValue}
-        className="h-10 w-full rounded-[8px] border border-black/10 bg-white px-3 text-[14px] outline-none"
-      />
-    </label>
+      </article>
+    </Link>
   );
 }
 
