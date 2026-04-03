@@ -84,7 +84,7 @@ function ListingCard({
             <button
               type="button"
               disabled={busy}
-              onClick={() => onEdit(listing)}
+              onClick={() => window.location.assign(`/submit-listing?id=${encodeURIComponent(listing.id)}`)}
               className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-[13px] text-white disabled:opacity-60"
             >
               <Edit3 className="h-4 w-4" />
@@ -297,7 +297,7 @@ export function ListingsSectionClient() {
 
           <button
             type="button"
-            onClick={openCreate}
+            onClick={() => window.location.assign('/submit-listing')}
             className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-[14px] font-medium text-white"
           >
             <Plus className="h-4 w-4" />
