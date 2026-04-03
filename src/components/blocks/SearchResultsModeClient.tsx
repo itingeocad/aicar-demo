@@ -23,11 +23,29 @@ function val(search: SearchMap | undefined, key: string): string {
   return pick1(search?.[key]).trim();
 }
 
+function numOrNaN(v: string): number {
+  const cleaned = String(v ?? '').replace(/[^\d.]/g, '').trim();
+  if (!cleaned) return NaN;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function normalizeText(v: unknown): string {
+  return String(v ?? '').trim().toLowerCase();
+}
+
 function normalizeType(value: string): string {
-  const raw = String(value || '').trim().toLowerCase();
+  const raw = normalizeText(value);
   if (raw === 'bike') return 'motorcycle';
   if (raw === 'bus') return 'truck';
   return raw;
+}
+
+function includesSoft(hay: unknown, needle: string): boolean {
+  const h = normalizeText(hay);
+  const n = normalizeText(needle);
+  if (!n) return true;
+  return h.includes(n);
 }
 
 function listingThumb(item: ListingView) {
@@ -55,6 +73,89 @@ function listingSpecs(item: ListingView) {
     item.transmission ? `КПП: ${item.transmission}` : '',
     item.vehicleCategory ? `Тип: ${item.vehicleCategory}` : ''
   ].filter(Boolean).join(' • ');
+}
+
+function demoBrand(car: DemoCar): string {
+  const direct = (car as any).brand;
+  if (direct) return String(direct);
+  return String(car.title || '').split(' ')[0] || '';
+}
+
+function demoModel(car: DemoCar): string {
+  const direct = (car as any).model;
+  if (direct) return String(direct);
+  const parts = String(car.title || '').split(' ');
+  return parts.slice(1).join(' ');
+}
+
+function matchesListing(item: ListingView, search?: SearchMap): boolean {
+  const type = normalizeType(val(search, 'type'));
+  const brand = normalizeText(val(search, 'brand'));
+  const model = normalizeText(val(search, 'model'));
+  const fuel = normalizeText(val(search, 'fuel'));
+  const city = normalizeText(val(search, 'city'));
+
+  const year = numOrNaN(val(search, 'year'));
+  const mileageKm = numOrNaN(val(search, 'mileageKm'));
+  const priceFrom = numOrNaN(val(search, 'priceFrom'));
+  const priceTo = numOrNaN(val(search, 'priceTo'));
+
+  const itemType = normalizeType(String(item.vehicleCategory || ''));
+  const itemBrand = normalizeText(item.brandId || item.brand || '');
+  const itemModel = normalizeText(item.modelId || item.model || '');
+  const itemFuel = normalizeText(item.fuelType || '');
+  const itemCity = normalizeText(item.city || '');
+  const itemYear = Number(item.year || 0);
+  const itemMileage = Number(item.mileageKm || 0);
+  const itemPrice = Number(item.priceAmount ?? item.price ?? NaN);
+
+  if (type && itemType !== type) return false;
+  if (brand && !includesSoft(itemBrand, brand) && !includesSoft(item.brand, brand)) return false;
+  if (model && !includesSoft(itemModel, model) && !includesSoft(item.model, model)) return false;
+  if (fuel && !includesSoft(itemFuel, fuel)) return false;
+  if (city && !includesSoft(itemCity, city)) return false;
+
+  if (!Number.isNaN(year) && itemYear && itemYear !== year) return false;
+  if (!Number.isNaN(mileageKm) && itemMileage && itemMileage > mileageKm) return false;
+  if (!Number.isNaN(priceFrom) && !Number.isNaN(itemPrice) && itemPrice < priceFrom) return false;
+  if (!Number.isNaN(priceTo) && !Number.isNaN(itemPrice) && itemPrice > priceTo) return false;
+
+  return true;
+}
+
+function matchesDemoCar(car: DemoCar, search?: SearchMap): boolean {
+  const type = normalizeType(val(search, 'type'));
+  const brand = normalizeText(val(search, 'brand'));
+  const model = normalizeText(val(search, 'model'));
+  const fuel = normalizeText(val(search, 'fuel'));
+  const city = normalizeText(val(search, 'city'));
+
+  const year = numOrNaN(val(search, 'year'));
+  const mileageKm = numOrNaN(val(search, 'mileageKm'));
+  const priceFrom = numOrNaN(val(search, 'priceFrom'));
+  const priceTo = numOrNaN(val(search, 'priceTo'));
+
+  const carType = normalizeType(String((car as any).vehicleType || 'car'));
+  const carBrand = normalizeText(demoBrand(car));
+  const carModel = normalizeText(demoModel(car));
+  const carFuel = normalizeText((car as any).fuel || '');
+  const carCity = normalizeText(car.city || '');
+  const carYear = Number(car.year || 0);
+  const carMileage = Number(car.mileageKm || 0);
+  const carPrice = Number(car.price || NaN);
+
+  if (type && carType !== type) return false;
+  if (brand && !includesSoft(carBrand, brand) && !includesSoft(car.title, brand)) return false;
+  if (model && !includesSoft(carModel, model) && !includesSoft(car.title, model)) return false;
+  if (fuel && !includesSoft(carFuel, fuel)) return false;
+  if (city && !includesSoft(carCity, city)) return false;
+
+  if (!Number.isNaN(year) && carYear && carYear !== year) return false;
+  if (!Number.isNaN(mileageKm) && carMileage && carMileage > mileageKm) return false;
+  if (!Number.isNaN(priceFrom) && !Number.isNaN(carPrice) && carPrice < priceFrom) return false;
+  if (!Number.isNaN(priceTo) && !Number.isNaN(carPrice) && carPrice > priceTo) return false;
+
+  return true;
 }
 
 function FilterField({
@@ -94,7 +195,7 @@ function DemoResultCard({ car }: { car: DemoCar }) {
                 {car.city} • {car.year} • {car.mileageKm.toLocaleString()} km
               </div>
               <div className="mt-3 text-[14px] text-slate-700">
-                Топливо: {car.fuel} • КПП: {car.gearbox} • Тип: {car.vehicleType ?? 'car'}
+                Топливо: {(car as any).fuel} • КПП: {(car as any).gearbox} • Тип: {(car as any).vehicleType ?? 'car'}
               </div>
               <div className="mt-5 text-[14px] text-slate-700">Описание объявления</div>
             </div>
@@ -168,7 +269,7 @@ function MobileDemoResultCard({ car }: { car: DemoCar }) {
             {car.city} • {car.year} • {car.mileageKm.toLocaleString()} km
           </div>
           <div className="mt-2 text-[12px] text-slate-700">
-            Топливо: {car.fuel} • КПП: {car.gearbox} • Тип: {car.vehicleType ?? 'car'}
+            Топливо: {(car as any).fuel} • КПП: {(car as any).gearbox} • Тип: {(car as any).vehicleType ?? 'car'}
           </div>
           <div className="mt-2 text-[13px] text-slate-800">Описание</div>
         </div>
@@ -260,51 +361,6 @@ function DemoHotOfferCard({ car }: { car: DemoCar }) {
   );
 }
 
-function LiveHotOfferCard({ listing }: { listing: ListingView }) {
-  const thumb = listingThumb(listing);
-
-  return (
-    <article className="overflow-hidden rounded-[10px] border border-black/10 bg-[#a6a6a6]">
-      <div className="aspect-square bg-white">
-        {thumb ? (
-          <img src={thumb} alt={listing.title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">Нет фото</div>
-        )}
-      </div>
-      <div className="flex h-[78px] items-center justify-center px-3 text-center text-[12px] text-white">
-        {listing.title}
-      </div>
-    </article>
-  );
-}
-
-function searchToQuery(search?: SearchMap): string {
-  const params = new URLSearchParams();
-
-  const type = normalizeType(val(search, 'type'));
-  const brand = val(search, 'brand');
-  const model = val(search, 'model');
-  const year = val(search, 'year');
-  const mileageKm = val(search, 'mileageKm');
-  const fuel = val(search, 'fuel');
-  const city = val(search, 'city');
-  const priceFrom = val(search, 'priceFrom');
-  const priceTo = val(search, 'priceTo');
-
-  if (type) params.set('type', type);
-  if (brand) params.set('brand', brand);
-  if (model) params.set('model', model);
-  if (year) params.set('year', year);
-  if (mileageKm) params.set('mileageKm', mileageKm);
-  if (fuel) params.set('fuel', fuel);
-  if (city) params.set('city', city);
-  if (priceFrom) params.set('priceFrom', priceFrom);
-  if (priceTo) params.set('priceTo', priceTo);
-
-  return params.toString();
-}
-
 export function SearchResultsModeClient({
   active,
   demoCars,
@@ -317,8 +373,6 @@ export function SearchResultsModeClient({
   const [loading, setLoading] = useState(true);
   const [liveListings, setLiveListings] = useState<ListingView[]>([]);
 
-  const queryString = useMemo(() => searchToQuery(search), [search]);
-
   useEffect(() => {
     let alive = true;
 
@@ -326,8 +380,7 @@ export function SearchResultsModeClient({
       try {
         setLoading(true);
 
-        const url = queryString ? `/api/listings?${queryString}` : '/api/listings';
-        const res = await fetch(url, {
+        const res = await fetch('/api/listings', {
           cache: 'no-store',
           credentials: 'include'
         });
@@ -351,9 +404,21 @@ export function SearchResultsModeClient({
     return () => {
       alive = false;
     };
-  }, [queryString]);
+  }, []);
+
+  const filteredLive = useMemo(
+    () => liveListings.filter((item) => matchesListing(item, search)),
+    [liveListings, search]
+  );
+
+  const filteredDemo = useMemo(
+    () => demoCars.filter((car) => matchesDemoCar(car, search)),
+    [demoCars, search]
+  );
 
   if (active) {
+    const useLive = filteredLive.length > 0;
+
     return (
       <>
         <div className="hidden md:block">
@@ -369,8 +434,10 @@ export function SearchResultsModeClient({
                   <div className="rounded-[18px] bg-[#f4f4f4] p-6 text-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
                     Загрузка объявлений…
                   </div>
-                ) : liveListings.length > 0 ? (
-                  liveListings.map((listing) => <LiveResultCard key={listing.id} listing={listing} />)
+                ) : useLive ? (
+                  filteredLive.map((listing) => <LiveResultCard key={listing.id} listing={listing} />)
+                ) : filteredDemo.length > 0 ? (
+                  filteredDemo.map((car) => <DemoResultCard key={car.id} car={car} />)
                 ) : (
                   <div className="rounded-[18px] bg-[#f4f4f4] p-6 text-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
                     По вашему запросу объявлений не найдено.
@@ -398,8 +465,10 @@ export function SearchResultsModeClient({
                 <div className="rounded-[14px] bg-[#d7d7d7] p-4 text-slate-700">
                   Загрузка объявлений…
                 </div>
-              ) : liveListings.length > 0 ? (
-                liveListings.map((listing) => <MobileLiveResultCard key={listing.id} listing={listing} />)
+              ) : useLive ? (
+                filteredLive.map((listing) => <MobileLiveResultCard key={listing.id} listing={listing} />)
+              ) : filteredDemo.length > 0 ? (
+                filteredDemo.map((car) => <MobileDemoResultCard key={car.id} car={car} />)
               ) : (
                 <div className="rounded-[14px] bg-[#d7d7d7] p-4 text-slate-700">
                   По вашему запросу объявлений не найдено.
@@ -412,9 +481,8 @@ export function SearchResultsModeClient({
     );
   }
 
-  const hotListings = liveListings.slice(0, 3);
-  const listListings = liveListings.slice(0, 5);
   const hotDemo = demoCars.slice(0, 3);
+  const listLive = liveListings.slice(0, 5);
   const listDemo = demoCars.slice(0, 5);
 
   return (
@@ -432,9 +500,7 @@ export function SearchResultsModeClient({
             <div className="mb-6 text-center text-[20px] font-semibold">Горячие предложения</div>
 
             <div className="grid grid-cols-3 gap-8">
-              {!loading && hotListings.length > 0
-                ? hotListings.map((listing) => <LiveHotOfferCard key={listing.id} listing={listing} />)
-                : hotDemo.map((car) => <DemoHotOfferCard key={car.id} car={car} />)}
+              {hotDemo.map((car) => <DemoHotOfferCard key={car.id} car={car} />)}
             </div>
 
             <div className="mt-3 flex justify-end">
@@ -446,8 +512,8 @@ export function SearchResultsModeClient({
           </div>
 
           <div className="mt-8 space-y-4">
-            {!loading && listListings.length > 0
-              ? listListings.map((listing) => <LiveResultCard key={listing.id} listing={listing} />)
+            {!loading && listLive.length > 0
+              ? listLive.map((listing) => <LiveResultCard key={listing.id} listing={listing} />)
               : listDemo.map((car) => <DemoResultCard key={car.id} car={car} />)}
           </div>
         </div>
@@ -466,7 +532,7 @@ export function SearchResultsModeClient({
                 <ChevronRight className="h-12 w-12" />
               </button>
 
-              {!loading && hotListings[0] ? <LiveHotOfferCard listing={hotListings[0]} /> : hotDemo[0] ? <DemoHotOfferCard car={hotDemo[0]} /> : null}
+              {hotDemo[0] ? <DemoHotOfferCard car={hotDemo[0]} /> : null}
             </div>
 
             <div className="mt-3 flex justify-end">
@@ -478,8 +544,8 @@ export function SearchResultsModeClient({
           </div>
 
           <div className="space-y-3">
-            {!loading && listListings.length > 0
-              ? listListings.map((listing) => <MobileLiveResultCard key={listing.id} listing={listing} />)
+            {!loading && listLive.length > 0
+              ? listLive.map((listing) => <MobileLiveResultCard key={listing.id} listing={listing} />)
               : listDemo.map((car) => <MobileDemoResultCard key={car.id} car={car} />)}
           </div>
         </div>
