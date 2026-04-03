@@ -19,9 +19,29 @@ function num(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizeType(value: string) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'bike') return 'motorcycle';
+  if (raw === 'bus') return 'truck';
+  return raw;
+}
+
 function matchesText(value: string | undefined, filter: string | null) {
   if (!filter) return true;
-  return String(value || '').trim().toLowerCase() === filter.trim().toLowerCase();
+  return String(value || '').trim().toLowerCase().includes(filter.trim().toLowerCase());
+}
+
+function typeMatches(queryType: string | null, rawItemType: string) {
+  const q = normalizeType(String(queryType || ''));
+  if (!q) return true;
+
+  const itemType = normalizeType(rawItemType || 'car');
+
+  if (q === 'car') {
+    return itemType === 'car' || itemType === 'suv';
+  }
+
+  return itemType === q;
 }
 
 function matchesListing(listing: ListingView, url: URL) {
@@ -37,7 +57,7 @@ function matchesListing(listing: ListingView, url: URL) {
   const priceFrom = num(url.searchParams.get('priceFrom'));
   const priceTo = num(url.searchParams.get('priceTo'));
 
-  const listingCategory = String(listing.vehicleCategory || '').toLowerCase();
+  const listingCategory = normalizeType(String(listing.vehicleCategory || 'car'));
   const listingBrand = String(listing.brandId || listing.brand || '').toLowerCase();
   const listingModel = String(listing.modelId || listing.model || '').toLowerCase();
   const listingFuel = String(listing.fuelType || '').toLowerCase();
@@ -45,10 +65,10 @@ function matchesListing(listing: ListingView, url: URL) {
   const listingRegion = String(listing.regionId || '').toLowerCase();
   const listingPrice = listing.priceAmount ?? listing.price ?? null;
 
-  if (type && listingCategory !== type.toLowerCase()) return false;
-  if (category && listingCategory !== category.toLowerCase()) return false;
-  if (brand && listingBrand !== brand.toLowerCase()) return false;
-  if (model && listingModel !== model.toLowerCase()) return false;
+  if (!typeMatches(type, listingCategory)) return false;
+  if (category && !typeMatches(category, listingCategory)) return false;
+  if (brand && !listingBrand.includes(brand.toLowerCase()) && !String(listing.brand || '').toLowerCase().includes(brand.toLowerCase())) return false;
+  if (model && !listingModel.includes(model.toLowerCase()) && !String(listing.model || '').toLowerCase().includes(model.toLowerCase())) return false;
   if (year && Number(listing.year || 0) !== Number(year)) return false;
 
   if (mileageKm) {

@@ -135,62 +135,6 @@ function matchesListing(item: ListingView, search?: SearchMap): boolean {
   return true;
 }
 
-function matchesDemoCar(car: DemoCar, search?: SearchMap): boolean {
-  const type = normalizeType(val(search, 'type'));
-  const brand = normalizeText(val(search, 'brand'));
-  const model = normalizeText(val(search, 'model'));
-  const fuel = normalizeText(val(search, 'fuel'));
-  const city = normalizeText(val(search, 'city'));
-
-  const year = numOrNaN(val(search, 'year'));
-  const mileageKm = numOrNaN(val(search, 'mileageKm'));
-  const priceFrom = numOrNaN(val(search, 'priceFrom'));
-  const priceTo = numOrNaN(val(search, 'priceTo'));
-
-  const carType = normalizeType(String((car as any).vehicleType || 'car'));
-  const carBrand = normalizeText(demoBrand(car));
-  const carModel = normalizeText(demoModel(car));
-  const carFuel = normalizeText((car as any).fuel || '');
-  const carCity = normalizeText(car.city || '');
-  const carYear = Number(car.year || 0);
-  const carMileage = Number(car.mileageKm || 0);
-  const carPrice = Number(car.price || NaN);
-
-  if (!typeMatches(type, carType)) return false;
-  if (brand && !includesSoft(carBrand, brand) && !includesSoft(car.title, brand)) return false;
-  if (model && !includesSoft(carModel, model) && !includesSoft(car.title, model)) return false;
-  if (fuel && !includesSoft(carFuel, fuel)) return false;
-  if (city && !includesSoft(carCity, city)) return false;
-
-  if (!Number.isNaN(year) && carYear && carYear !== year) return false;
-  if (!Number.isNaN(mileageKm) && carMileage && carMileage > mileageKm) return false;
-  if (!Number.isNaN(priceFrom) && !Number.isNaN(carPrice) && carPrice < priceFrom) return false;
-  if (!Number.isNaN(priceTo) && !Number.isNaN(carPrice) && carPrice > priceTo) return false;
-
-  return true;
-}
-
-function FilterField({
-  label,
-  name,
-  defaultValue
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-}) {
-  return (
-    <label className="block">
-      <div className="mb-1 text-[12px] text-slate-700">{label}</div>
-      <input
-        name={name}
-        defaultValue={defaultValue}
-        className="h-10 w-full rounded-[8px] border border-black/10 bg-white px-3 text-[14px] outline-none"
-      />
-    </label>
-  );
-}
-
 function DemoResultCard({ car }: { car: DemoCar }) {
   return (
     <article className="rounded-[18px] bg-[#f4f4f4] p-4 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
@@ -324,6 +268,27 @@ function MobileLiveResultCard({ listing }: { listing: ListingView }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function FilterField({
+  label,
+  name,
+  defaultValue
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+}) {
+  return (
+    <label className="block">
+      <div className="mb-1 text-[12px] text-slate-700">{label}</div>
+      <input
+        name={name}
+        defaultValue={defaultValue}
+        className="h-10 w-full rounded-[8px] border border-black/10 bg-white px-3 text-[14px] outline-none"
+      />
+    </label>
   );
 }
 
