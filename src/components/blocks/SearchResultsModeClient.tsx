@@ -275,6 +275,26 @@ function MobileLiveResultCard({ listing }: { listing: ListingView }) {
   );
 }
 
+function FilterField({
+  label,
+  name,
+  defaultValue
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+}) {
+  return (
+    <label className="block">
+      <div className="mb-1 text-[12px] text-slate-700">{label}</div>
+      <input
+        name={name}
+        defaultValue={defaultValue}
+        className="h-10 w-full rounded-[8px] border border-black/10 bg-white px-3 text-[14px] outline-none"
+      />
+    </label>
+  );
+}
 function CompactFilterForm({
   search,
   mobile = false
